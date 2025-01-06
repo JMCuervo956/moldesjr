@@ -14,15 +14,14 @@
         <div class="background-container">
             <!-- Aquí se aplica el fondo -->
         </div>
+        <label for="user" >Ingresar</label>           
         <div class="register-form"> 
                 <form onsubmit="clearFields()" id="loginForm" action="/loginv" method='POST'>
-                    <hr class="divider">
-                    <label for="user" >Usuario--</label>           
-                    <input type="text" class="simple-border" placeholder="Usuario" name="user" autocomplete="off" required>
-
-                    <label for="pass" >Contraseña</label>           
+                    <input type="text" class="simple-border" placeholder="Usuario" name="user" autocomplete="off" required autofocus>
                     <input type="password" class="simple-border" placeholder="Contraseña" name="pass" autocomplete="off" required> 
-
+                    <hr class="divider">
+                    <input type="text" class="simple-border" placeholder="Ciudad" name="ciud" autocomplete="off" required>
+                    <input type="text" class="simple-border" placeholder="Parqueadero" name="parq" autocomplete="off" required>
                     <br><br>
                     <div style="display: inline;">
                         <h5></h5>

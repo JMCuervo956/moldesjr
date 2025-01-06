@@ -21,7 +21,12 @@
 <body>
     <script src="app.js"></script>
     <%- include('partials/navigation') %>  
-
+    <div style="display: inline;">
+        <h5 style="font-size: 14px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); transition: color 0.3s ease;" 
+            onmouseover="this.querySelector('.user').style.color='darkblue'; this.querySelector('.name').style.color='darkred';" 
+            <span class="user" style="color: rgb(211, 88, 17); padding-left: 10px;"><%= userUser %></span>
+        </h5>
+    </div> 
     <div class="content">
         <h4>Registro de Inventario</h4>
         <div class="register-form30"> 
