@@ -1470,7 +1470,7 @@ app.post('/save-table-data2', async (req, res) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        await connection.execute('DELETE FROM my_tableCol2');
+        await connection.execute('DELETE FROM my_tablecol2');
 
         for (const { ip, pn, sn, pa, sa, ap, apq } of data) {
             //const user = `${pn.charAt(0)}${sa}`;
@@ -1479,7 +1479,7 @@ app.post('/save-table-data2', async (req, res) => {
             const name = pn + ' ' + sn + ' ' + pa + ' ' + sa
             const rol = `Usuario`;
             if (ip && name && ap && apq && rol) {
-                await connection.execute('INSERT INTO my_tableCol2 (user, name, rol) VALUES (?, ?, ?)', [user, name, rol]);
+                await connection.execute('INSERT INTO my_tablecol2 (user, name, rol) VALUES (?, ?, ?)', [user, name, rol]);
             }
             // Llamar a la función para ejecutar el proceso
         }
@@ -1507,7 +1507,7 @@ app.post('/save-table-data2', async (req, res) => {
 // Función para generar y actualizar la contraseña en la tabla
 async function updatePasswords() {
     try {
-        const [rows] = await pool.execute('SELECT Id, user FROM my_tableCol2');
+        const [rows] = await pool.execute('SELECT Id, user FROM my_tablecol2');
         if (rows.length === 0) {
             //console.log('No hay usuarios para actualizar.');
             return; // Salir si no hay registros
@@ -1517,7 +1517,7 @@ async function updatePasswords() {
                 const transformedPassword = `${row.user.charAt(0).toUpperCase()}${row.user.slice(1)}24%`;
                 console.log(transformedPassword);
                 const hashedPassword = await bcryptjs.hash(transformedPassword, 8);
-                await pool.execute('UPDATE my_tableCol2 SET pass = ? WHERE user = ?', [hashedPassword, row.user]);
+                await pool.execute('UPDATE my_tablecol2 SET pass = ? WHERE user = ?', [hashedPassword, row.user]);
             } catch (updateError) {
                 console.error(`Error actualizando la contraseña para el usuario ${row.user}:`, updateError);
             }
