@@ -1463,7 +1463,6 @@ async function processCSV(filePath) {
 
 app.post('/save-table-data2', async (req, res) => {
     const data = req.body;
-
     if (!Array.isArray(data) || data.length === 0) {
         return res.status(400).json({ message: 'No data provided' });
     }
@@ -1472,15 +1471,21 @@ app.post('/save-table-data2', async (req, res) => {
     try {
         await connection.beginTransaction();
         await connection.execute('DELETE FROM my_tableCol2');
-        for (const { user, name, rol } of data) {
-            if (user && name && rol) {
+
+        for (const { ip, pn, sn, pa, sa, ap, apq } of data) {
+            //const user = `${pn.charAt(0)}${sa}`;
+            const user = `${pn.charAt(0).toUpperCase()}${pa}`;
+            //const name = `${pn}-${sn}-${pa}-${sa}`;
+            const name = pn + ' ' + sn + ' ' + pa + ' ' + sa
+            const rol = `Usuario`;
+            if (ip && name && ap && apq && rol) {
                 await connection.execute('INSERT INTO my_tableCol2 (user, name, rol) VALUES (?, ?, ?)', [user, name, rol]);
             }
+            // Llamar a la función para ejecutar el proceso
         }
 
         // Llamada al procedimiento almacenado
         await connection.execute('CALL SP_Valida_ImportarColumnas()'); // Reemplaza 'nombre_del_procedimiento_almacenado' con el nombre real de tu SP
-        // Llamar a la función para ejecutar el proceso
         updatePasswords();
 
         await connection.commit();
@@ -1489,6 +1494,7 @@ app.post('/save-table-data2', async (req, res) => {
             title: 'Registro Exitoso',
             message: '¡Registrado correctamente!'
         });
+
     } catch (error) {
         console.error('Error saving data:', error);
         await connection.rollback();
@@ -1497,6 +1503,29 @@ app.post('/save-table-data2', async (req, res) => {
         connection.release();
     }
 });
+
+// Función para generar y actualizar la contraseña en la tabla
+async function updatePasswords() {
+    try {
+        const [rows] = await pool.execute('SELECT Id, user FROM my_tableCol2');
+        if (rows.length === 0) {
+            //console.log('No hay usuarios para actualizar.');
+            return; // Salir si no hay registros
+        }
+        for (const row of rows) {
+            try {
+                const transformedPassword = `${row.user.charAt(0).toUpperCase()}${row.user.slice(1)}24%`;
+                console.log(transformedPassword);
+                const hashedPassword = await bcryptjs.hash(transformedPassword, 8);
+                await pool.execute('UPDATE my_tableCol2 SET pass = ? WHERE user = ?', [hashedPassword, row.user]);
+            } catch (updateError) {
+                console.error(`Error actualizando la contraseña para el usuario ${row.user}:`, updateError);
+            }
+        }
+    } catch (error) {
+        console.error('Error en updatePasswords:', error);
+    }
+}
 
 // End - [cargascol]
 
@@ -1542,31 +1571,6 @@ app.post('/save-table-data', async (req, res) => {
 });
 */
 // End - [cargas]
-
-// Función para generar y actualizar la contraseña en la tabla
-async function updatePasswords() {
-    try {
-        const [rows] = await pool.execute('SELECT Id, user FROM my_tableCol2');
-        if (rows.length === 0) {
-            //console.log('No hay usuarios para actualizar.');
-            return; // Salir si no hay registros
-        }
-        for (const row of rows) {
-            try {
-                const transformedPassword = `${row.user.charAt(0).toUpperCase()}${row.user.slice(1)}24%`;
-                const hashedPassword = await bcryptjs.hash(transformedPassword, 8);
-                await pool.execute('UPDATE my_tableCol2 SET pass = ? WHERE user = ?', [hashedPassword, row.user]);
-            } catch (updateError) {
-                console.error(`Error actualizando la contraseña para el usuario ${row.user}:`, updateError);
-            }
-        }
-    } catch (error) {
-        console.error('Error en updatePasswords:', error);
-    }
-}
-
-
-
 
 
 // [     V E R           A R C H I V O S        ]

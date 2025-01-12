@@ -17,12 +17,16 @@
     <br><br>
     <h4>Contenido del archivo:</h4>
     <pre id="contenido-archivo"></pre>
-    <table id="myTable" border="1" style="width: 40%; border-collapse: collapse; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); border-radius: 10px; overflow: hidden; font-size: 13px; line-height: 0; margin: 0 auto; background-color: rgb(243, 242, 164);">
+    <table id="myTable" border="1" style="width: 70%; border-collapse: collapse; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); border-radius: 10px; overflow: hidden; font-size: 13px; line-height: 0; margin: 0 auto; background-color: rgb(243, 242, 164);">
       <thead>
         <tr>
-          <th>Usuario</th>
-          <th>Nombre</th>
-          <th>Rol</th>
+          <th>ID Propiedad</th>
+          <th>Primer Nombre</th>
+          <th>Segundo Nombre</th>
+          <th>Primer Apellido</th>
+          <th>Segundo Apellido</th>
+          <th>Area Apto</th>
+          <th>Area Parqueadero</th>
         </tr>
       </thead>
       <tbody>
@@ -38,22 +42,34 @@
       const table = document.getElementById('myTable').getElementsByTagName('tbody')[0];
       table.innerHTML = "";  // Limpiamos la tabla antes de agregar el contenido
       const filas = contenido.split('\n');
-      filas.forEach(fila => {
+      filas.slice(1).forEach(fila => {
         if (fila.trim() !== "") { // Validar que la fila no esté vacía
           const nuevaFila = document.createElement('tr');
           const celdas = fila.split(';'); // Dividimos la fila en columnas
           if (celdas.length >= 3) {
-            const nuevaCeldaUsuario = document.createElement('td');
-            const nuevaCeldaNombre = document.createElement('td');
-            const nuevaCeldaRol = document.createElement('td');
+            const nuevaCeldaIP = document.createElement('td');
+            const nuevaCeldaPN = document.createElement('td');
+            const nuevaCeldaSN = document.createElement('td');
+            const nuevaCeldaPA = document.createElement('td');
+            const nuevaCeldaSA = document.createElement('td');
+            const nuevaCeldaAA = document.createElement('td');
+            const nuevaCeldaAP = document.createElement('td');
 
-            nuevaCeldaUsuario.textContent = celdas[0].trim();
-            nuevaCeldaNombre.textContent = celdas[1].trim();
-            nuevaCeldaRol.textContent = celdas[2].trim();
+            nuevaCeldaIP.textContent = celdas[0].trim();
+            nuevaCeldaPN.textContent = celdas[1].trim();
+            nuevaCeldaSN.textContent = celdas[2].trim();
+            nuevaCeldaPA.textContent = celdas[3].trim();
+            nuevaCeldaSA.textContent = celdas[4].trim();
+            nuevaCeldaAA.textContent = celdas[5].trim();
+            nuevaCeldaAP.textContent = celdas[6].trim();
 
-            nuevaFila.appendChild(nuevaCeldaUsuario);
-            nuevaFila.appendChild(nuevaCeldaNombre);
-            nuevaFila.appendChild(nuevaCeldaRol);
+            nuevaFila.appendChild(nuevaCeldaIP);
+            nuevaFila.appendChild(nuevaCeldaPN);
+            nuevaFila.appendChild(nuevaCeldaSN);
+            nuevaFila.appendChild(nuevaCeldaPA);
+            nuevaFila.appendChild(nuevaCeldaSA);
+            nuevaFila.appendChild(nuevaCeldaAA);
+            nuevaFila.appendChild(nuevaCeldaAP);
 
             table.appendChild(nuevaFila);
           }
@@ -86,9 +102,13 @@
       for (let i = 1; i < table.rows.length; i++) {  // Empieza en 1 para omitir el encabezado
         const row = table.rows[i];
         const rowData = {
-          user: row.cells[0].innerText,
-          name: row.cells[1].innerText,
-          rol: row.cells[2].innerText
+          ip: row.cells[0].innerText,
+          pn: row.cells[1].innerText,
+          sn: row.cells[2].innerText,
+          pa: row.cells[3].innerText,
+          sa: row.cells[4].innerText,
+          ap: row.cells[5].innerText,
+          apq: row.cells[6].innerText
         };
         data.push(rowData);
       }
