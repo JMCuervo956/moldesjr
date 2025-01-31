@@ -1,4 +1,4 @@
- // Importaciones de módulos de terceros		
+ // Importaciones de módulos de terceros - loc		
 import express, { Router } from 'express';		
 import session from 'express-session';		
 import mysql from 'mysql2/promise'; // Cambiado para usar mysql2 con promesas		
@@ -16,7 +16,7 @@ import crypto from 'crypto';
 
 // Importaciones de archivos locales		
 import { pool } from './db.js';		
-import { PORT } from './config.js';		
+import { PORT } from './config.js';		    
 import path from 'path';		
 import { fileURLToPath } from 'url';	
 import mammoth from 'mammoth'; // docx a pdf
@@ -104,27 +104,12 @@ const storagepdf = multer.diskStorage({
         cb(null, uploadDir); // Establecer el destino
     },
     filename: (req, file, cb) => {
-        cb(null, file.originalname); // Usar el nombre original del archivo
+        const newFileName = `PODERASM_${req.session.numprop}${path.extname(file.originalname)}`;
+        cb(null, newFileName); // Nombre final del archivo
+//        cb(null, file.originalname); // Usar el nombre original del archivo
     }
 });
 
-//const uploadpdf = multer({ storagepdf }); // Crear el middleware de Multer
-const uploadpdf = multer({ storage: storagepdf }); 
-
-// Ruta para manejar la carga del archivo PDF
-app.post('/uploadpdf', uploadpdf.single('file'), async (req, res) => {
-    try {
- //       console.log(req.file); // Aquí puedes ver qué se ha cargado
-        res.send(`Archivo cargado y guardado en ======= ${req.file.path}`);
-    } catch (error) {
-
-        console.error('Error al cargar el archivo:', error);
-        res.status(500).send('Error al cargar el archivo.');
-    }
-});
-  
-
-// End - [cargapoder] - Configuración de Multer - Para Cargar Archivos 
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); 
@@ -191,9 +176,8 @@ app.get('/', async (req, res) => {
 });		
 
 // Ruta para descargar archivos
-//console.log('aqui ');
-//console.log(__dirname);
-app.use('uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.get('/origen/:folder/:filename', (req, res) => {
     const folder = req.params.folder;
     const filename = req.params.filename;
@@ -210,92 +194,6 @@ app.get('/origen/:folder/:filename', (req, res) => {
     });
 });
 
-// INVENTARIOS
-
-app.get('/inventarios', (req, res)=>{
-    if (req.session.loggedin) {
-        const userUser = req.session.unidad;
-        res.render('inventarios', { userUser });
-    } else {
-        res.send('Por favor, inicia sesión primero.');
-    }
-})
-
-app.post('/inventarios', async (req, res) => {
-    try {
-        console.log('DB_HOST:', process.env.DB_HOST);
-        console.log('DB_USER:', process.env.DB_USER);
-        console.log('DB_PASSWORD:', process.env.DB_PASSWORD);
-        console.log('Conectando a la base de datos con estos valores:');
- 
-        const { CodActivo, DesGen, DesAct, observ, Estado, Propio } = req.body;
-
-        // Verificar si el activo ya existe
-        const [rows] = await pool.execute('SELECT * FROM tbl_inventarios WHERE id_activo = ?', [CodActivo]);
-
-        if (rows.length > 0) {
-            // Si el registro ya existe, devolver mensaje y opciones
-            return res.json({ 
-                status: 'exists', 
-                message: 'El registro ya existe.',
-                codActivo: CodActivo ,
-                options: {
-                    delete: true,  // Opción para eliminar
-                    keep: true     // Opción para mantener
-                }
-            });
-        }
-
-        // Si el registro no existe, insertarlo en la base de datos
-        await pool.execute('INSERT INTO tbl_inventarios (id_activo, desgen, desact, desobs, estado, propio) VALUES (?, ?, ?, ?, ?, ?)', [CodActivo, DesGen, DesAct, observ, Estado, Propio ]);
-        res.json({ status: 'success', message: '¡Activo registrado correctamente!' });
-
-    } catch (error) {
-        console.error('Error en registro:', error);
-        res.status(500).json({ status: 'error', message: 'Error en el servidor' });
-    }
-});
-
-// inventarios ELIMINAR
-
-app.post('/inventeli', async (req, res) => {
-    try {
-        const ids = req.body.CodActivo;
-
-        // Log para depuración
-
-        const [rows] =  await pool.execute('delete from tbl_inventarios WHERE id_activo = ?', [ids]);
-        return res.json({
-            status: 'success',
-            title: 'Borrado Exitoso.',
-            message: '¡Registro Exitoso! BD'
-        });
-    } catch (error) {
-        if (error.code === 'ER_ROW_IS_REFERENCED') {
-            return res.json({
-                status: 'error',
-                title: 'Borrado No Exitoso',
-                message: 'No se puede eliminar la pregunta porque tiene dependencia de OPCIONES.'
-            });
-        }
-        // Para cualquier otro tipo de error
-        return res.json({
-            status: 'error',
-            title: 'Error de Borrado',
-            message: `Error: ${error.code}`
-        });
-    }
-});
-
-// INVENTARIOS
-
-app.get('/inventario', (req, res) => {
-    if (req.session.loggedin) {
-        res.render('inventario');
-    } else {
-        res.send('Por favor, inicia sesión primero.');
-    }
-});
 
 // Rutas de autenticación y registro
 //app.get('/login', (req, res) => res.render('login'));
@@ -309,6 +207,12 @@ app.get('/login', (req, res)=>{
 //        res.send('Por favor, inicia sesión primero.');
 //    }
 })
+
+app.get('/valida', (req, res)=>{
+        const userUser = req.session.unidad;
+        res.render('valida', { userUser });
+    })
+    
 
 // [video]
 app.get('/video', (req, res) => {
@@ -608,6 +512,7 @@ app.get('/maepropeli', (req, res) => {
     }
     const UdaRecord = rows[0];
     req.session.unidad = UdaRecord.razonsocial; // mantener la información del usuario entre diferentes solicitudes durante su sesión (COMPARTIR).
+    req.session.idrsocial = UdaRecord.id_rz; 
     // Aquí puedes realizar la evaluación necesaria
     if (identificador) {
         return res.json({ status: 'success', message: '¡Tipo Propiedad ok!' });
@@ -692,6 +597,7 @@ app.post('/maepropeli', async (req, res) => {
 });
 
 // End - [maepropeli]
+
 
 // PODERES 
 
@@ -838,6 +744,157 @@ app.post('/podereli', async (req, res) => {
 
 // End - [podereli]
 
+// PODERES - USUARIOS
+
+// PODERES 
+
+app.get('/poderesusu', async (req, res) => {
+    try {
+        const tableName = "tbl_poderes_usu";
+        const [rows] = await pool.execute(`select * from ${tableName}`);
+        if (req.session.loggedin) {
+            res.render('poderesusu', { data: rows });
+        } else {
+            res.send('Por favor, inicia sesión primero.');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+});
+
+app.get('/poderadiusu', (req, res) => {
+    if (req.session.loggedin) {
+        const { user, name } = req.session;                 // revisar
+        res.render('poderadiusu', { user, name });
+    } else {
+        res.send('Por favor, inicia sesión primero.');
+    }
+});
+
+app.get('/podermodusu', (req, res) => {
+    const id = req.query.Id;
+    const numprop = req.query.numprop;
+    const name = req.query.name;
+    const propoder = req.query.propoder;
+    const proname = req.query.proname;
+    res.render('podermodusu', { id, numprop, name, propoder, proname });
+});
+
+app.get('/podereliusu', (req, res) => {
+    const id = req.query.Id;
+    const numprop = req.query.numprop;
+    const name = req.query.name;
+    const propoder = req.query.propoder;
+    const proname = req.query.proname;
+    res.render('podereliusu', { id, numprop, name, propoder, proname });
+});
+
+app.post('/poderadiusu', async (req, res) => {
+    try {
+        const tableName = "tbl_poderes_usu";
+        const date = new Date();
+        const numprop = req.body.numprop;
+        const name = req.body.name;
+        const propoder = req.session.numprop;
+        const proname = req.session.name;
+/*        
+        if (!numprop) {
+            return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios' });
+        }
+
+        if (numprop==propoder) {
+            return res.status(400).json({ status: 'error', message: 'Quien Otorga no puede recibir' });
+        }
+            
+        const [rows] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE numprop = ?', [numprop]);
+        if (rows.length > 0) {
+            return res.status(400).json({ status: 'error', message: 'Poder ya Existe' });
+        }
+*/
+            
+/*
+        const [rows2] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE numprop = ?', [propoder]);
+        if (rows2.length > 0) {
+            return res.status(400).json({ status: 'error', message: 'Quien recibe ya otorgo poder' });
+        }
+*/
+/*
+        const [rows3] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE propoder = ?', [numprop]);
+        if (rows3.length > 0) {
+            return res.status(400).json({ status: 'error', message: 'Quien Otorga ya tiene poderes recibidos' });
+        }
+*/
+        console.log('insertar');
+        console.log(name);
+        console.log(numprop);
+        console.log(propoder);
+        console.log(proname);
+
+        await pool.execute(`INSERT INTO ${tableName} (name,numprop,propoder,proname,fecha) VALUES (?,?,?,?,?)`, [numprop, name, propoder, proname, date]);
+        res.json({ status: 'success', message: '¡Registrado Correctamente!' });
+    } catch (error) {
+        console.error('Error en registro:', error);
+        res.status(500).json({ status: 'error', message: 'Error en el servidor' });
+    }
+});
+
+// [podermod] - modifica poder
+
+app.post('/podermodusu', async (req, res) => {
+    try {
+        const tableName = "tbl_poderes_usu";
+        const date = new Date();
+        const id = req.body.id;
+        const numprop = req.body.numprop;
+        const name = req.body.name;
+        const propoder = req.session.numprop;
+        const proname = req.session.name;
+        //console.log(id);
+        await pool.execute(`UPDATE ${tableName} SET numprop = ?, name = ?, propoder = ?, proname = ?, Fecha = ? WHERE id = ?`, [numprop, name, propoder, proname, date, id]);
+        return res.json({
+            status: 'success',
+            title: 'Actualizacion Exitosa',
+            message: '¡Registrado correctamente!'
+        });
+    } catch (error) {
+        res.json({
+            status: 'error',
+            title: 'Actualizacion NO Exitosa...',
+            message: `Error: ${error.message}`
+        });
+    }
+});
+
+// End - [podermod]
+
+// [podereli] - Eliminar poder
+           
+app.post('/podereliusu', async (req, res) => {
+    try {
+        const tableName = "tbl_poderes_usu";
+        const id = req.body.id;
+        // Log para depuración delete
+        const [result] = await pool.execute(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
+        if (result.affectedRows > 0) {
+            // El registro fue eliminado con éxito
+            return res.json({
+                status: 'success',
+                title: 'Eliminado',
+                message: 'ha sido eliminado correctamente.'
+            });
+        }
+    } catch (error) {
+        res.json({
+            status: 'error',
+            title: 'Borrado NO Exitoso.....PODER',
+            message: `Error: ${error.message}`
+        });
+    }
+});
+
+// End Poderes Usuarios
+
 // Graficos
 
 app.get('/bar', async (req, res) => {
@@ -929,35 +986,6 @@ app.get('/cargascsv', (req, res) => {
     res.render('cargascsv', { id, texto });
 });
 
-// loginv
-
-app.post('/loginv', async (req, res) => {
-    // variables de ejs
-    const { user, pass } = req.body;
-  
-    // Valida Usuario
-    const tableName = 'users';
-    const [rows] = await pool.execute(`SELECT * FROM ${tableName} WHERE user = ?`, [user]);
-    
-    if (rows.length === 0) {
-        return res.json({ status: 'error', message: 'Usuario no encontrado' });
-    }
-    const userRecord = rows[0];
-    const passwordMatch = await bcryptjs.compare(pass, userRecord.pass);
-  
-    if (!passwordMatch) {
-        return res.json({ status: 'error', message: 'Contraseña incorrecta' });
-    }
-  
-    req.session.loggedin = true;
-    req.session.user = userRecord.user; // mantener la información del usuario entre diferentes solicitudes durante su sesión (COMPARTIR).
-    req.session.name = userRecord.name; // mantener la información del usuario entre diferentes solicitudes durante su sesión (COMPARTIR).
-    req.session.rol = userRecord.rol;
-    req.session.pass = userRecord.pass;
-  
-    return res.json({ status: 'success', message: '!LOGIN Correcto!' });
-  });
-  
 
 // [login] - Autenticacion
 
@@ -981,6 +1009,7 @@ app.post('/auth', async (req, res) => {
     }
     const UdaRecord = rowsud[0];
     req.session.unidad = UdaRecord.razonsocial; // mantener la información del usuario entre diferentes solicitudes durante su sesión (COMPARTIR).
+    req.session.nomid = UdaRecord.nomid;
     //console.log(req.session.unidad);
     // Valida Usuario
     const tableName = 'users';
@@ -1001,11 +1030,43 @@ app.post('/auth', async (req, res) => {
     req.session.name = userRecord.name; // mantener la información del usuario entre diferentes solicitudes durante su sesión (COMPARTIR).
     req.session.rol = userRecord.rol;
     req.session.pass = userRecord.pass;
+    req.session.numprop = userRecord.numprop;
+    console.log('este 1');
+    console.log(req.session.name);
+    console.log(req.session.numprop);
 
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
 });
 
 // End - [login]
+
+//const uploadpdf = multer({ storagepdf }); // Crear el middleware de Multer
+const uploadpdf = multer({ storage: storagepdf }); 
+
+// Ruta para manejar la carga del archivo PDF
+app.post('/uploadpdf', uploadpdf.single('file'), async (req, res) => {
+    try {
+        console.log(req.file.path);
+        
+        const oldPath = req.file.path;
+        const newFileName = 'PODERASM_' + Date.now() + path.extname(req.file.originalname);
+        const anewFileName = 'PODERASM_' + req.session.numprop;
+        const newPath = path.join('uploads', anewFileName);
+
+        console.log(newFileName);
+        console.log(anewFileName);
+        console.log(newPath);
+
+        res.send(`Archivo cargado y guardado en ======= ${req.file.path}`);
+    } catch (error) {
+
+        console.error('Error al cargar el archivo:', error);
+        res.status(500).send('Error al cargar el archivo.');
+    }
+});
+  
+
+// End - [cargapoder] - Configuración de Multer - Para Cargar Archivos 
 
 // [preguntas] 
 
@@ -1494,7 +1555,6 @@ app.post('/save-table-data2', async (req, res) => {
             title: 'Registro Exitoso',
             message: '¡Registrado correctamente!'
         });
-
     } catch (error) {
         console.error('Error saving data:', error);
         await connection.rollback();
@@ -1529,31 +1589,88 @@ async function updatePasswords() {
 
 // End - [cargascol]
 
-// [cargas] - Ruta para guardar datos en la tabla 
-/*
-app.post('/save-table-data', async (req, res) => {
-    const data = req.body;
-    console.log('paso 1');
-    if (!Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ message: 'No data provided' });
-    }
+app.get('/ver-word', (req, res) => {
+    // Aquí usas la URL completa, que incluye el protocolo y el dominio (puede ser http://localhost:3000 o el dominio de producción)
+    const archivoWord = 'http://localhost:3000/uploads/poder.docx';  // Ruta absoluta del archivo Word
+    console.log('Archivo Word:', archivoWord);  // Log para verificar que archivoWord está definido
+    res.render('ver-word', { archivoWord });  // Pasar la variable 'archivoWord' al template EJS
+});
 
+app.get('/ver-pdf', (req, res) => {
+//    const ruta = 'emp4';
+//    const archivo = 'poder_18401.pdf';
+    const ruta = req.session.nomid;
+    const archivo = `PODERASM_${req.session.numprop}.pdf`;
+    const archivoPDF = `/uploads/${ruta}/${archivo}`;
+    console.log('este');
+    console.log(archivo);
+    console.log(archivoPDF);
+    res.render('ver-pdf', { pdfUrl: archivoPDF });
+  });
+
+// Cargar PDF
+app.get('/cargarpdf', (req, res) => {
+    const nomid = req.session.nomid;
+    res.render('cargarpdf', { nomid });
+});
+
+// Ruta para cargar la vista de carga
+app.get('/cargapoder', (req, res) => {
+    res.render('cargapoder'); // Renderiza cargapoder.ejs
+});
+
+// Ruta GET para obtener las ciudades y parqueaderos
+
+app.get('/datos', async (req, res) => {
+    try {
+        //Console.log('datos');
+        // Consultar ciudades
+        //const [ciudades] = await pool.execute('SELECT id_ciudad, ciudad FROM tbl_ciudades');
+        const [ciudades] = await pool.execute('SELECT numprop, name FROM users');
+
+        // Enviar las ciudades y parqueaderos como respuesta JSON
+        res.json({ ciudades});
+    } catch (error) {
+        console.error("Error al obtener los datos: ", error);
+        res.status(500).json({ status: 'error', message: 'Error del servidor' });
+    }
+});
+
+app.post('/valreg', async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        await connection.beginTransaction();
-        await connection.execute('DELETE FROM my_table2');
-
-        for (const { codigo } of data) {
-            if (codigo) {
-                await connection.execute('INSERT INTO my_table2 (codigo) VALUES (?)', [codigo]);
-            }
-        }
-        console.log('ingresa');
         // Llamada al procedimiento almacenado
-        await connection.execute('CALL SP_Valida_ImportarColumnas()');
-        console.log('actualiza')
-        // Llamar a la función para ejecutar el proceso
-        await updatePasswords();  // Asegúrate de usar await aquí
+        await connection.execute('CALL SP_Validar()'); // Reemplaza 'SP_Validar' con tu nombre real de SP
+
+        // Recuperamos los datos de la tabla tbl_valida
+        const [rows] = await connection.execute('SELECT * FROM tbl_valida');
+
+        await connection.commit();
+
+        // Enviar el resultado de la tabla junto con el mensaje de éxito
+        res.json({
+            status: 'success',
+            title: 'Registro Exitoso',
+            message: '¡Registrado correctamente!',
+            data: rows // Enviamos los datos de la tabla
+        });
+    } catch (error) {
+        console.error('Error saving data:', error);
+        await connection.rollback();
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
+
+app.post('/valsecuen', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+
+        // Llamada al procedimiento almacenado
+        await connection.execute('CALL SP_Valida_ImportarColumnas()'); // Reemplaza 'nombre_del_procedimiento_almacenado' con el nombre real de tu SP
+        updatePasswords();
 
         await connection.commit();
         res.json({
@@ -1568,87 +1685,6 @@ app.post('/save-table-data', async (req, res) => {
     } finally {
         connection.release();
     }
-});
-*/
-// End - [cargas]
-
-
-// [     V E R           A R C H I V O S        ]
-
-// ver archivos cargas docx o pdf //////////////////////////////
-
-// opc 1 docx
-// app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-
-app.get('/ver-word', (req, res) => {
-    // Aquí usas la URL completa, que incluye el protocolo y el dominio (puede ser http://localhost:3000 o el dominio de producción)
-    const archivoWord = 'http://localhost:3009/uploads/poder.docx';  // Ruta absoluta del archivo Word
-    console.log('Archivo Word:', archivoWord);  // Log para verificar que archivoWord está definido
-    res.render('ver-word', { archivoWord });  // Pasar la variable 'archivoWord' al template EJS
-});
-
-// opc 2 docx a pdf
-/*
-// Ruta del archivo .docx y de salida
-const inputFilePath = path.join('uploads', 'poder.docx');
-const outputFilePath = path.join('uploads', 'poder.pdf');
-
-// Función para convertir .docx a PDF
-async function convertDocxToPdf(inputPath, outputPath) {
-    try {
-        // Leer el archivo .docx
-        const docxData = fs.readFileSync(inputPath);
-        const { value: docText } = await mammoth.extractRawText({ buffer: docxData });
-
-        // Crear un nuevo documento PDF usando pdf-lib
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage();
-        
-        // Usar la fuente estándar Helvetica de pdf-lib
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const { width, height } = page.getSize();
-        
-        // Añadir el texto del documento .docx al PDF
-        page.drawText(docText, {
-            x: 50,
-            y: height - 50,
-            font,
-            size: 12,
-            maxWidth: width - 100,
-            lineHeight: 14,
-        });
-
-        // Guardar el archivo PDF
-        const pdfBytes = await pdfDoc.save();
-        fs.writeFileSync(outputPath, pdfBytes);
-
-        console.log('Archivo convertido a PDF con éxito.');
-    } catch (error) {
-        console.error('Error al convertir .docx a PDF:', error);
-    }
-}
-
-  // Llamar a la función para convertir el archivo
-  convertDocxToPdf(inputFilePath, outputFilePath);
-*/
-
-// opc 3 pdf  
-
-// En tu ruta en Express:
-app.get('/ver-pdf', (req, res) => {
-    const archivoPDF = '../uploads/poder.pdf'; // Ruta al archivo PDF
-    console.log(archivoPDF);
-    res.render('ver-pdf', { pdfUrl: archivoPDF });
-  });
-
-// Cargar PDF
-app.get('/cargarpdf', (req, res) => {
-    res.render('cargarpdf');
-  });
-
-// Ruta para cargar la vista de carga
-app.get('/cargapoder', (req, res) => {
-    res.render('cargapoder'); // Renderiza cargapoder.ejs
 });
 
 app.listen(PORT, () => {

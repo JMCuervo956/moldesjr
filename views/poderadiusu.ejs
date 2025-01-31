@@ -1,0 +1,114 @@
+<!-- maepropadi.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Incluye SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <%- include('partials/head') %>
+</head>
+<body>
+    <script src="app.js"></script>
+    <%- include('partials/navigation') %>  
+    <br>
+    <div class="content">
+        <div class="register-formIzq1"> 
+            <h4 style="color: #0b07f1; text-align: center;">Registrar Poder Otorgado</h4>
+            <form onsubmit="clearFields()" id="loginForm" action="/poderadiusu" method='POST'>
+                <hr class="divider">
+
+                
+                <!-- Campo name como Select -->
+                <select class="simple-border" name="ciud" id="name" required>
+                    <option value="" disabled selected>Seleccione Otorgante</option>
+                    <!-- Las opciones de name serán cargadas dinámicamente aquí -->
+                </select>
+
+                <h6>========================</h6>
+                <input type="text" name="numprop" class="input-small" id="numprop" placeholder="Numero Propiedad otorga" required maxlength="30" style="display: inline;">
+                <input type="text" name="name" class="input-small" id="names" placeholder="Propietario Otorga" required maxlength="50" style="display: inline;">
+                <br><br>    
+                <div style="display: none;">
+                    <h6>Recibe Poder</h6>
+                    <input type="text" name="propoder" class="input-small" placeholder="Numero Propiedad recibe" maxlength="30" style="display: inline;">
+                    <input type="text" name="proname" class="input-small" placeholder="Propietario Recibe" maxlength="50" style="display: inline;">
+                    <h1></h1>
+                    <a href="/poderesusu">Cargar Poder</a>
+                </div>    
+                <div style="display: inline;">
+                    <br>
+                    <a href="/poderesusu" class="btn-cancel">Regresar</a>
+                    <input type="submit" class="btn-save" value="Registrar">
+                </div>
+            </form>   
+        </div>
+    </div>
+
+    <script>
+        // Función para cargar los datos de USUARIOS
+        async function cargarDatos() {
+            //console.log('Cargando datos de usuarios...');
+            try {
+                const response = await fetch('/datos');
+                const data = await response.json();
+
+                // Verificar los datos recibidos
+                //console.log('Datos recibidos:', data);
+    
+                if (data.status !== 'error') {
+                    const ciudadesSelect = document.getElementById('name');
+    
+                    if (data.ciudades && Array.isArray(data.ciudades)) {
+                        //console.log('Ciudades disponibles:', data.ciudades);
+    
+                        // Llenamos el select con las opciones
+                        data.ciudades.forEach(ciudad => {
+                            //console.log(`Procesando ciudad: ${JSON.stringify(ciudad)}`);
+                            const option = document.createElement('option');
+                            option.value = ciudad.name;  // Usamos numprop como valor
+                            option.textContent = ciudad.numprop;  // Mostramos el nombre de la ciudad
+                            ciudadesSelect.appendChild(option);
+                        });
+                    } else {
+                        console.log('No se encontraron ciudades en los datos');
+                    }
+                    // Escuchar el cambio en el select
+                    ciudadesSelect.addEventListener('change', function () {
+                        // Obtener el valor (numprop) seleccionado
+                        const selectedValue = this.value;
+                        console.log('Valor seleccionado (numprop):', selectedValue);
+    
+                        // Obtener el texto (name) de la opción seleccionada
+                        const selectedOptionText = this.options[this.selectedIndex].textContent;
+                        console.log('Texto de la opción seleccionada:', selectedOptionText);
+    
+                        // Mostrar los valores de numprop y name en los campos correspondientes
+                        document.getElementById('numprop').value = selectedValue;
+                        document.getElementById('names').value = selectedOptionText;
+                    });
+                } else {
+                    console.log('Error en los datos:', data.status);
+                }
+               
+
+            } catch (error) {
+                console.error('Error al cargar los datos:', error);
+            }
+        }
+    
+        // Llamar a la función para cargar los datos cuando la página se carga
+        window.onload = cargarDatos;
+    </script>
+            
+            
+    <%- include('partials/footer') %>  
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/src/main.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</body>
+</html>
+

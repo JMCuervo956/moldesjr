@@ -32,7 +32,7 @@ body {
 /*     background-image: url('/img/edificios.jpg');  */
 
 .custom-navbar-bg {
-    background-color: #8671e4; /* Azul oscuro *  de encabezado "" */
+    background-color: #15026b; /* Azul oscuro *  de encabezado "" */
 }
 
 /*     background: #b8b8bb ; */
@@ -870,13 +870,21 @@ button:hover {
   display: block;
 }
 
-.simple-border {
+.simple-borderaaaaaa {
     border: 1px solid #ccc; /* Borde sencillo */
     border-radius: 3px; /* Bordes ligeramente redondeados (opcional) */
     padding: 8px; /* Espaciado interno */
     box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
     font-size: 14px; /* Ajusta el tamaño de la fuente según sea necesario */
     height: 20px; /* Ajusta la altura según sea necesario */
+}
+
+.simple-border {
+    border: 1px solid #ccc;
+    border-radius: 3px; /* Bordes ligeramente redondeados (opcional) */
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 4px; /* Bordes redondeados */
 }
 
 /* Opcional: Quitar el borde al recibir foco */

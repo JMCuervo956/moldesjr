@@ -5,17 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Subir archivo PDF</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <%- include('partials/head') %>
 </head>
 <body>
-
-    <h2>Selecciona un archivo PDF para cargar</h2>
-    
-    <!-- Formulario para cargar el archivo -->
-    <form action="/uploadpdf" method="POST" enctype="multipart/form-data">
-        <input type="text" name="empresaId" value="Emp4" placeholder="Nombre de la empresa"> <!-- Cambia esto según la empresa -->
-        <input type="file" name="file" accept=".pdf" required />
-        <button type="submit">Subir PDF</button>
-    </form>
-
+    <%- include('partials/navigation') %>  
+    <div class="content">
+        <h2>cargar PDF</h2>
+        <br><br>
+        <div class="register-formAncho"> 
+            <br>
+            <!-- Formulario para cargar el archivo -->
+            <form action="/uploadpdf" method="POST" enctype="multipart/form-data">
+                <input type="text" name="empresaId" value="<%= nomid %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="file" name="file" accept=".pdf" required style="font-size: 14px; width: 350px;">
+                <button class="btn btn-success btn-sm btnind-hover-effect" style="width: auto; font-size: 14px; background-color: blue; border-color: blue;">
+                    Subir PDF
+                </button>
+            </form>
+            <br>
+        </div>      
+        <br>
+        <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+    </div>
+    <%- include('partials/footer') %>  
 </body>
 </html>

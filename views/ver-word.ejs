@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ver Documento Word</title>
+    <title>Ver Word</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <%- include('partials/head') %>
 </head>
 <body>
-    <h1>Ver Documento Word</h1>
+    <%- include('partials/navigation') %>  
+    <div class="content">
+        <br><br><br>
+        <div class="register-formAncho"> 
+            <h4 style="color: rgb(45, 6, 240); text-align: center;">Descargar : "poder.docx"</h4>
+        </div>      
 
-    <!-- Google Docs Viewer -->
-    <iframe src="https://docs.google.com/gview?url=<%= archivoWord %>&embedded=true" 
-            style="width:100%; height:600px;" frameborder="0"></iframe>
-
-    <!-- Office Web Viewer (también puedes usar esta opción) -->
-    <!-- <iframe src="https://view.officeapps.live.com/op/view.aspx?src=<%= archivoWord %>" 
-            style="width:100%; height:600px;" frameborder="0"></iframe> -->
-
+        <div class="register-formAncho"> 
+            <br><br><br>
+            <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+            <a href="<%= archivoWord %>" download>Haz clic para descargar el archivo .docx</a>
+        </div>      
+    </div>      
+    <%- include('partials/footer') %>  
 </body>
 </html>
-
-
