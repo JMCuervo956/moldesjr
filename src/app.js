@@ -1643,7 +1643,7 @@ app.post('/valreg', async (req, res) => {
         await connection.execute('CALL SP_Validar()'); // Reemplaza 'SP_Validar' con tu nombre real de SP
 
         // Recuperamos los datos de la tabla tbl_valida
-        const [rows] = await connection.execute('SELECT * FROM tbl_valida');
+        const [rows] = await connection.execute('SELECT * FROM tbl_valida order by id_activo_numerico desc');
 
         await connection.commit();
 
