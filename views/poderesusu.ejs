@@ -64,12 +64,30 @@
                                         <td class="tex-hover-effect" style="width: 100px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             <%= item.proname %>
                                         </td>
-                                        <td style="width: 30px;">
-                                                <a href="/podermodusu?Id=<%= item.Id%>&numprop=<%= item.numprop %>&name=<%= item.name %>&propoder=<%= item.propoder %>&proname=<%=item.proname%>" class="btn btn-warning btn-sm btn-hover-effect">Mod</a>
-                                        </td>
+
+                                        <% if (item.pdf === 'Subir PDF') { %>
+                                            <td class="tex-hover-effect" style="width: 100px; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(235, 15, 15); font-weight: bold;">
+                                              <%= item.pdf %>
+                                            </td>
+                                          <% } else { %>
+                                            <td class="tex-hover-effect" style="width: 100px; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(47, 13, 202); ; font-weight: bold;">
+                                              <%= item.pdf %>
+                                            </td>
+                                          <% } %>
                                         <td style="width: 30px;">
                                                 <a href="/podereliusu?Id=<%= item.Id%>&numprop=<%= item.numprop %>&name=<%= item.name %>&propoder=<%= item.propoder %>&proname=<%=item.proname%>" class="btn btn-danger btn-sm btn-hover-effect">Ret</a>
                                         </td>
+                                        <td style="width: 30px;">
+                                            <a href="/cargarpdf?Id=<%= item.Id%>&numprop=<%= item.numprop %>&name=<%= item.name %>&propoder=<%= item.propoder %>&proname=<%=item.proname%>" class="btn btn-warning btn-sm btn-hover-effect">Pdf</a>
+                                        </td>
+                                        <td style="width: 30px;">
+                                            <% if (item.pdf === 'Cargado') { %>
+                                                <a href="/ver_poder_usu?Id=<%= item.Id%>&numprop=<%= item.numprop %>&name=<%= item.name %>&propoder=<%= item.propoder %>&proname=<%=item.proname%>" class="btn btn-primary btn-sm btn-hover-effect">Ver</a>
+                                            <% } else { %>
+                                                <a href="#" class="btn btn-primary btn-sm btn-hover-effect" disabled>Ver</a>
+                                            <% } %>
+                                        </td>
+
                                     </tr>
 
                                 <% }); %>
@@ -102,5 +120,6 @@
             }
         }
     </script>
+
 </body>
 </html>

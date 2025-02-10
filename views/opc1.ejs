@@ -15,7 +15,8 @@
                 <table>
                     <thead>
                             <h6>Pregunta: </h6>
-                            <h6 style="font-family: 'Arial', sans-serif; color: rgb(216, 19, 45); font-weight: bold;"> <%= preguntas[0].texto %> </h6>
+                            <h6 style="font-family: 'Arial', sans-serif; color: rgb(216, 19, 45); font-weight: bold; display: inline;"> <%= preguntas[0].idp %> </h6>
+                            <h6 style="font-family: 'Arial', sans-serif; color: rgb(11, 7, 235); font-weight: bold; display: inline;"> <%= preguntas[0].texto %> </h6>
                     </thead>        
                 </table>
             </div>
@@ -58,6 +59,13 @@
                             </div>
                         <% } %>
                     </form>
+
+                    <div style="display: none;">
+                        <h5></h5>
+                        <input type="submit" id="btnGraficoBar" class="btn-salir" value="Resultado Columna">
+                        <br><br>    
+                    </div>
+
                 </div>   
             </div>    
         <% } else { %>
@@ -122,7 +130,18 @@
                 });
             });
         </script>
-        <%- include('partials/footer') %>  
+
+        <script>
+            document.getElementById('btnGraficoBar').addEventListener('click', function() {
+                // Obtener el valor de preguntas[0].idp
+                const idPregunta = '<%= preguntas[0].idp %>';  // Usamos el valor directamente desde el server-side
+
+                // Redirigir a la página de gráficos, pasando el idp como parámetro en la URL
+                window.location.href = `/bar?idp=${idPregunta}`; // Pasa el idp en la URL
+            });        
+        </script>
+
+<%- include('partials/footer') %>  
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="/src/main.js"></script>
         <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>    

@@ -1,4 +1,5 @@
- // Importaciones de módulos de terceros - loc		
+ // LOCAL
+
 import express, { Router } from 'express';		
 import session from 'express-session';		
 import mysql from 'mysql2/promise'; // Cambiado para usar mysql2 con promesas		
@@ -20,7 +21,7 @@ import { PORT } from './config.js';
 import path from 'path';		
 import { fileURLToPath } from 'url';	
 import mammoth from 'mammoth'; // docx a pdf
-import { PDFDocument } from 'pdf-lib'; // docx a pdf
+import { componentsToColor, PDFDocument } from 'pdf-lib'; // docx a pdf
 //import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'; // Importación correcta para ESM
 
 // Función para cargar y leer un archivo PDF
@@ -55,6 +56,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);		
 const app = express();		
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.set('view engine', 'ejs'); 
+app.set('views', path.join(__dirname, '../views'));
 
 // [cargapoder] - Configuración de Multer - Para Cargar Archivos 
 
@@ -62,8 +66,6 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const { empresaId } = req.body; // Obtener el ID de la empresa del formulario
         const uploadDir = path.join('uploads', empresaId); // Crear ruta de la carpeta
-    //    console.log('poder');
-    //    console.log(uploadDir)
 
         // Crear la carpeta si no existe
         if (!fs.existsSync(uploadDir)) {
@@ -88,34 +90,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-//*********************************** */
-
-const storagepdf = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const { empresaId } = req.body; // Obtener el ID de la empresa del formulario
-        const uploadDir = path.join('uploads', empresaId); // Crear ruta de la carpeta
-    //    console.log('pdf');
-    //    console.log(uploadDir)
-        // Crear la carpeta si no existe
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        cb(null, uploadDir); // Establecer el destino
-    },
-    filename: (req, file, cb) => {
-        const newFileName = `PODERASM_${req.session.numprop}${path.extname(file.originalname)}`;
-        cb(null, newFileName); // Nombre final del archivo
-//        cb(null, file.originalname); // Usar el nombre original del archivo
-    }
-});
-
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.set('view engine', 'ejs'); 
-app.set('views', path.join(__dirname, '../views'));
-
-//console.log('Hello, world!');
 
 // menus 
  
@@ -140,8 +114,9 @@ app.use((req, res, next) => {
 		
 // Middleware		
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(express.json());		
-app.use(express.urlencoded({ extended: true }));		
+app.use(express.urlencoded({ extended: true })); // Para procesar formularios con datos codificados en URL
+app.use(express.json()); // Para procesar cuerpos JSON, si se envían datos JSON
+
 
 // Middleware para servir archivos estáticos - docx
 //app.use(express.static('public')); 
@@ -207,6 +182,24 @@ app.get('/login', (req, res)=>{
 //        res.send('Por favor, inicia sesión primero.');
 //    }
 })
+
+app.get('/documentos', async(req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const id = req.query.id;
+            const texto = req.query.texto;
+            const [rows] = await pool.execute("select * from pgtaresp where idprg = ?", [id]);
+            res.render('documentos', { id, texto, data: rows, user: userUser, name: userName });
+        } else {
+            res.send('Por favor, inicia sesión primero.');
+        }
+    } catch (error) {
+        console.error('Error conectando a la base de datos....????:', error);
+        res.status(500).send('Error conectando a la base de datos.?????');
+        }
+    });
 
 app.get('/valida', (req, res)=>{
         const userUser = req.session.unidad;
@@ -382,9 +375,38 @@ app.get('/opc1', async (req, res) => {
     }
 });
 
+app.get('/respuesta', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.estado=1");
+            res.render('respuesta', { preguntas: rows, user: userUser, name: userName });
+        } else {
+            res.send('Por favor, inicia sesión primero.');
+        }
+    } catch (error) {
+        res.status(500).send('Error conectando a la base de datos.');
+    }
+});
+
 app.get('/opc2', async (req, res) => {
     try {
-        const [rows] = await pool.execute("select * from preguntas");
+        const [rows] = await pool.execute(`
+            SELECT 
+                a.id AS id, 
+                a.texto, 
+                a.estado, 
+                a.activo, 
+                COUNT(b.id) AS opc 
+            FROM 
+                preguntas a 
+            LEFT JOIN 
+                pgtaresp b ON a.id = b.idprg 
+            GROUP BY 
+                a.id, a.texto, a.estado, a.activo
+        `);
+
         res.render('opc2', { data: rows });
     } catch (error) {
         res.status(500).send('Error conectando a la base de datos.');
@@ -448,6 +470,27 @@ app.get('/usuariosreset', async (req, res) => {
                 res.status(500).send('Error conectando a la base de datos.?????');
             }
     });
+
+// Resultados Votos
+
+app.get('/resultados', async (req, res) => {
+    try {
+        const tableName = "preguntas";
+        const [rows] = await pool.execute(`select * from ${tableName}`);
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            res.render('resultados', { data: rows, user: userUser, name: userName });
+
+        } else {
+            res.send('Por favor, inicia sesión primero.');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+    });
+
 
 // resetuser - eliuser
 
@@ -750,8 +793,9 @@ app.post('/podereli', async (req, res) => {
 
 app.get('/poderesusu', async (req, res) => {
     try {
+        const { user, numprop } = req.session;
         const tableName = "tbl_poderes_usu";
-        const [rows] = await pool.execute(`select * from ${tableName}`);
+        const [rows] = await pool.execute(`SELECT * FROM ${tableName} WHERE propoder = ?`, [numprop]);
         if (req.session.loggedin) {
             res.render('poderesusu', { data: rows });
         } else {
@@ -772,6 +816,15 @@ app.get('/poderadiusu', (req, res) => {
     }
 });
 
+app.get('/cargarpoder', (req, res) => {
+    if (req.session.loggedin) {
+        const { user, name } = req.session;                 // revisar
+        res.render('cargarpoder', { user, name });
+    } else {
+        res.send('Por favor, inicia sesión primero.');
+    }
+});
+
 app.get('/podermodusu', (req, res) => {
     const id = req.query.Id;
     const numprop = req.query.numprop;
@@ -780,6 +833,10 @@ app.get('/podermodusu', (req, res) => {
     const proname = req.query.proname;
     res.render('podermodusu', { id, numprop, name, propoder, proname });
 });
+
+
+// cargarpd
+
 
 app.get('/podereliusu', (req, res) => {
     const id = req.query.Id;
@@ -802,36 +859,27 @@ app.post('/poderadiusu', async (req, res) => {
         if (!numprop) {
             return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios' });
         }
-
-        if (numprop==propoder) {
+*/
+        if (name==propoder) {
             return res.status(400).json({ status: 'error', message: 'Quien Otorga no puede recibir' });
         }
             
-        const [rows] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE numprop = ?', [numprop]);
+        const [rows] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE numprop = ?', [name]);
         if (rows.length > 0) {
             return res.status(400).json({ status: 'error', message: 'Poder ya Existe' });
         }
-*/
-            
-/*
         const [rows2] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE numprop = ?', [propoder]);
         if (rows2.length > 0) {
             return res.status(400).json({ status: 'error', message: 'Quien recibe ya otorgo poder' });
         }
-*/
+
 /*
         const [rows3] = await pool.execute('SELECT * FROM tbl_poderes_usu WHERE propoder = ?', [numprop]);
         if (rows3.length > 0) {
             return res.status(400).json({ status: 'error', message: 'Quien Otorga ya tiene poderes recibidos' });
         }
 */
-        console.log('insertar');
-        console.log(name);
-        console.log(numprop);
-        console.log(propoder);
-        console.log(proname);
-
-        await pool.execute(`INSERT INTO ${tableName} (name,numprop,propoder,proname,fecha) VALUES (?,?,?,?,?)`, [numprop, name, propoder, proname, date]);
+        await pool.execute(`INSERT INTO ${tableName} (name,numprop,propoder,proname,pdf, fecha) VALUES (?,?,?,?,?,?)`, [numprop, name, propoder, proname, 'Subir PDF',date]);
         res.json({ status: 'success', message: '¡Registrado Correctamente!' });
     } catch (error) {
         console.error('Error en registro:', error);
@@ -874,6 +922,34 @@ app.post('/podereliusu', async (req, res) => {
     try {
         const tableName = "tbl_poderes_usu";
         const id = req.body.id;
+        // Log para borrar archivo fisico
+        const [rows] = await pool.execute(`SELECT ruta FROM ${tableName} WHERE id = ?`, [id]);
+        const ruta = rows.length > 0 ? rows[0].ruta : null;  // Extraemos el valor de la propiedad 'ruta'
+
+        // BORRAR FISICO
+
+        // Ruta base del servidor donde están almacenados los archivos
+        const rutaBase = path.join(__dirname, '../uploads');  // Ruta base relativa para Express
+        console.log(rutaBase);
+        // Asumimos que 'rows' contiene los datos obtenidos de la base de datos
+        const rutaArchivoRelativa = rows.length > 0 ? rows[0].ruta : null;
+        
+        if (rutaArchivoRelativa) {
+          // Combina la ruta base con la ruta relativa del archivo
+          const rutaCompleta = path.join(rutaBase, rutaArchivoRelativa.replace(/\\/g, path.sep));
+          console.log('borrar');  
+          console.log(rutaCompleta);
+          try {
+            // Elimina el archivo físico
+            await fs.promises.unlink(rutaCompleta);
+            console.log('Archivo eliminado con éxito');
+          } catch (err) {
+            console.error('Error al borrar el archivo:', err);
+          }
+        } else {
+          console.log('No se encontró la ruta del archivo');
+        }
+        
         // Log para depuración delete
         const [result] = await pool.execute(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
         if (result.affectedRows > 0) {
@@ -899,9 +975,21 @@ app.post('/podereliusu', async (req, res) => {
 
 app.get('/bar', async (req, res) => {
     try {
+
+
         if (req.session.loggedin) {
+            // Obtener el valor de 'idp' de la URL
+            const idPregunta = req.query.idp;  // Obtén el idp de la URL
+
             // Ejecuta la consulta SQL
-            const [datos] = await pool.execute("SELECT respuesta, COUNT(*) AS total FROM respusers GROUP BY respuesta order by total desc");
+            //const [datos] = await pool.execute("SELECT respuesta, COUNT(*) AS total FROM respusers GROUP BY respuesta order by total desc");
+
+            // Aquí puedes usar 'idPregunta' para hacer una consulta específica si es necesario
+            const [datos] = await pool.execute(
+                "SELECT respuesta, COUNT(*) AS total FROM respusers WHERE idprg = ? GROUP BY respuesta ORDER BY total DESC", 
+                [idPregunta] // Usar el idPregunta como parámetro para la consulta
+            );
+
 
             // Procesa los resultados para obtener las etiquetas y valores
             const labels = [];
@@ -927,6 +1015,39 @@ app.get('/bar', async (req, res) => {
     }
 });
 
+app.get('/bar_resul', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            // Obtener el valor de 'idp' de la URL
+            const idPregunta = req.query.idp;  // Obtén el idp de la URL
+            // Ejecuta la consulta SQL
+            const [datos] = await pool.execute(
+                "SELECT respuesta, COUNT(*) AS total FROM respusers WHERE idprg = ? GROUP BY respuesta ORDER BY total DESC", 
+                [idPregunta] // Usar el idPregunta como parámetro para la consulta
+            );
+            // Procesa los resultados para obtener las etiquetas y valores
+            const labels = [];
+            const dataValues = [];
+
+            // Cambié 'results' por 'datos' porque 'datos' es el resultado de la consulta
+            datos.forEach(row => {
+                labels.push(row.respuesta);  // Añade la respuesta como una etiqueta
+                dataValues.push(row.total);  // Añade el conteo de respuestas como un valor
+            });
+
+            // Pasa estos datos a la vista
+            res.render('bar_resul', {
+                labels: labels, // No es necesario usar JSON.stringify aquí
+                dataValues: dataValues, // No es necesario usar JSON.stringify aquí
+            });
+        } else {
+            res.send('Por favor, inicia sesión primero.');
+        }
+    } catch (error) {
+        console.error('Error al ejecutar la consulta:', error);  // Imprime el error en la consola
+        res.status(500).send('Error conectando a la base de datos.');
+    }
+});
 
 app.get('/pie', async (req, res)=>{
     try {
@@ -1031,41 +1152,63 @@ app.post('/auth', async (req, res) => {
     req.session.rol = userRecord.rol;
     req.session.pass = userRecord.pass;
     req.session.numprop = userRecord.numprop;
-    console.log('este 1');
-    console.log(req.session.name);
-    console.log(req.session.numprop);
-
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
 });
 
 // End - [login]
 
-//const uploadpdf = multer({ storagepdf }); // Crear el middleware de Multer
-const uploadpdf = multer({ storage: storagepdf }); 
+export const storagepdf = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const { empresaId } = req.body; // Obtener el ID de la empresa del formulario
+        const uploadDir = path.join('uploads', empresaId); // Crear ruta de la carpeta
+        // Crear la carpeta si no existe
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir); // Establecer el destino
+    },
+    filename: (req, file, cb) => {
+        const numprop = req.body.Inumprop; // Usar el valor del formulario
+        const Anumprop = req.body.Ipropoder; // Usar el valor del formulario
+        const newFileName = `PODER_${Anumprop}_${numprop}${path.extname(file.originalname)}`;
+        console.log(newFileName);
+        cb(null, newFileName); // Establecer el nombre del archivo
+    }
+});
 
-// Ruta para manejar la carga del archivo PDF
+const uploadpdf = multer({ storage: storagepdf }); // Usar el almacenamiento configurado
+
+// Ruta para manejar la carga del archivo PDF   Inumprop
 app.post('/uploadpdf', uploadpdf.single('file'), async (req, res) => {
     try {
-        console.log(req.file.path);
-        
         const oldPath = req.file.path;
-        const newFileName = 'PODERASM_' + Date.now() + path.extname(req.file.originalname);
-        const anewFileName = 'PODERASM_' + req.session.numprop;
+        // Obtener el valor de Inumprop del formulario
+        const numprop = req.body.Inumprop || 'valor_predeterminado'; // Usar 'valor_predeterminado' si no se pasa nada
+        const propoder = req.body.Ipropoder || 'valor_predeterminado'; // Usar 'valor_predeterminado' si no se pasa nada
+        const empresaid = req.body.empresaId;
+        const numpropFromSession = req.session.numprop; // Valor en la sesión
+        const numpropFromForm = req.body.Inumprop;  // Valor enviado desde el formulario
+        const anewFileName1 = 'PODERASM_' + numpropFromSession + "_" + numpropFromForm;
+        const anewFileName = `PODER_${propoder}_${numprop}${path.extname(req.file.originalname)}`;
+        // Determinar el nuevo path para el archivo cargado
         const newPath = path.join('uploads', anewFileName);
+        const rta = empresaid + '\\' + anewFileName;
+        const tableName = "tbl_poderes_usu";
+        const wpdf = 'Cargado';
+        await pool.execute(`UPDATE ${tableName} SET pdf = ? WHERE numprop = ?`, [wpdf, numprop]);
+        await pool.execute(`UPDATE ${tableName} SET ruta = ? WHERE numprop = ?`, [rta, numprop]);
+        // Enviar respuesta en JSON
+        res.json({ 
+            status: 'success', 
+            message: '¡Archivo registrado correctamente....!' 
+        });
 
-        console.log(newFileName);
-        console.log(anewFileName);
-        console.log(newPath);
-
-        res.send(`Archivo cargado y guardado en ======= ${req.file.path}`);
     } catch (error) {
-
         console.error('Error al cargar el archivo:', error);
         res.status(500).send('Error al cargar el archivo.');
     }
 });
   
-
 // End - [cargapoder] - Configuración de Multer - Para Cargar Archivos 
 
 // [preguntas] 
@@ -1188,7 +1331,7 @@ app.post('/register', async (req, res) => {
     try {
         const rz = '1';
         const id_rz = 'Propiedad';
-        const { UsuarioNew, UsuarioNom, rol, PassNew } = req.body;
+        const { UsuarioNew, UsuarioNom, rol, PassNew, numpropNew, coeficiente } = req.body;
         if (!UsuarioNew || !UsuarioNom || !rol || !PassNew) {
             return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios' });
         }
@@ -1200,7 +1343,7 @@ app.post('/register', async (req, res) => {
 
         // Insertar nuevo usuario
         const passwordHash = await bcryptjs.hash(PassNew, 8);
-        await pool.execute('INSERT INTO users (rz, id_rz, user, name, pass, rol, estado ) VALUES (?, ?, ?, ?, ?, ?, ?)', [rz, id_rz, UsuarioNew, UsuarioNom, passwordHash, rol, null ]);
+        await pool.execute('INSERT INTO users (rz, id_rz, user, name, pass, rol, estado, numprop, coeficiente ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [rz, id_rz, UsuarioNew, UsuarioNom, passwordHash, rol, null, numpropNew, coeficiente]);
         res.json({ status: 'success', message: '¡Usuario registrado correctamente!' });
     } catch (error) {
         console.error('Error en registro:', error);
@@ -1244,8 +1387,6 @@ app.post('/preguntaseli', async (req, res) => {
 
 // End - [eliminar]
 
-// [opc1] voto   
-
 app.post('/procesarseleccion', async (req, res) => {
     try {
         const userUser = req.session.user;
@@ -1260,7 +1401,7 @@ app.post('/procesarseleccion', async (req, res) => {
         // SELECT      
         const tablePtas = "respusers";
         const [rows] = await pool.execute(`SELECT respuesta FROM ${tablePtas} WHERE user = ? and idprg = ?`, [userUser, id]);
-        
+/*        
         if (rows.length > 0) {
             const respuesta = rows[0].respuesta;  // Obtenemos la primera fila y el campo "pregunta"
             return res.json({
@@ -1269,6 +1410,7 @@ app.post('/procesarseleccion', async (req, res) => {
                 message: `Su Voto Registrado es : [ ${respuesta} ]`
             });
         } else {
+*/
             // insert de respuesta
             const tableName = "respusers";
             const date = new Date();
@@ -1279,7 +1421,7 @@ app.post('/procesarseleccion', async (req, res) => {
                 title: 'Voto Exitoso.',
                 message: '¡Registro Exitoso! BD'
             });
-        }
+//        }
     } catch (error) {
         res.json({
             status: 'error',
@@ -1289,14 +1431,14 @@ app.post('/procesarseleccion', async (req, res) => {
     }
 });
 
-// End - [opc1] 
-
 // [opc2] activar voto   
 
 app.post('/procesar-seleccion', async (req, res) => {
         try {
             const userUser = req.session.user;
             const userName = req.session.name;
+            console.log('seleccion');
+            console.log(req.body);
             const selectedValue = req.body.pregunta; // Obtén el valor seleccionado
             const selectActivo = parseInt(req.body.selactivo, 10); // Convierte a entero
 
@@ -1306,6 +1448,7 @@ app.post('/procesar-seleccion', async (req, res) => {
             // Verifica si hay valores seleccionados
             if (selectedValue && selectedValue.length > 0) {
                 for (const id of selectedValue) {
+                    console.log(id);
                     // Actualiza el estado a 1 para los ids seleccionados
                     await pool.execute('UPDATE preguntas SET estado = 1 WHERE id = ?', [id]);
                     
@@ -1330,19 +1473,27 @@ app.post('/procesar-seleccion', async (req, res) => {
         }
     });
     
-// End - [opc1]
     
 // [moduser] - modifica usuarios
 
 app.post('/usuariomod', async (req, res) => {
     try {
+        console.log(req.body);
         const user = req.body.user;
         const name = req.body.name;
         const rol = req.body.rol;
         const estado = req.body.estado;
-
+        const numprop = req.body.numpropNew;
+        const coefici = req.body.coeficiente;
+        console.log(user);
+        console.log(name);
+        console.log(rol);
+        console.log(numprop);
+        console.log(coefici);
         // Insertar nuevo usuario
-        await pool.execute('UPDATE users SET name = ?, rol = ? WHERE (estado IS NULL OR estado = 0) AND user = ?', [name, rol, user]);
+        //await pool.execute('UPDATE users SET name = ?, rol = ?, numprop = ?, coeficiente = ?,  WHERE (estado IS NULL OR estado = 0) AND user = ?', [name, rol, numprop, coefici, user]);
+        await pool.execute('UPDATE users SET name = ?, numprop = ?, coeficiente = ?, rol = ? WHERE (estado IS NULL OR estado = 0) AND user = ?', [name, numprop, coefici, rol, user]);
+
         if (estado !== '1') {
             return res.json({
                 status: 'success',
@@ -1361,7 +1512,8 @@ app.post('/usuariomod', async (req, res) => {
         res.json({
             status: 'success',
             title: 'Registro de Preguta NO Exitoso...',
-            message: '¡Error en el servidor! BD'
+//            message: '¡Error en el servidor! BD'
+            message: `Error: ${error.message}`
         });
     }
 });
@@ -1464,7 +1616,6 @@ app.post('/usuariosrespass', async (req, res) => {
  app.post('/opcionesreg', async (req, res) => {
     const { id, respuesta, pgtas } = req.body;
     try {
-        console.log('opcionesreg');
         const tableName = "pgtaresp";
         const [rows] = await pool.execute(`SELECT * FROM ${tableName} WHERE idprg= ? and respuesta = ?`, [id, pgtas]);
         if (rows.length > 0) {
@@ -1575,7 +1726,6 @@ async function updatePasswords() {
         for (const row of rows) {
             try {
                 const transformedPassword = `${row.user.charAt(0).toUpperCase()}${row.user.slice(1)}24%`;
-                console.log(transformedPassword);
                 const hashedPassword = await bcryptjs.hash(transformedPassword, 8);
                 await pool.execute('UPDATE my_tablecol2 SET pass = ? WHERE user = ?', [hashedPassword, row.user]);
             } catch (updateError) {
@@ -1587,36 +1737,133 @@ async function updatePasswords() {
     }
 }
 
-// End - [cargascol]
+// End - [cargascol]  uploads
 
 app.get('/ver-word', (req, res) => {
     // Aquí usas la URL completa, que incluye el protocolo y el dominio (puede ser http://localhost:3000 o el dominio de producción)
-    const archivoWord = 'http://localhost:3000/uploads/poder.docx';  // Ruta absoluta del archivo Word
-    console.log('Archivo Word:', archivoWord);  // Log para verificar que archivoWord está definido
+    //const archivoWord = 'http://localhost:3000/uploads/poder.docx';  // Ruta absoluta del archivo Word
+    //const archivoWord = path.join(__dirname, `../uploads/poder.docx`);
+    const archivoWord = `../uploads/poder.docx`;
     res.render('ver-word', { archivoWord });  // Pasar la variable 'archivoWord' al template EJS
 });
 
-app.get('/ver-pdf', (req, res) => {
+
+app.get('/reloj', (req, res) => {
+    //    const ruta = 'emp4';
+    //    const archivo = 'poder_18401.pdf';
+        const ruta = req.session.nomid;
+        const archivo = `PODER.pdf`;
+        const archivoPDF = `/uploads/${ruta}/${archivo}`;
+        res.render('reloj', { pdfUrl: archivoPDF });
+      });
+
+app.get('/ver_poder', (req, res) => {
 //    const ruta = 'emp4';
+//    const archivo = 'poder_18401.pdf';
+    const ruta = req.session.nomid;
+    const archivo = `PODER.pdf`;
+    const archivoPDF = `/uploads/${ruta}/${archivo}`;
+    res.render('ver_poder', { pdfUrl: archivoPDF });
+  });
+
+app.get('/ver_poder_usu', (req, res) => {
+    const id = req.query.Id;
+    const numprop = req.query.numprop;
+    const name = req.query.name;
+    const propoder = req.query.propoder;
+    const proname = req.query.proname;
+
+    const ruta = req.session.nomid;
+    const archivo = `PODER_${propoder}_${numprop}.pdf`;
+    const archivoPDF = `/uploads/${ruta}/${archivo}`;
+    //const archivoPDF = path.join(__dirname, 'uploads', ruta, archivo);
+/*
+    console.log(archivoPDF); // Imprimirá la ruta completa en el servidor
+    console.log('inicia');
+    console.log(archivoPDF);
+    console.log('Id:', id);
+    console.log('Número de propiedad:', numprop);
+    console.log('Nombre:', name);
+    console.log('Propietario:', propoder);
+    console.log('Nombre propietario:', proname);    
+ */
+    res.render('ver_poder_usu', { pdfUrl: archivoPDF, archivoExistente: true });
+
+/*    
+    // Verificamos si el archivo existe
+    fs.access(archivoPDF, fs.constants.F_OK, (err) => {
+        if (err) {
+            // Si el archivo no existe, pasamos archivoExistente: false
+            console.log('Archivo no encontrado');
+            res.render('ver_poder_usu', { 
+                pdfUrl: null, 
+                archivoExistente: false, 
+                mensajeError: 'El archivo PDF no está cargado o no existe.' 
+            });
+        } else {
+            // Si el archivo existe, pasamos archivoExistente: true y la URL del PDF
+            console.log('Archivo encontrado');
+            res.render('ver_poder_usu', { pdfUrl: archivoPDF, archivoExistente: true });
+        }
+    });
+*/
+//    res.render('ver_poder_usu', { pdfUrl: archivoPDF });
+    
+});
+
+app.post('/ver_poder_usu', async (req, res) => {
+try {
+    const tableName = "tbl_poderes_usu";
+    const id = req.body.id;
+    // Log para borrar archivo fisico
+    const [rows] = await pool.execute(`SELECT ruta FROM ${tableName} WHERE id = ?`, [id]);
+    const ruta = rows.length > 0 ? rows[0].ruta : null;  // Extraemos el valor de la propiedad 'ruta'
+    // BORRAR FISICO
+
+    // Ruta base del servidor donde están almacenados los archivos
+    const rutaBase = path.join(__dirname, '../uploads');  // Ruta base relativa para Express
+    console.log(rutaBase);
+    // Asumimos que 'rows' contiene los datos obtenidos de la base de datos
+    const rutaArchivoRelativa = rows.length > 0 ? rows[0].ruta : null;
+
+} catch (error) {
+    res.json({
+        status: 'error',
+        title: 'PDF NO Exitoso.....PODER',
+        message: `Error: ${error.message}`
+    });
+}
+});
+    
+  app.get('/ver-pdf', (req, res) => {
+    //    const ruta = 'emp4';
 //    const archivo = 'poder_18401.pdf';
     const ruta = req.session.nomid;
     const archivo = `PODERASM_${req.session.numprop}.pdf`;
     const archivoPDF = `/uploads/${ruta}/${archivo}`;
-    console.log('este');
-    console.log(archivo);
-    console.log(archivoPDF);
     res.render('ver-pdf', { pdfUrl: archivoPDF });
-  });
-
+    });
+    
 // Cargar PDF
 app.get('/cargarpdf', (req, res) => {
     const nomid = req.session.nomid;
-    res.render('cargarpdf', { nomid });
+    const id = req.query.Id;
+    const numprop = req.query.numprop;
+    const name = req.query.name;
+    const propoder = req.query.propoder;
+    const proname = req.query.proname;
+    res.render('cargarpdf', { nomid, id, numprop, name, propoder, proname });
 });
 
 // Ruta para cargar la vista de carga
 app.get('/cargapoder', (req, res) => {
-    res.render('cargapoder'); // Renderiza cargapoder.ejs
+    const nomid = req.session.nomid;
+    const id = req.query.Id;
+    const numprop = req.query.numprop;
+    const name = req.query.name;
+    const propoder = req.query.propoder;
+    const proname = req.query.proname;
+    res.render('cargapoder', { nomid, id, numprop, name, propoder, proname });
 });
 
 // Ruta GET para obtener las ciudades y parqueaderos

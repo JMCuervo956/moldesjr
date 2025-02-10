@@ -8,6 +8,19 @@
     <link rel="stylesheet" href="/css/style.css">
     <!-- Incluye SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Ocultar flechas en navegadores basados en Webkit (Chrome, Safari, Edge) */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+    
+        /* Ocultar flechas en Firefox */
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+    </style>
     <%- include('partials/head') %>
 </head>
 <body>
@@ -28,14 +41,26 @@
                     <br>
                     <!-- Campo oculto con el mismo valor -->
                     <input type="hidden" name="user" value="<%= user %>">
-<!--                    <input type="text" name="rol" value="<%= rol %>">  -->
-
                     <span style="color: #518b05; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">Modificar Usuario  :</span> 
                     <h1></h1>
                     <input type="text" name="name" value="<%= name %>" style="width: 100%; max-width: 600px; height: 30px; padding: 10px; font-size: 16px;">
                     <h1></h1>
+
+                    <h1></h1>
+                    <label style="font-size:  12px;">Propiedad:</label>           
+                    <input type="number" name="numpropNew" class="input-small" placeholder="Numero Propiedad" required autocomplete="off" step="1" oninput="validarEntero(this)" style="font-size:  12px;">
+                    <h1></h1>
+                    <label style="font-size:  12px;">Coeficiente:</label>           
+                    <input type="number" name="coeficiente" class="input-small" placeholder="Coeficiente" required autocomplete="off" step="0.01" oninput="limitarDecimales(this)" style="font-size: 12px;">
+
+                    
+
+
                     <input type="hidden" name="estado" value="<%= estado %>" style="width: 100%; max-width: 600px; height: 30px; padding: 10px; font-size: 16px;">
                     <h1></h1>
+
+                    
+
                     <label for="rol">Rol</label>           
                     <select name="rol" id="rol" class="select-css">
                         <option value="Usuario" <%= rol === 'Usuario' ? 'selected' : '' %>>Usuario</option>
@@ -50,6 +75,28 @@
             </form>    
         </div>
     </div>
+
+    <script>
+        function limitarDecimales(input) {
+          let value = input.value;
+          
+          // Si hay un punto decimal
+          if (value.includes('.')) {
+            // Limita el número a dos decimales, pero no redondea el valor original
+            let parts = value.split('.');
+            if (parts[1].length > 2) {
+              input.value = parts[0] + '.' + parts[1].substring(0, 2);  // Mantiene solo dos decimales
+            }
+          }
+        }
+      </script>
+
+    <script>
+        function validarEntero(input) {
+          // Esto reemplaza cualquier punto (.) por una cadena vacía, asegurando que no se ingresen decimales.
+          input.value = input.value.replace(/\./g, '');
+        }
+    </script>
 
     <script>
         console.log('Script cargado');

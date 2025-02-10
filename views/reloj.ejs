@@ -1,0 +1,39 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Pregunta con Reloj</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #timer {
+      font-size: 2em;
+      margin: 20px;
+      color: red;
+    }
+    .form-container {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>¿Cuál es la capital de Francia?</h1>
+
+  <div id="timer">00:00</div>
+
+  <div class="form-container">
+    <form id="question-form">
+      <input type="text" id="answer" placeholder="Tu respuesta..." required />
+      <button type="submit">Enviar Respuesta</button>
+    </form>
+  </div>
+
+  <script src="/nscript.js"></script>
+</body>
+</html>

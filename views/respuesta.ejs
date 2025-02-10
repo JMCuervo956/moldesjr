@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Selecciona Preguntas</title>
+    <%- include('partials/head') %> <!-- partial para repetir en cada una de las páginas -->
+</head>
+<body class="body.imagen">
+    <%- include('partials/navigation') %>
+    <div class="content">
+        <% if (preguntas && preguntas.length > 0) { %>
+            <div id="timer" style="font-weight: bold; font-size: 1.5em; color: red;">00:00</div>
+            <div class="register-formIzq1"> 
+                <table>
+                    <thead>
+                        <h6>Pregunta: </h6>
+                        <h6 style="font-family: 'Arial', sans-serif; color: rgb(216, 19, 45); font-weight: bold; display: inline;"> <%= preguntas[0].idp %> </h6>
+                        <h6 style="font-family: 'Arial', sans-serif; color: rgb(11, 7, 235); font-weight: bold; display: inline;"> <%= preguntas[0].texto %> </h6>
+                    </thead>        
+                </table>
+            </div>
+            <div class="register-formIzq1"> 
+                <div style="font-size: 20px;"> 
+                    <form id="registerForm" action="/procesarseleccion" method="POST"> 
+                        <% if (preguntas[0].prgact === 1) { %>
+                            <% preguntas.forEach(function(item) { %>
+                                <div>
+                                    <input type="radio" name="preguntas" value="<%= item.idp %>|<%= item.texto %>|<%= item.id %>|<%= item.respuesta %>" id="respuesta-<%= item.id %>">
+                                    <% if (item.default) { %> checked <% } %> 
+                                    <label for="respuesta-<%= item.id %>"><%= item.respuesta %></label><br>
+                                </div>
+                            <% }); %>
+                            <div style="display: inline;">
+                                <input type="submit" class="btn btn-success btn-sm" value="Votar" id="submitButton">
+                                <a href="/menuprc" class="btn btn-success btn-sm" style="background-color: rgb(255, 244, 87); color: rgb(139, 17, 240); font-weight: bold;">Regresar</a>
+                            </div>
+                        <% } else { %>
+                            <% preguntas.forEach(function(item) { %>
+                                <div>
+                                    <input type="radio" name="preguntas" 
+                                        value="<%= item.idp %>|<%= item.texto %>|<%= item.id %>|<%= item.respuesta %>" 
+                                        id="respuesta-<%= item.id %>" 
+                                        <% if (!item.default) { %> disabled <% } %>
+                                        <% if (item.default) { %> checked <% } %> 
+                                    />
+                                    <label for="respuesta-<%= item.id %>"><%= item.respuesta %></label><br>
+                                </div>
+                            <% }); %>
+                            <div style="display: inline;">
+                                <br>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <a href="/menuprc" class="btn btn-success btn-sm" style="background-color: rgb(255, 244, 87); color: rgb(139, 17, 240); font-weight: bold;">Regresar</a>
+                                        <h6 style="background-color: rgb(95, 102, 3); padding: 8px; color: white; margin-left: 10px;">Pregunta NO Activa (Cerrada)</h6>
+                                    </div>
+                                </td>
+                            </div>
+                        <% } %>
+                    </form>
+                </div>   
+            </div>    
+        <% } else { %>
+            <tr>
+                <div>
+                    <div class="register-formIzq1"> 
+                        <td>No hay datos disponibles</td>
+                        <a href="/menuprc" class="btn btn-success btn-sm" style="background-color: rgb(255, 244, 87); color: rgb(139, 17, 240); padding: 10px 30px; font-weight: bold; margin-left: 60px;">Regresar</a>
+                    </div>
+                </div>
+            </tr>
+        <% } %>
+    </div>
+
+    <script>
+        let timer;
+        let timeLeft = localStorage.getItem('timeLeft') || 15; // Usar el tiempo guardado o iniciar con 15
+        const timerElement = document.getElementById('timer');
+        const submitButton = document.getElementById('submitButton');
+        const radioButtons = document.getElementsByName('preguntas');
+        
+        const currentIdp = '<%= preguntas[0].idp %>';  // Obtener el idp actual de la pregunta
+
+        // Función para actualizar el cronómetro
+        function updateTimer() {
+            if (timeLeft <= 0) {
+                clearInterval(timer); // Detener el cronómetro
+                ///alert("Se acabó el tiempo para responder.;;;;;");
+
+                // Deshabilitar el botón de envío
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
+
+                // Deshabilitar los radio buttons
+                radioButtons.forEach(button => button.disabled = true);
+
+            } else {
+                timeLeft--;
+                localStorage.setItem('timeLeft', timeLeft);  // Guardar el tiempo restante
+                timerElement.textContent = formatTime(timeLeft);
+            }
+        }
+
+        // Función para formatear el tiempo en minutos y segundos
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        // Iniciar el cronómetro al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obtener el idp guardado
+            const previousIdp = localStorage.getItem('previousIdp');
+
+            // Si el idp ha cambiado, reiniciar el cronómetro y habilitar los botones
+            if (currentIdp !== previousIdp) {
+                resetTimer();  // Reiniciar el cronómetro
+                enableElements();  // Habilitar los elementos
+                localStorage.setItem('previousIdp', currentIdp);  // Guardar el nuevo idp
+            } else if (timeLeft > 0) {
+                // Si aún hay tiempo, mantener el cronómetro en curso
+                timer = setInterval(updateTimer, 1000);  
+            } else {
+                // Si el tiempo es 0, deshabilitar inmediatamente los elementos
+                updateTimer();
+            }
+
+            // Mostrar el tiempo restante
+            timerElement.textContent = formatTime(timeLeft);
+        });
+
+        // Función para reiniciar el cronómetro a 15 segundos
+        function resetTimer() {
+            timeLeft = 15;  // Resetear a 15 segundos
+            localStorage.setItem('timeLeft', timeLeft);  // Guardar en localStorage
+            clearInterval(timer);  // Detener cualquier cronómetro en curso
+            timer = setInterval(updateTimer, 1000);  // Iniciar el cronómetro desde 15 segundos
+        }
+
+        // Función para habilitar los elementos (botones de radio y botón de envío)
+        function enableElements() {
+            radioButtons.forEach(button => {
+                button.disabled = false;  // Habilitar cada botón de radio
+            });
+
+            if (submitButton) {
+                submitButton.disabled = false;  // Habilitar el botón de envío
+            }
+        }
+
+        // Función para validar la selección del radio button
+        function validarSeleccion() {
+            let seleccionada = false;
+            for (const radio of radioButtons) {
+                if (radio.checked) {
+                    seleccionada = true;
+                    break;
+                }
+            }
+            if (!seleccionada) {
+                Swal.fire({
+                    title: 'Atención',
+                    text: 'Por favor, selecciona una opción.',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+            return seleccionada;
+        }
+
+        // Manejar el envío del formulario
+        document.getElementById('registerForm').addEventListener('submit', async function(event) {
+            event.preventDefault();  // Evitar que el formulario se envíe de forma tradicional
+
+            if (!validarSeleccion()) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            const response = await fetch('/procesarseleccion', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            const result = await response.json();
+            Swal.fire({
+                title: result.title || 'Error',
+                text: result.message || 'Hubo un problema',
+                icon: result.status,
+                showConfirmButton: true,
+                timer: result.status === 'success' ? 2500 : null // Timer solo para éxito
+            }).then(() => {
+                if (result.status === 'success') {
+                    window.location.href = '/menuprc';  // Redirigir a la página de resultados
+                }
+            });
+        });
+    </script>
+
+    <%- include('partials/footer') %>  
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/src/main.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>    
+    <script src="/nscript.js"></script>
+
+</body>
+</html>

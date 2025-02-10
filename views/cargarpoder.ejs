@@ -1,25 +1,25 @@
-<!-- maepropadi.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <!-- Incluye SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Subir archivo PDF</title>
+    <link rel="stylesheet" href="/css/style.css">
     <%- include('partials/head') %>
 </head>
 <body>
-    <script src="app.js"></script>
     <%- include('partials/navigation') %>  
-    <br>
+    <span style="color: #0a024d; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= propoder %></span>
+    <span style="color: #d11b33; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= proname %></span>
 
     <div class="content">
-        <div class="register-formIzq1"> 
-            <h4 style="color: #0c023a; text-align: center;">Registrar Poder Otorgado</h4>
-            <form id="registerForm"> 
+        <h4>Cargar Poder PDF</h4>
+        <br><br>
+        <div class="register-formAncho"> 
+            <!-- Formulario para cargar el archivo -->
+            <form id="uploadForm" action="/uploadpdf" method="POST" enctype="multipart/form-data">
+
                 <br>
                 <!-- Campo name como Select -->
                 <select class="simple-border" name="ciud" id="name" required>
@@ -41,15 +41,59 @@
                     <h1></h1>
                     <a href="/poderesusu">Cargar Poder</a>
                 </div>    
-                <div style="display: inline;">
-                    <br>
-                    <a href="/poderesusu" class="btn-cancel">Regresar</a>
-                    <input type="submit" class="btn-save" value="Registrar">
-                </div>
-            </form>   
-        </div>
+
+
+                <span style="color: #33025c; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);">Otorgado por:</span> <span style="color: #d11b33;"><%= numprop %></span>
+                <span style="color: #d11b33; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= name %></span>
+                <br><br>
+                <input type="text" name="empresaId" id="empresaId" value="<%= nomid %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="text" name="Ipropoder" id="Ipropoder" value="<%= propoder %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="text" name="Inumprop" id="Inumprop" value="<%= numprop  %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="file" name="file" accept=".pdf" required style="font-size: 14px; width: 350px;">
+                <button type="submit" class="btn btn-success btn-sm btnind-hover-effect" style="width: auto; font-size: 14px; background-color: blue; border-color: blue;">
+                    Subir PDF
+                </button>
+            </form>
+            
+            <br>
+        </div>      
+        <br>
+        <a href="/poderesusu" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
     </div>
 
+    <script>
+        // Usar 'submit' de forma asíncrona
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();  // Prevenir el envío tradicional del formulario
+    
+            const formData = new FormData(this);  // Obtener los datos del formulario
+    
+            try {
+                const response = await fetch('/uploadpdf', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                const result = await response.json();  // Obtener la respuesta JSON
+    
+                Swal.fire({
+                    title: result.status === 'success' ? 'Éxito' : 'Error',
+                    text: result.message || 'Hubo un problema',
+                    icon: result.status === 'success' ? 'success' : 'error',
+                    showConfirmButton: true,
+                    timer: result.status === 'success' ? 1000 : null // Timer solo para éxito
+                }).then(() => {
+                    if (result.status === 'success') {
+                        window.location.href = '/poderesusu'; // Redirigir al usuario si es necesario
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cargar el archivo:', error);
+                Swal.fire('Error', 'Hubo un problema al cargar el archivo', 'error');
+            }
+        });
+    </script>
+    
     <script>
         // Función para cargar los datos de USUARIOS
         async function cargarDatos() {
@@ -106,45 +150,6 @@
         window.onload = cargarDatos;
     </script>
 
-<script>
-    document.getElementById('registerForm').addEventListener('submit', async function(event) {
-        event.preventDefault(); // Evitar que el formulario se envíe de forma tradicional
-
-        const formData = new FormData(this);
-        const response = await fetch('/poderadiusu', {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            Swal.fire({
-                title: result.title,
-                text: result.message,
-                icon: result.status,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                window.location.href = '/poderesusu'; // Redirigir al usuario si es necesario
-            });
-        } else {
-            Swal.fire({
-                title: result.title,
-                text: result.message,
-                icon: result.status,
-                showConfirmButton: true
-            });
-        }
-
-    });
-</script>
-
-            
     <%- include('partials/footer') %>  
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="/src/main.js"></script>
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 </body>
 </html>
-

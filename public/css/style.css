@@ -916,3 +916,12 @@ button:hover {
     background-color: #333;  /* Fondo oscuro al pasar el mouse */
     color: white;  /* Mantener el texto blanco en hover */
   }
+
+.table-no-borders {
+    border-collapse: collapse;
+    border: none;
+}
+
+.table-no-borders td, .table-no-borders th {
+    border: none;
+}

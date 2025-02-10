@@ -10,24 +10,67 @@
 </head>
 <body>
     <%- include('partials/navigation') %>  
+    <span style="color: #0a024d; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= propoder %></span>
+    <span style="color: #d11b33; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= proname %></span>
+
     <div class="content">
-        <h2>cargar PDF</h2>
+        <h4>Cargar Poder PDF</h4>
         <br><br>
         <div class="register-formAncho"> 
-            <br>
             <!-- Formulario para cargar el archivo -->
-            <form action="/uploadpdf" method="POST" enctype="multipart/form-data">
-                <input type="text" name="empresaId" value="<%= nomid %>" placeholder="Nombre de la empresa" style="display: none;">
+            <form id="uploadForm" action="/uploadpdf" method="POST" enctype="multipart/form-data">
+                <span style="color: #33025c; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);">Otorgado por:</span> <span style="color: #d11b33;"><%= numprop %></span>
+                <span style="color: #d11b33; text-shadow: 3px 1px 2px rgba(0, 0, 0, 0.3);"><%= name %></span>
+                <br><br>
+                <input type="text" name="empresaId" id="empresaId" value="<%= nomid %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="text" name="Ipropoder" id="Ipropoder" value="<%= propoder %>" placeholder="Nombre de la empresa" style="display: none;">
+                <input type="text" name="Inumprop" id="Inumprop" value="<%= numprop  %>" placeholder="Nombre de la empresa" style="display: none;">
                 <input type="file" name="file" accept=".pdf" required style="font-size: 14px; width: 350px;">
-                <button class="btn btn-success btn-sm btnind-hover-effect" style="width: auto; font-size: 14px; background-color: blue; border-color: blue;">
+                <button type="submit" class="btn btn-success btn-sm btnind-hover-effect" style="width: auto; font-size: 14px; background-color: blue; border-color: blue;">
                     Subir PDF
                 </button>
             </form>
+            
             <br>
         </div>      
         <br>
-        <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+        <a href="/poderesusu" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
     </div>
+
+    <script>
+        // Usar 'submit' de forma asíncrona
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();  // Prevenir el envío tradicional del formulario
+    
+            const formData = new FormData(this);  // Obtener los datos del formulario
+    
+            try {
+                const response = await fetch('/uploadpdf', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                const result = await response.json();  // Obtener la respuesta JSON
+    
+                Swal.fire({
+                    title: result.status === 'success' ? 'Éxito' : 'Error',
+                    text: result.message || 'Hubo un problema',
+                    icon: result.status === 'success' ? 'success' : 'error',
+                    showConfirmButton: true,
+                    timer: result.status === 'success' ? 1000 : null // Timer solo para éxito
+                }).then(() => {
+                    if (result.status === 'success') {
+                        window.location.href = '/poderesusu'; // Redirigir al usuario si es necesario
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cargar el archivo:', error);
+                Swal.fire('Error', 'Hubo un problema al cargar el archivo', 'error');
+            }
+        });
+    </script>
+    
+
     <%- include('partials/footer') %>  
 </body>
 </html>

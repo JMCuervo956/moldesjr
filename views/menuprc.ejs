@@ -46,90 +46,29 @@
     <div class="content">
         <div class="register-formIzq">
                 <div style="display: inline;">
-<!--
-                    <div style="display: inline;">
-                        <input type="submit" id="btnUsuarios" class="btn-salir" value="Usuarios">
-                        <br><br>    
-                    </div>
-            
                     <div style="display: inline;">
                         <h5></h5>
-                        <input type="submit" id="btnPreguntas" class="btn-salir" value="Preguntas">
+                            <input type="submit" id="btnSeleccion" class="btn-salir" value="Votar">
                         <br><br>    
-                    </div>
-            
-                    <div style="display: inline;">
                         <h5></h5>
-                        <input type="submit" id="btnSel" class="btn-salir" value="Asignar Pregunta voto">
+                            <input type="submit" id="btnresultados" class="btn-salir" value="Resultados">
                         <br><br>    
-                    </div>
--->                   
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnSeleccion" class="btn-salir" value="Votar">
-                        <br><br>    
-                    </div>
-<!--
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnCargar" class="btn-salir" value="Cargar">
-                        <br><br>    
-                    </div>
 
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnCargar2" class="btn-salir" value="Cargar col2">
-                        <br><br>    
-                    </div>
-
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnCargarCSV" class="btn-salir" value="Cargar CSV">
-                        <br><br>    
-                    </div>
--->
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnGraficoBar" class="btn-salir" value="Resultado Columna">
-                        <br><br>    
-                    </div>
-
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnGraficoPie" class="btn-salir" value="Resultado Pastel">
-                        <br><br>    
-                    </div>
-<!--
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnVideo" class="btn-salir" value="video">
-                        <br><br>    
-                    </div>
--->
-                    <div style="display: inline;">
-                        <h5></h5>
-                        <input type="submit" id="btnSalir" class="btn-salir" value="Salir">
-                        <br><br>    
-                    </div>
-                   
+                    </div>                    
                 </div>
         </div> 
-        <% if (rol!='Administrador') { %>
+    
+        <% if (rol!='Administration') { %>
             <div class="register-formIzq">
                 <div>
                     <div style="display: inline;">
-                        <li class="nav-item dropdown">
-                            <h5></h5>
-                            <button class="btn btn-light btn-sm ">Poderes</button>
-                            <div class="dropdown-content">
-                            <a href="/poderesusu">Registrar Poder Otorgado</a>
-                            <a href="/ver-word">Descargar Formato</a>
-                            <a href="/valida">validar</a>
-                            </div>
-                            <br><br>    
-                        </li>
+                        <a href="/ver_poder" class="btn btn-light btn-sm ">Formato PODER</a>
+                        <br><br>    
                     </div>
-
+                    <div style="display: inline;">
+                        <a href="/poderesusu" class="btn btn-light btn-sm ">Registrar PODER</a>
+                        <br><br>    
+                    </div>
                     <div style="display: inline;">
                         <a href="/moduserpass?user=<%= user %>&name=<%= name %>" class="btn btn-light btn-sm ">Cambiar Contraseña</a>
                         <br><br>    
@@ -153,70 +92,32 @@
             </div>
         <% } %>        
 
-        
+        <div class="register-formIzq">
+            <div style="display: inline;">
+                <h5></h5>
+                <input type="submit" id="btnSalir" class="btn-salir" value="Salir">
+                <br><br>    
+            </div>
+        </div> 
+
+    
     </div>   
 
     <script>
-
-/*
-        document.getElementById('btnUsuarios').addEventListener('click', function() {
-            // Acción para el botón "Usuarios"
-            window.location.href = '/usuarios'; // Redirige a la página de usuarios
-        });
-
-        document.getElementById('btnPreguntas').addEventListener('click', function() {
-            // Acción para el botón "Registro de Preguntas"
-            window.location.href = '/ingpreguntas'; // Redirige a la página de usuarios
-        });
-
-        document.getElementById('btnSel').addEventListener('click', function() {
-            // Acción para el botón "Votaciones"
-            window.location.href = '/opc2'; // opc2 Redirige a la página de votaciones
-        });
-*/          
         document.getElementById('btnSeleccion').addEventListener('click', function() {
             // Acción para el botón "Votaciones"
-            window.location.href = '/opc1'; // Redirige a la página de votaciones
+            window.location.href = '/respuesta'; // Redirige a la página de votaciones
         });
 
-/*
-        document.getElementById('btnCargar').addEventListener('click', function() {
-            // Acción para el botón "Cargas"
-            window.location.href = '/cargas'; // opc2 Redirige a la página de votaciones
-        });
-
-        document.getElementById('btnCargar2').addEventListener('click', function() {
-            // Acción para el botón "Cargas"
-            window.location.href = '/cargascol'; // opc2 Redirige a la página de votaciones
-        });
-
-        document.getElementById('btnCargarCSV').addEventListener('click', function() {
-            // Acción para el botón "Cargas"
-            window.location.href = '/cargascsv'; // opc2 Redirige a la página de votaciones
-        });
-*/
-
-        document.getElementById('btnGraficoBar').addEventListener('click', function() {
+        document.getElementById('btnresultados').addEventListener('click', function() {
             // Acción para el botón "Votaciones"
-            window.location.href = '/bar'; // opc2 Redirige a la página de votaciones
+            window.location.href = '/resultados'; // Redirige a la página de votaciones
         });
-
-        document.getElementById('btnGraficoPie').addEventListener('click', function() {
-            // Acción para el botón "Votaciones"
-            window.location.href = '/pie'; // opc2 Redirige a la página de votaciones
-        });
-
 
         document.getElementById('btnSalir').addEventListener('click', function() {
             // Acción para el botón "Salir"
             window.location.href = '/'; // Redirige a la página de logout o cerrar sesión
         });
-
-        document.getElementById('btnVideo').addEventListener('click', function() {
-            // Acción para el botón "Salir"
-            window.location.href = '/video'; // Redirige a la página de logout o cerrar sesión
-        });
-        
     </script>
 
     <%- include('partials/footer') %>  
