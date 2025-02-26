@@ -312,6 +312,18 @@ form button{
     border-radius: 15px;
 }
 
+.btn-salirS{
+    width: 100%;
+    padding: 2px;
+    background-color: #089733;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-size: 15px;    
+    color: #ffffff;
+    border-radius: 10px;
+    }
+
 .btn-salir{
     width: 100%;
     padding: 2px;
@@ -925,3 +937,90 @@ button:hover {
 .table-no-borders td, .table-no-borders th {
     border: none;
 }
+
+a.disabled {
+    pointer-events: none;
+    opacity: 0.5; /* Para hacer que se vea visualmente deshabilitado */
+}
+
+/* Esta clase cambiará el color del texto a rojo */
+.red-text {
+    color: red !important;  /* El !important asegura que no haya reglas CSS previas que sobreescriban este estilo */
+}
+
+#toggleButton {
+    font-size: 12px;
+    padding: 5px 20px;
+    width: 100px;
+    background-color: #1c0438;
+    border: 2px solid #ccc;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#toggleButton:hover {
+    background-color: #03532f;
+    transform: scale(1.1);
+}
+
+#toggleButton.active {
+    background-color: #02250a;
+    color: white;
+    border-color: #02300d;
+}
+
+#toggleButtonS{
+    font-size: 12px;
+    padding: 5px 20px;
+    width: 100px;
+    background-color: #066330;
+    border: 2px solid #ccc;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#toggleButtonS:hover {
+    background-color: #04552f;
+    transform: scale(1.1);
+}
+
+#toggleButtonS.active {
+    background-color: #011f08;
+    color: white;
+    border-color: #28a745;
+}
+
+/* Boton cancelar modificado */
+
+/* Estilo base del enlace tipo botón */
+.btn-cancelM {
+    display: inline-block;           /* Hace que se comporte como un botón */
+    font-size: 12px;                 /* Tamaño de la fuente */
+    padding: 5px 20px;               /* Espaciado alrededor del texto */
+    border: 2px solid #f5ab0be1;         /* Borde gris claro */
+    border-radius: 5px;             /* Bordes redondeados */
+    background-color: #f5ab0be1;      /* Fondo gris claro */
+    color: #333;                    /* Color del texto */
+    text-decoration: none;           /* Elimina el subrayado del enlace */
+    cursor: pointer;                /* Cambia el cursor cuando pasa por encima */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Efectos suaves */
+}
+
+/* Efecto al pasar el cursor */
+.btn-cancelM:hover {
+    background-color: #dfa11c;      /* Fondo más oscuro cuando se pasa el ratón */
+    transform: scale(1.05);          /* Aumenta ligeramente el tamaño */
+}
+
+/* Efecto al estar activo o presionado */
+.btn-cancelM:active {
+    background-color: #f80909;         /* Fondo aún más oscuro cuando se presiona */
+    transform: scale(1);             /* Vuelve al tamaño original al soltar */
+}
+
+.swal2-popup {
+    font-size: 12px; /* Tamaño de la fuente */
+    width: 250px; /* Ancho de la alerta */
+    height: auto; /* Ajustar altura automáticamente */
+    padding: 30px; /* Ajuste del padding */
+  }

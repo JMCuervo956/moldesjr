@@ -45,28 +45,63 @@
 
             <div class="container mt-1">
                 <table class="table table-bordered table-hover">
-                    <thead></thead>
+                    <thead>
+                        <tr style="font-size: 8px; text-align: center;">
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>Opciones<br>de Respuesta</th>
+                            <th></th>
+                            <th style="font-size: 8px; text-align: center;">Activo<br>"1" No Disponible</th>
+                        </tr>                        
+                    </thead>
                     <tbody>
-                        <% if (data && data.length > 0) { %>
-                            <% data.forEach(function(item) { %>
+                            <% if (data && data.length > 0) { %>
+                                <% data.forEach(function(item) { %>
+                                    <tr id="item-<%= item.id %>">
+                                        <td>
+                                            <%= item.texto %>
+                                        </td>
+                                        
+                                        <!-- Botón Modificar -->
+                                        <td>
+                                            <a href="/modificar?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-warning btn-sm btn-hover-effect <%= item.activo === 1 ? 'disabled' : '' %>">
+                                                Mod
+                                            </a>
+                                        </td>
+                        
+                                        <!-- Botón Eliminar -->
+                                        <td>
+                                            <a href="/eliminar?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-danger btn-sm btn-hover-effect <%= item.activo === 1 ? 'disabled' : '' %>">
+                                                Ret
+                                            </a>
+                                        </td>
+                        
+                                        <!-- Botón Opciones -->
+                                        <td>
+                                            <a href="/opciones?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-primary btn-sm btn-hover-effect <%= item.activo === 1 ? 'disabled' : '' %>">
+                                                Opc
+                                            </a>
+                                        </td>
+                        
+                                        <!-- Estado (sin cambios) -->
+                                        <td>
+                                            <button class="btn btn-link btn-sm btn-hover-effect toggle-estado" data-id="<%= item.id %>" data-estado="<%= item.activo %>">
+                                                <%= item.activo === 1 ? 'Desactivar' : 'Activar' %>
+                                            </button>
+                                        </td>
+                                        <td class="tex-hover-effect" 
+                                        style="text-align: center; color: <%= item.activo.toString() === '1' ? 'red' : 'black' %>;">
+                                        <%= item.activo %>
+                                    </td>
+                                
+
+                                <% }); %>
+                            <% } else { %> 
                                 <tr>
-                                    <td class="tex-hover-effect"><%= item.texto %></td>
-                                    <td>
-                                        <a href="/modificar?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-warning btn-sm btn-hover-effect ">Mod</a>
-                                    </td>
-                                    <td>
-                                        <a href="/eliminar?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-danger btn-sm btn-hover-effect ">Ret</a>
-                                    </td>
-                                    <td>
-                                        <a href="/opciones?id=<%= item.id %>&texto=<%= item.texto %>" class="btn btn-primary btn-sm btn-hover-effect">Opc</a>
-                                    </td>
+                                    <td colspan="5">No hay datos disponibles</td>   
                                 </tr>
-                            <% }); %>
-                        <% } else { %> 
-                            <tr>
-                                <td colspan="5">No hay datos disponibles</td>   
-                            </tr>
-                        <% } %>
+                            <% } %>
                     </tbody>
                 </table>
             </div>
@@ -80,15 +115,49 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     
     <script>
-        function checkValue(input) {
-            console.log('imagen'); // Este mensaje debería aparecer
-            const successImage = input.parentElement.querySelector('.successImage');
-            if (parseInt(input.value) === 0) {
-                successImage.style.display = 'block'; // Mostrar imagen
-            } else {
-                successImage.style.display = 'none'; // Ocultar imagen
-            }
-        }
+        $(document).ready(function() {
+            // Manejar el cambio de estado (activo/inactivo)
+            $('.toggle-estado').click(function() {
+                const id = $(this).data('id');
+                const estadoActual = $(this).data('estado');
+                const nuevoEstado = estadoActual === 1 ? 0 : 1; // Alternar entre 1 y 0
+                
+                // Realizar la solicitud AJAX
+                $.ajax({
+                    url: '/activar', // La URL de tu servidor para actualizar el estado
+                    method: 'POST',
+                    data: {
+                        id: id,
+                        estado: nuevoEstado
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // Actualizar la interfaz después de la respuesta exitosa
+                            const fila = $('#item-' + id);
+                            fila.find('td:last').html(nuevoEstado);
+                            fila.find('.toggle-estado').text(nuevoEstado === 1 ? 'Desactivar' : 'Activar');
+                            fila.find('td:last').css('color', nuevoEstado === 1 ? 'red' : 'black');
+                            fila.find('.toggle-estado').data('estado', nuevoEstado);
+
+                            // Actualizar el estado de los botones
+                            if (nuevoEstado === 1) {
+                                fila.find('a').addClass('disabled');
+                            } else {
+                                fila.find('a').removeClass('disabled');
+                            }
+
+                            // Cambiar el color de la celda del estado también
+                            fila.find('td:last').css('color', nuevoEstado === 1 ? 'red' : 'black');
+                        } else {
+                            alert('Error al actualizar el estado');
+                        }
+                    },
+                    error: function() {
+                        alert('Hubo un problema con la solicitud');
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

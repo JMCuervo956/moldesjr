@@ -17,7 +17,7 @@ import crypto from 'crypto';
 
 // Importaciones de archivos locales		
 import { pool } from './db.js';		
-import { PORT } from './config.js';		    
+import { PORT } from './config.js';
 import path from 'path';		
 import { fileURLToPath } from 'url';	
 import mammoth from 'mammoth'; // docx a pdf
@@ -102,7 +102,11 @@ app.use(session({
     secret: 'tu_secreto_aqui', // Cambia esto por una cadena secreta		
     resave: false, // No volver a guardar la sesión si no ha habido cambios		
     saveUninitialized: true, // Guarda una sesión incluso si no ha sido inicializada		
-    cookie: { secure: false } // Cambia a true si usas HTTPS		
+    cookie: { 
+        httpOnly: true, 
+        secure: false,  // Si usas https, ponlo a true
+        expires: false  // La cookie solo durará mientras el navegador esté abierto
+    }
 }));		
 		
 app.use((req, res, next) => {		
@@ -116,7 +120,6 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.urlencoded({ extended: true })); // Para procesar formularios con datos codificados en URL
 app.use(express.json()); // Para procesar cuerpos JSON, si se envían datos JSON
-
 
 // Middleware para servir archivos estáticos - docx
 //app.use(express.static('public')); 
@@ -171,17 +174,36 @@ app.get('/origen/:folder/:filename', (req, res) => {
 
 
 // Rutas de autenticación y registro
-//app.get('/login', (req, res) => res.render('login'));
-
+/*
 app.get('/login', (req, res)=>{
-//    console.log(req.session.unidad);
-//    if (req.session.loggedin) {
         const userUser = req.session.unidad;
         res.render('login', { userUser });
-//    } else {
-//        res.send('Por favor, inicia sesión primero.');
-//    }
 })
+*/
+
+// Rutas para manejar el login
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    return res.status(401).json({ message: 'Credenciales incorrectas' });
+});
+
+// Ruta para verificar si el usuario está logueado
+app.get('/profile', (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ message: 'No estás logueado' });
+    }
+    res.json({ message: `Bienvenido ${req.session.username}` });
+});
+
+// Ruta para logout
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ message: 'Error al cerrar sesión' });
+        }
+        res.json({ message: 'Sesión cerrada exitosamente' });
+    });
+});
 
 app.get('/documentos', async(req, res) => {
     try {
@@ -193,7 +215,8 @@ app.get('/documentos', async(req, res) => {
             const [rows] = await pool.execute("select * from pgtaresp where idprg = ?", [id]);
             res.render('documentos', { id, texto, data: rows, user: userUser, name: userName });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+            //res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         console.error('Error conectando a la base de datos....????:', error);
@@ -206,6 +229,10 @@ app.get('/valida', (req, res)=>{
         res.render('valida', { userUser });
     })
     
+app.get('/totales', (req, res)=>{
+    const userUser = req.session.unidad;
+    res.render('totales', { userUser });
+})
 
 // [video]
 app.get('/video', (req, res) => {
@@ -225,7 +252,8 @@ app.get('/menuprc', (req, res) => {
         const userUser = req.session.unidad;
         res.render('menuprc', { user, name, rol, userUser });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -233,7 +261,8 @@ app.get('/register', (req, res) => {
     if (req.session.loggedin) {
         res.render('register');
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -242,7 +271,8 @@ app.get('/menuDropdown', (req, res) => {
         const { user, name } = req.session;
         res.render('menuDropdown', { user, name });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -254,7 +284,8 @@ app.get('/preguntas', (req, res)=>{
         const userName = req.session.name;
         res.render('preguntas', { user: userUser, name: userName });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 })
 
@@ -266,7 +297,8 @@ app.get('/cargas', (req, res)=>{
         const userName = req.session.name;
         res.render('cargas', { user: userUser, name: userName });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 })
 
@@ -276,7 +308,8 @@ app.get('/cargascol', (req, res)=>{
         const userName = req.session.name;
         res.render('cargascol', { user: userUser, name: userName });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 })
 
@@ -284,6 +317,43 @@ app.get('/modificar', (req, res) => {
     const id = req.query.id;
     const texto = req.query.texto;
     res.render('modificar', { id, texto });
+});
+
+app.get('/activar', (req, res) => {
+    const id = req.query.id;
+    const texto = req.query.texto;
+    res.render('activar', { id, texto });
+});
+
+app.post('/activar', async (req, res) => {
+    const { id, estado } = req.body;
+    const tableName = "preguntas";
+    try {
+        // Actualizar el estado de la pregunta en la base de datos
+        await pool.execute(`UPDATE ${tableName} SET activo = ? WHERE id = ?`, [estado, id]);
+        res.json({ status: 'success' });
+    } catch (error) {
+        console.error(error);
+        res.json({ status: 'error', message: 'Error al actualizar el estado' });
+    }
+});
+
+app.post('/actualizarEstado', async (req, res) => {
+    const { id, estado } = req.body;
+    const tableName = "preguntas";
+    console.log(id);
+    try {
+        // Actualiza el estado en la base de datos
+        await pool.execute(`UPDATE ${tableName} SET estado = ? WHERE id = ?`, [estado, id]);
+        console.log(estado);
+        return res.json({status: 'success' });
+    } catch (error) {
+        console.error(error);
+        return res.json({
+            status: 'error',
+            message: 'Hubo un error al actualizar el estado'
+        });
+    }
 });
 
 app.get('/eliminar', (req, res) => {
@@ -321,7 +391,8 @@ app.get('/preguntasopc', (req, res) => {
         const respuesta = req.query.respuesta; // Obtén la respuesta
         res.render('preguntasopc', { id:id, respuesta:respuesta,user: userUser, name: userName });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -342,11 +413,66 @@ app.get('/eliopc', (req, res) => {
 
 app.get('/seleccion', async (req, res) => {
     try {
-        const [rows] = await pool.execute("SELECT * FROM preguntas");
-        res.render('opc1', { data: rows });
+        const tableName = "preguntas";
+//        const [rows] = await pool.execute(`SELECT * FROM ${tableName} WHERE activo <> 1`);
+        const [rows] = await pool.execute(`
+            SELECT 
+                a.id AS id, 
+                a.texto, 
+                a.estado, 
+                a.activo, 
+                COUNT(b.id) AS opc 
+            FROM 
+                ${tableName} a 
+            LEFT JOIN 
+                pgtaresp b ON a.id = b.idprg 
+            WHERE activo <> 1    
+            GROUP BY 
+                a.id, a.texto, a.estado, a.activo
+        `);
+
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            res.render('seleccion', { data: rows, user: userUser, name: userName });
+
+        } else {
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
+        }
     } catch (error) {
-        res.status(500).send('Error conectando a la base de datos.');
-    }
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+});
+
+app.post('/seleccion', async(req, res) => {
+    console.log('seleccionar');
+    const { id, texto } = req.body; // Recibir los datos enviados desde el cliente
+    // Lógica para procesar la pregunta seleccionada
+    console.log(id);
+    console.log(texto);
+    const wid = id;
+    const tableName = "preguntas";
+    await pool.execute(`UPDATE ${tableName} SET estado = 0`);
+    await pool.execute(`UPDATE ${tableName} SET estado = 1 WHERE id = ?`, [wid]);
+    return res.json({
+        status: 'success',
+        title: 'Actualizacion Exitosa',
+        message: '¡Registrado correctamente!'
+    });
+});
+    
+app.post('/seleccion2', async(req, res) => {
+    console.log('seleccionar dos');
+    // Lógica para procesar la pregunta seleccionada
+    const tableName = "preguntas";
+    await pool.execute(`UPDATE ${tableName} SET estado = 0`);
+    return res.json({
+        status: 'success',
+        title: 'Actualizacion Exitosa',
+        message: '¡Registrado correctamente!'
+    });
 });
 
 app.get('/opcbtn', async (req, res) => {
@@ -368,7 +494,8 @@ app.get('/opc1', async (req, res) => {
             const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.estado=1");
             res.render('opc1', { preguntas: rows, user: userUser, name: userName });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         res.status(500).send('Error conectando a la base de datos.');
@@ -380,14 +507,99 @@ app.get('/respuesta', async (req, res) => {
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
-            const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.estado=1");
+            const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.disponer=1 and a.estado=1 and a.activo=0");
             res.render('respuesta', { preguntas: rows, user: userUser, name: userName });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         res.status(500).send('Error conectando a la base de datos.');
     }
+});
+
+app.get('/disponer', async (req, res) => {
+    try {
+        const tableName = "preguntas";
+        const [rows] = await pool.execute(`
+            SELECT 
+                a.id AS id, 
+                a.texto, 
+                a.estado, 
+                a.activo,
+                b.respuesta
+            FROM 
+                ${tableName} a 
+            LEFT JOIN 
+                pgtaresp b ON a.id = b.idprg 
+            WHERE activo <> 1 and a.estado = 1    
+        `);
+
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            res.render('disponer', { data: rows, user: userUser, name: userName });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+});
+
+app.post('/disponer', (req, res) => {
+    const { username, password } = req.body;
+    console.log('Ingresa DIsponer');
+    return res.json({
+        status: 'success',
+        title: 'Pregunta Asignada',
+        message: '¡Registrado correctamente!'
+    });
+
+    //    res.json({ message: `Hola` });
+});
+
+app.get('/cerrar', async (req, res) => {
+    try {
+        const tableName = "preguntas";
+        const [rows] = await pool.execute(`
+            SELECT 
+                a.id AS id, 
+                a.texto, 
+                a.estado, 
+                a.activo,
+                b.respuesta
+            FROM 
+                ${tableName} a 
+            LEFT JOIN 
+                pgtaresp b ON a.id = b.idprg 
+            WHERE activo <> 1 and a.estado = 1    
+        `);
+
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            res.render('cerrar', { data: rows, user: userUser, name: userName, title: 'Actualizacion Exitosa', });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+});
+
+app.post('/cerrar', (req, res) => {
+    const { username, password } = req.body;
+    console.log('Ingresa Cerrar');
+    return res.json({
+        status: 'success',
+        title: 'Pregunta Cerrada',
+        message: '¡Registrado correctamente!'
+    });
+    //    res.json({ message: `Hola` });
 });
 
 app.get('/opc2', async (req, res) => {
@@ -423,7 +635,8 @@ app.get('/ingpreguntas', async (req, res) => {
             res.render('ingpreguntas', { data: rows, user: userUser, name: userName });
 
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -443,7 +656,8 @@ app.get('/usuarios', async (req, res) => {
             res.render('usuarios', { data: rows, user: userUser, name: userName });
 
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -463,7 +677,8 @@ app.get('/usuariosreset', async (req, res) => {
             res.render('usuariosreset', { data: rows, user: userUser, name: userName });
 
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -476,21 +691,21 @@ app.get('/usuariosreset', async (req, res) => {
 app.get('/resultados', async (req, res) => {
     try {
         const tableName = "preguntas";
-        const [rows] = await pool.execute(`select * from ${tableName}`);
+        const [rows] = await pool.execute(`SELECT * FROM ${tableName} WHERE activo = 0`);
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
             res.render('resultados', { data: rows, user: userUser, name: userName });
 
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
                 res.status(500).send('Error conectando a la base de datos.?????');
             }
     });
-
 
 // resetuser - eliuser
 
@@ -509,7 +724,8 @@ app.get('/maeprop', async (req, res) => {
         if (req.session.loggedin) {
             res.render('maeprop', { data: rows });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -524,7 +740,8 @@ app.get('/maepropadi', (req, res) => {
         const { user, name } = req.session;
         res.render('maepropadi', { user, name });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -651,7 +868,8 @@ app.get('/poderes', async (req, res) => {
         if (req.session.loggedin) {
             res.render('poderes', { data: rows });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -666,7 +884,8 @@ app.get('/poderadi', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('poderadi', { user, name });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -799,7 +1018,8 @@ app.get('/poderesusu', async (req, res) => {
         if (req.session.loggedin) {
             res.render('poderesusu', { data: rows });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
                 console.error('Error conectando a la base de datos....????:', error);
@@ -812,7 +1032,8 @@ app.get('/poderadiusu', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('poderadiusu', { user, name });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -821,7 +1042,8 @@ app.get('/cargarpoder', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('cargarpoder', { user, name });
     } else {
-        res.send('Por favor, inicia sesión primero.');
+//        res.send('Por favor, inicia sesión primero.');
+        res.redirect('/');
     }
 });
 
@@ -1007,7 +1229,8 @@ app.get('/bar', async (req, res) => {
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         console.error('Error al ejecutar la consulta:', error);  // Imprime el error en la consola
@@ -1022,7 +1245,7 @@ app.get('/bar_resul', async (req, res) => {
             const idPregunta = req.query.idp;  // Obtén el idp de la URL
             // Ejecuta la consulta SQL
             const [datos] = await pool.execute(
-                "SELECT respuesta, COUNT(*) AS total FROM respusers WHERE idprg = ? GROUP BY respuesta ORDER BY total DESC", 
+                "SELECT respuesta, COUNT(*) AS total FROM respusers WHERE idprg = ? GROUP BY respuesta ORDER BY total DESC LIMIT 10", 
                 [idPregunta] // Usar el idPregunta como parámetro para la consulta
             );
             // Procesa los resultados para obtener las etiquetas y valores
@@ -1041,13 +1264,15 @@ app.get('/bar_resul', async (req, res) => {
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         console.error('Error al ejecutar la consulta:', error);  // Imprime el error en la consola
         res.status(500).send('Error conectando a la base de datos.');
     }
 });
+
 
 app.get('/pie', async (req, res)=>{
     try {
@@ -1071,7 +1296,8 @@ app.get('/pie', async (req, res)=>{
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         console.error('Error al ejecutar la consulta:', error);  // Imprime el error en la consola
@@ -1091,7 +1317,8 @@ app.get('/opciones', async(req, res) => {
             const [rows] = await pool.execute("select * from pgtaresp where idprg = ?", [id]);
             res.render('opciones', { id, texto, data: rows, user: userUser, name: userName });
         } else {
-            res.send('Por favor, inicia sesión primero.');
+//            res.send('Por favor, inicia sesión primero.');
+            res.redirect('/');
         }
     } catch (error) {
         console.error('Error conectando a la base de datos....????:', error);
@@ -1152,6 +1379,15 @@ app.post('/auth', async (req, res) => {
     req.session.rol = userRecord.rol;
     req.session.pass = userRecord.pass;
     req.session.numprop = userRecord.numprop;
+
+    // Verifica si ya hay una sesión activa
+    if (req.session.username) {
+        return res.status(400).json({ message: 'Ya estás logueado en otro dispositivo' });
+    }
+
+    // Si no, guarda la sesión
+    req.session.username = user;
+
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
 });
 
@@ -1266,6 +1502,44 @@ app.post('/preguntasmod', async (req, res) => {
 
 // End - [modificar]
 
+// [activar]
+
+app.post('/preguntasact', async (req, res) => {
+    try {
+        console.log(req.body);
+        const ids = req.body.ids;
+//        const respuesta = req.body.respuesta;
+        const tableName = "preguntas";
+
+        // update nuevo usuario
+        const respuesta = req.body.respuesta;
+        // Convertir la respuesta en 1 o 0
+        const valorActivo = respuesta === 'Sí' ? 0 : 1;
+        console.log(valorActivo);        
+        // Actualizar la base de datos con el valor correspondiente
+        await pool.execute(`UPDATE ${tableName} SET activo = ? WHERE id = ?`, [valorActivo, ids]);
+
+        // Si quieres hacer el otro update (por ejemplo, para desactivar la otra respuesta), lo harías de esta forma:
+        const valorInactivo = valorActivo === 1 ? 0 : 1;
+        console.log(valorInactivo);        
+//        await pool.execute(`UPDATE ${tableName} SET activo = ? WHERE respuesta = ? and id = ?`, [valorInactivo, respuesta, ids]);
+
+        res.json({
+            status: 'success',
+            title: 'Actualizacion Exitosa',
+            message: '¡Registrado correctamente!'
+        });
+    } catch (error) {
+        res.json({
+            status: 'success',
+            title: 'Registro de Preguta NO Exitoso',
+            message: '¡Error en el servidor! BD'
+        });
+    }
+});
+
+// End - [modificar]
+
 // [modopc] - modificacion opciones
 app.post('/preguntasmodopc', async (req, res) => {
     try {
@@ -1318,7 +1592,7 @@ app.post('/preguntaseliopc', async (req, res) => {
         res.json({
             status: 'error',
             title: 'Borrado de Preguta NO Exitoso',
-            message: `Error: ${error.message}`
+            message: '¡Registro NO realizado! BD'
         });
     }
 });
@@ -1379,8 +1653,8 @@ app.post('/preguntaseli', async (req, res) => {
         // Para cualquier otro tipo de error
         return res.json({
             status: 'error',
-            title: 'Error de Borrado',
-            message: `Error: ${error.code}`
+            title: '¡Registro NO realizado! BD',
+            message: ' - Validar si contiene respuestas - '
         });
     }
 });
@@ -1395,13 +1669,13 @@ app.post('/procesarseleccion', async (req, res) => {
         const [id, texto, idp, respuesta] = selectedValue.split('|');
 
         // EVALUA SI YA VOTO
-        const pgtas = req.body.pgtas;
+        //const pgtas = req.body.pgtas;
         // Log para depuración
 
         // SELECT      
-        const tablePtas = "respusers";
-        const [rows] = await pool.execute(`SELECT respuesta FROM ${tablePtas} WHERE user = ? and idprg = ?`, [userUser, id]);
-/*        
+        /*        
+        //const tablePtas = "respusers";
+        //const [rows] = await pool.execute(`SELECT respuesta FROM ${tablePtas} WHERE user = ? and idprg = ?`, [userUser, id]);
         if (rows.length > 0) {
             const respuesta = rows[0].respuesta;  // Obtenemos la primera fila y el campo "pregunta"
             return res.json({
@@ -1415,13 +1689,13 @@ app.post('/procesarseleccion', async (req, res) => {
             const tableName = "respusers";
             const date = new Date();
             const estado = 0; // Ejemplo de estado
+            await pool.execute(`DELETE FROM ${tableName} WHERE user = ? AND idprg = ?`, [userUser, id]);
             await pool.execute(`INSERT INTO ${tableName} (user, idprg, pregunta, idpres, respuesta) VALUES (?, ?, ?, ?, ?)`, [userUser, id, texto, idp, respuesta]);
-            return res.json({
+            return res.json({   
                 status: 'success',
                 title: 'Voto Exitoso.',
                 message: '¡Registro Exitoso! BD'
             });
-//        }
     } catch (error) {
         res.json({
             status: 'error',
@@ -1433,12 +1707,41 @@ app.post('/procesarseleccion', async (req, res) => {
 
 // [opc2] activar voto   
 
+app.post('/asignar', async (req, res) => {
+    try {
+        console.log('Entró al POST');
+        console.log(req.body); // Verifica qué datos están llegando
+
+        const userUser = req.body.user;
+        const userName = req.body.name;
+        const selectedValue = req.body.respuesta; // Puedes ajustar esto según el nombre del campo
+        const wid = req.body.ids; // Asegúrate de que el valor de 'ids' sea correcto
+        console.log('Datos recibidos:', userUser, userName, selectedValue, wid);
+
+        const tableName = "preguntas";
+        const date = new Date();
+        const estado = 0; // Ejemplo de estado
+        await pool.execute(`UPDATE ${tableName} SET disponer = 1 WHERE id = ?`, [wid]);
+
+        return res.json({
+            status: 'success',
+            title: 'Voto Exitoso.',
+            message: '¡Registro Exitoso! BD'
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.json({
+            status: 'error',
+            title: 'Grabar Respuesta NO Exitoso',
+            message: `Error: ${error.message}`
+        });
+    }
+});
+
 app.post('/procesar-seleccion', async (req, res) => {
         try {
             const userUser = req.session.user;
             const userName = req.session.name;
-            console.log('seleccion');
-            console.log(req.body);
             const selectedValue = req.body.pregunta; // Obtén el valor seleccionado
             const selectActivo = parseInt(req.body.selactivo, 10); // Convierte a entero
 
@@ -1448,7 +1751,6 @@ app.post('/procesar-seleccion', async (req, res) => {
             // Verifica si hay valores seleccionados
             if (selectedValue && selectedValue.length > 0) {
                 for (const id of selectedValue) {
-                    console.log(id);
                     // Actualiza el estado a 1 para los ids seleccionados
                     await pool.execute('UPDATE preguntas SET estado = 1 WHERE id = ?', [id]);
                     
@@ -1478,18 +1780,12 @@ app.post('/procesar-seleccion', async (req, res) => {
 
 app.post('/usuariomod', async (req, res) => {
     try {
-        console.log(req.body);
         const user = req.body.user;
         const name = req.body.name;
         const rol = req.body.rol;
         const estado = req.body.estado;
         const numprop = req.body.numpropNew;
         const coefici = req.body.coeficiente;
-        console.log(user);
-        console.log(name);
-        console.log(rol);
-        console.log(numprop);
-        console.log(coefici);
         // Insertar nuevo usuario
         //await pool.execute('UPDATE users SET name = ?, rol = ?, numprop = ?, coeficiente = ?,  WHERE (estado IS NULL OR estado = 0) AND user = ?', [name, rol, numprop, coefici, user]);
         await pool.execute('UPDATE users SET name = ?, numprop = ?, coeficiente = ?, rol = ? WHERE (estado IS NULL OR estado = 0) AND user = ?', [name, numprop, coefici, rol, user]);
@@ -1737,7 +2033,7 @@ async function updatePasswords() {
     }
 }
 
-// End - [cargascol]  uploads
+// End - [cargascol]
 
 app.get('/ver-word', (req, res) => {
     // Aquí usas la URL completa, que incluye el protocolo y el dominio (puede ser http://localhost:3000 o el dominio de producción)
@@ -1746,7 +2042,6 @@ app.get('/ver-word', (req, res) => {
     const archivoWord = `../uploads/poder.docx`;
     res.render('ver-word', { archivoWord });  // Pasar la variable 'archivoWord' al template EJS
 });
-
 
 app.get('/reloj', (req, res) => {
     //    const ruta = 'emp4';
@@ -1835,8 +2130,8 @@ try {
 }
 });
     
-  app.get('/ver-pdf', (req, res) => {
-    //    const ruta = 'emp4';
+app.get('/ver-pdf', (req, res) => {
+//    const ruta = 'emp4';
 //    const archivo = 'poder_18401.pdf';
     const ruta = req.session.nomid;
     const archivo = `PODERASM_${req.session.numprop}.pdf`;
@@ -1910,6 +2205,33 @@ app.post('/valreg', async (req, res) => {
     }
 });
 
+app.post('/valregTOT', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        // Llamada al procedimiento almacenado
+        await connection.execute('CALL SP_validarTOTALES()'); // Reemplaza 'SP_Validar' con tu nombre real de SP
+
+        // Recuperamos los datos de la tabla tbl_valida
+        const [rows] = await connection.execute('SELECT * FROM tbl_validaTOT');
+
+        await connection.commit();
+
+        // Enviar el resultado de la tabla junto con el mensaje de éxito
+        res.json({
+            status: 'success',
+            title: 'Registro Exitoso',
+            message: '¡Registrado correctamente!',
+            data: rows // Enviamos los datos de la tabla
+        });
+    } catch (error) {
+        console.error('Error saving data:', error);
+        await connection.rollback();
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
 
 app.post('/valsecuen', async (req, res) => {
     const connection = await pool.getConnection();
@@ -1939,3 +2261,5 @@ app.listen(PORT, () => {
 });
 
 /// CERRAR CONEXIONES :  connection.release(); //
+
+

@@ -27,6 +27,9 @@
 <%- include('partials/navigation') %>  
 
 <div class="content">
+    <a href="/resultados" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+    <br><br>
+
     <h2 id="textoPregunta" style="color: blue; text-align: center;"></h2>
 
     <div class="register-formIzq1"> 
@@ -40,8 +43,6 @@
 
     <button id="download-pdf" class="btn btn-primary" hidden>Generar PDF</button> <!-- Botón para generar PDF -->
 
-    <br><br>
-    <a href="/resultados" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
 </div>    
 
 <script>
@@ -59,7 +60,7 @@
     const dataPercentage = dataValues.map(value => ((value / total) * 100).toFixed(2));  // Porcentajes
 
     // Mostrar la suma de los votos en el HTML
-    document.getElementById('sumaVotos').textContent = `Suma total de votos: ${total}`;
+    document.getElementById('sumaVotos').innerHTML = `Total de votos (<span style="color: red;">Primeros 10</span>): ${total}`;
 
     const vibrantColors = [
         'rgba(255, 99, 132, 0.6)',
@@ -105,6 +106,7 @@
         options: {
             aspectRatio: 1.5,
             responsive: true,
+            indexAxis: 'y',  // Esto invierte los ejes (hace que el eje X sea vertical y el Y sea horizontal)
             plugins: {
                 legend: {
                     display: false
@@ -114,9 +116,17 @@
                     anchor: 'start',
                     align: 'end',
                     offset: 20,
+                    rotation: 0,  // Ajusta la rotación para que los data labels estén correctamente orientados
+                    maxRotation: 0, // Evita la rotación excesiva
+                    minRotation: 0, // Asegura que no haya rotación para los data labels
+                    font: {
+                        size: 16, // Ajusta el tamaño de la fuente
+                        weight: 'normal',
+                        family: 'Arial'
+                    },
                     formatter: function(value, context) {
                         const percentage = dataPercentage[context.dataIndex];
-                        return `Votos: ${value}\n\n${percentage}%`;
+                        return `Votos: ${value}     ${percentage}%`;
                     }
                 }
             },
@@ -126,23 +136,36 @@
                         display: false
                     },
                     ticks: {
+                        display: false,  // Oculta los valores del eje Y
                         font: {
                             weight: 'bold',
-                            size: 14,
+                            size: 8,
                             color: 'blue'
-                        }
+                        },
+                        // No necesitas rotar las etiquetas del eje X ahora porque es vertical
+                        align: 'center',
+                        maxRotation: 0,
+                        minRotation: 0
                     }
                 },
                 y: {
-                    grid: {
-                        display: false
-                    },
-                    beginAtZero: true
-                }
+                        grid: {
+                            display: false
+                        },
+                        beginAtZero: true,  // Asegura que el gráfico comience desde cero
+                        ticks: {
+                            font: {
+                                weight: 'bold',
+                                size: 14,  // Ajusta el tamaño de las etiquetas en el eje Y
+                                color: 'blue'
+                            },
+                        }
+                    }
             }
         },
         plugins: [ChartDataLabels]
     });
+
 
     // Función para generar el PDF
     document.getElementById('download-pdf').addEventListener('click', function() {

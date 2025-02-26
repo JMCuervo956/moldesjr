@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Asamblea</title>
+    <%- include('partials/head') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <%- include('partials/navigation') %>  
+    <div class="content">
+        <h4 style="text-align: center; color: rgb(214, 10, 20);">Asignar</h4>
+        <br><br>
+        <div class="register-formAncho">
+            <thead>
+            </thead>        
+            <div class="formAncho">
+                <div style="font-size: 20px;"> 
+                    <form id="registerForm" method="POST" action="/disponer">
+                        <th>
+                            <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+                            <!-- Asegúrate de que el botón de envío esté dentro del formulario -->
+                            <input type="submit" class="btn btn-primary btn-sm btnind-hover-effect" value="Asignar">
+                        </th>
+                        <table class="table table-bordered table-hover" >
+                            <thead>
+                                <tr style="font-size: 8px; text-align: center; ">
+                                </tr>                        
+                            </thead>
+                            <tbody>
+                                <% if (data && data.length > 0) { %>
+                                    <% 
+                                    // Crear un conjunto para almacenar respuestas únicas
+                                    let respuestasUnicas = new Set();let textoMostrado = null; // Variable para hacer un seguimiento del texto que ya se mostró
+                                    %>
+                                    <% data.forEach(function(item) { %>
+                                        <% if (textoMostrado !== item.texto) { %>
+                                            <!-- Mostrar el texto solo una vez -->
+                                            <tr>
+                                                <td colspan="2" class="texto-header">
+                                                    <h6 style="display: inline ">ID: </h6><span style="color: blue;"><%= item.texto %></span>
+                                                    <h6 style="display: inline ">Pregunta: </h6><span style="color: blue;"><%= item.texto %></span>
+                                                </td>
+                                            </tr>
+                                            <% textoMostrado = item.texto; %> <!-- Marcar el texto como mostrado -->
+                                        <% } %>
+                                    
+                                        <tr id="item-<%= item.id %>" data-id="<%= item.id %>">
+                                            <!-- Mostrar la respuesta -->
+                                            <td class="tex-hover-effect <%= item.opc === 0 ? 'red-text' : '' %>" style="text-align: center;">
+                                                <%= item.respuesta %> <!-- Mostrar respuesta centrada -->
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                    <% } else { %> 
+                                    <tr>
+                                        <td colspan="3">No hay datos disponibles</td>   
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            document.getElementById('registerForm').addEventListener('submit', async (event) => {
+              event.preventDefault(); // Prevenir el comportamiento por defecto del formulario
+        
+              const formData = new FormData(event.target);
+              const response = await fetch('/disponer', {
+                method: 'POST',
+                body: formData,
+              });
+        
+              const result = await response.json();
+              console.log(result);
+            Swal.fire({
+                        title: result.title || 'Error',
+                        text: result.message || 'Hubo un problema',
+                        icon: result.status,
+                        showConfirmButton: true,
+                        timer: result.status === 'success' ? 2000 : null // Timer solo para éxito
+                    }).then(() => {
+                        if (result.status === 'success') {
+                            window.location.href = '/menuprc';  // Redirigir a la página de resultados
+                        }
+                    });
+        });
+    </script>
+        
+
+    <%- include('partials/footer') %>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
+
+
+

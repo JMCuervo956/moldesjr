@@ -32,7 +32,7 @@
     <% if (rol==='Administrador') { %>
         <%- include('partials/navigat') %>  
     <% } else { %> 
-        <%- include('partials/navigation') %>  
+        <%- include('partials/navigatusr') %>  
     <% } %>
     <br>    
     <div style="display: inline;">
@@ -44,20 +44,19 @@
         </h5>
     </div>    
     <div class="content">
-        <div class="register-formIzq">
+        <div class="register-formIzq1">
                 <div style="display: inline;">
                     <div style="display: inline;">
                         <h5></h5>
-                            <input type="submit" id="btnSeleccion" class="btn-salir" value="Votar">
-                        <br><br>    
+                            <input type="submit" id="btnSeleccion" class="btn-salir" value="Votar" style="font-size: 1rem; padding: 15px 30px; width: 60%; max-width: 300px; margin: 0 auto; display: block;">
+                        <br><br>
                         <h5></h5>
-                            <input type="submit" id="btnresultados" class="btn-salir" value="Resultados">
+                            <input type="submit" id="btnresultados" class="btn-salir" value="Grafico" style="font-size: 1rem; padding: 15px 30px; width: 60%; max-width: 300px; margin: 0 auto; display: block;">
                         <br><br>    
-
                     </div>                    
                 </div>
         </div> 
-    
+<!--     
         <% if (rol!='Administration') { %>
             <div class="register-formIzq">
                 <div>
@@ -101,11 +100,11 @@
                 </div>
             </div>
         <% } %>        
-
-        <div class="register-formIzq">
+-->
+        <div class="register-formIzq1">
             <div style="display: inline;">
                 <h5></h5>
-                <input type="submit" id="btnSalir" class="btn-salir" value="Salir">
+                    <input type="submit" id="btnSalir" class="btn-salirS" value="Salir" style="font-size: 1rem; padding: 15px 30px; width: 60%; max-width: 300px; margin: 0 auto; display: block;">
                 <br><br>    
             </div>
         </div> 
@@ -125,8 +124,21 @@
         });
 
         document.getElementById('btnSalir').addEventListener('click', function() {
-            // Acción para el botón "Salir"
-            window.location.href = '/'; // Redirige a la página de logout o cerrar sesión
+            // Realiza la solicitud GET a /logout para destruir la sesión
+            fetch('/logout', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Si la sesión se cerró correctamente, redirige al usuario
+                if (data.message === 'Sesión cerrada exitosamente') {
+                    // Redirige a la página de inicio o login
+                    window.location.href = '/'; // Puedes cambiar la ruta según tus necesidades
+                }
+            })
+            .catch(error => {
+                console.log('Error al cerrar sesión:', error);
+            });
         });
     </script>
 
