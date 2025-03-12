@@ -1,0 +1,111 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Incluye SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Ocultar flechas en navegadores basados en Webkit (Chrome, Safari, Edge) */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+    
+        /* Ocultar flechas en Firefox */
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+    </style>
+    <%- include('partials/head') %>
+</head>
+<body>
+    <script src="app.js"></script>
+    <%- include('partials/navigation') %>  
+    <div class="content">
+        <h4>Consulta de Usuarios</h4>
+        <div class="register-form30"> 
+            <form id="registerForm" action="/consultausr" method="POST"> 
+                <div class="contenedor__login-register">
+                    <h1></h1>
+                    <input type="text" name="UsuarioNew" class="input-small" placeholder="Propiedad" required autocomplete="off" style="font-size:  16px;"> <!-- v(50) -->
+                    <h1></h1>
+
+                    <div style="display: inline;">
+                        <h5></h5>
+                        <a href="/usuarios" class="btn-cancel">Regresar</a>
+                        <input type="submit" class="btn-save" value="Consultar">
+                    </div>
+                </div>       
+            </form>
+
+            <!-- Contenedor para los detalles del usuario -->
+            <div id="userDetailsContainer"></div>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evitar que el formulario se envíe de forma tradicional
+            const formData = new FormData(this);
+            const response = await fetch('/consultausr', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            const result = await response.json();
+
+            // Limpiar detalles anteriores antes de mostrar los nuevos
+            const detailsContainer = document.getElementById('userDetailsContainer');
+            detailsContainer.innerHTML = '';  // Limpiar el contenido
+
+            if (result.status === 'success') {
+                Swal.fire({
+                    title: result.title || result.message,
+                    text: result.message,
+                    icon: result.status,
+                    showConfirmButton: false,
+                    timer: 500
+                }).then(() => {
+                    if (result.user) {
+                        console.log(result.user);  // Verifica los datos del usuario en la consola
+
+                        // Crear un contenedor para los detalles del usuario
+                        const userDetailsContainer = document.createElement('div');
+                        userDetailsContainer.innerHTML = `
+                            <br>  
+                            <p><strong>Propiedad:</strong> ${result.user.numprop || 'No disponible'}</p>
+                            <p><strong>Usuario:</strong> ${result.user.user || 'No disponible'}</p>
+                            <p><strong>Nombre:</strong> ${result.user.name || 'No disponible'}</p>
+                            <p><strong>Rol:</strong> ${result.user.rol || 'No disponible'}</p>
+                        `;
+                        
+                        // Referencia al contenedor para los detalles del usuario
+                        const detailsContainer = document.getElementById('userDetailsContainer');
+                        detailsContainer.innerHTML = '';  // Limpiar cualquier contenido anterior
+                        detailsContainer.appendChild(userDetailsContainer);  // Agregar los detalles del usuario
+                    }
+                    //window.location.href = '/usuarios'; // Redirigir al usuario si es necesario
+                });
+            } else {
+                Swal.fire({
+                    title: result.title || result.message,
+                    text: result.message,
+                    icon: result.status,
+                    showConfirmButton: true,
+                    timer: 1500
+                });
+            }
+        });
+    </script>
+    <%- include('partials/footer') %>  
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/src/main.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</body>
+</html>

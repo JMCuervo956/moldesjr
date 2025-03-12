@@ -26,14 +26,13 @@
           <th>Primer Apellido</th>
           <th>Segundo Apellido</th>
           <th>Area Apto</th>
-          <th>Area Parqueadero</th>
         </tr>
       </thead>
       <tbody>
       </tbody>
     </table>
     <br><br>
-    <a href="/menuprc" class="btn btn-success btn-sm">Regresar</a>
+    <a href="/cargausuarios" class="btn btn-success btn-sm">Regresar</a>
     <button id="saveButton" class="btn btn-primary btn-sm"> - Importar -</button>
   </div>      
 
@@ -53,7 +52,6 @@
             const nuevaCeldaPA = document.createElement('td');
             const nuevaCeldaSA = document.createElement('td');
             const nuevaCeldaAA = document.createElement('td');
-            const nuevaCeldaAP = document.createElement('td');
 
             nuevaCeldaIP.textContent = celdas[0].trim();
             nuevaCeldaPN.textContent = celdas[1].trim();
@@ -61,7 +59,6 @@
             nuevaCeldaPA.textContent = celdas[3].trim();
             nuevaCeldaSA.textContent = celdas[4].trim();
             nuevaCeldaAA.textContent = celdas[5].trim();
-            nuevaCeldaAP.textContent = celdas[6].trim();
 
             nuevaFila.appendChild(nuevaCeldaIP);
             nuevaFila.appendChild(nuevaCeldaPN);
@@ -69,7 +66,6 @@
             nuevaFila.appendChild(nuevaCeldaPA);
             nuevaFila.appendChild(nuevaCeldaSA);
             nuevaFila.appendChild(nuevaCeldaAA);
-            nuevaFila.appendChild(nuevaCeldaAP);
 
             table.appendChild(nuevaFila);
           }
@@ -108,7 +104,7 @@
           pa: row.cells[3].innerText,
           sa: row.cells[4].innerText,
           ap: row.cells[5].innerText,
-          apq: row.cells[6].innerText
+          apq: row.cells[0].innerText
         };
         data.push(rowData);
       }
@@ -120,6 +116,8 @@
 
       saveTableData2(data).then(response => {
         alert('Datos guardados con éxito: ' + response.message);
+        window.location.href = '/cargausuarios'; // Redirigir al usuario si es necesario
+
       }).catch(error => {
         console.error('Error al guardar los datos:', error);
         alert('Error al guardar los datos');

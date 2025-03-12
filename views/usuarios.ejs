@@ -8,6 +8,13 @@
     <title>Asamblea</title>
     <%- include('partials/head') %>
     <style>
+        table {
+          font-size: 14px; /* Tamaño de fuente más pequeño */
+          line-height: 0.6; /* Reduce el espacio entre líneas */
+          border-collapse: collapse; /* Para evitar doble borde */
+          width: 100%;
+        }
+
         th {
             border: 1px solid rgb(247, 244, 244);
             padding: 8px;
@@ -19,6 +26,9 @@
             margin-top: 10px; /* Espacio superior */
         }
     </style>
+
+
+
 </head>
 
 <body>
@@ -38,6 +48,7 @@
                             <h4>Usuarios</h4>
                             <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
                             <a href="/register" class="btn btn-primary btn-sm btnind-hover-effect">Adicionar</a>
+                            <a href="/consultausr" class="btn btn-info btn-sm btnind-hover-effect">Consulta</a>
                         </th>
                     </thead>        
                 </table>

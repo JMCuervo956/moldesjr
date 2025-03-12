@@ -1024,3 +1024,17 @@ a.disabled {
     height: auto; /* Ajustar altura automáticamente */
     padding: 30px; /* Ajuste del padding */
   }
+
+/* Estilo para organizar los botones */
+.button-container {
+    display: flex;
+    flex-direction: column; /* Organiza los botones verticalmente */
+    flex-wrap: wrap; /* Permite que los botones se ajusten en diferentes filas si no caben */
+    gap: 10px; /* Espacio entre botones */
+    justify-content: center; /* Centra los botones */
+    margin-top: 20px;
+}
+
+.button-container .btn {
+    width: 170px; /* Ancho fijo para los botones */
+}

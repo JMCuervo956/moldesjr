@@ -215,7 +215,6 @@ app.get('/documentos', async(req, res) => {
             const [rows] = await pool.execute("select * from pgtaresp where idprg = ?", [id]);
             res.render('documentos', { id, texto, data: rows, user: userUser, name: userName });
         } else {
-            //res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -227,6 +226,11 @@ app.get('/documentos', async(req, res) => {
 app.get('/valida', (req, res)=>{
         const userUser = req.session.unidad;
         res.render('valida', { userUser });
+    })
+
+app.get('/registros', (req, res)=>{
+        const userUser = req.session.unidad;
+        res.render('registros', { userUser });
     })
     
 app.get('/totales', (req, res)=>{
@@ -252,7 +256,6 @@ app.get('/menuprc', (req, res) => {
         const userUser = req.session.unidad;
         res.render('menuprc', { user, name, rol, userUser });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -261,7 +264,6 @@ app.get('/register', (req, res) => {
     if (req.session.loggedin) {
         res.render('register');
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -271,7 +273,6 @@ app.get('/menuDropdown', (req, res) => {
         const { user, name } = req.session;
         res.render('menuDropdown', { user, name });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -284,7 +285,6 @@ app.get('/preguntas', (req, res)=>{
         const userName = req.session.name;
         res.render('preguntas', { user: userUser, name: userName });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 })
@@ -297,7 +297,6 @@ app.get('/cargas', (req, res)=>{
         const userName = req.session.name;
         res.render('cargas', { user: userUser, name: userName });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 })
@@ -308,7 +307,6 @@ app.get('/cargascol', (req, res)=>{
         const userName = req.session.name;
         res.render('cargascol', { user: userUser, name: userName });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 })
@@ -341,11 +339,9 @@ app.post('/activar', async (req, res) => {
 app.post('/actualizarEstado', async (req, res) => {
     const { id, estado } = req.body;
     const tableName = "preguntas";
-    console.log(id);
     try {
         // Actualiza el estado en la base de datos
         await pool.execute(`UPDATE ${tableName} SET estado = ? WHERE id = ?`, [estado, id]);
-        console.log(estado);
         return res.json({status: 'success' });
     } catch (error) {
         console.error(error);
@@ -391,7 +387,6 @@ app.get('/preguntasopc', (req, res) => {
         const respuesta = req.query.respuesta; // Obtén la respuesta
         res.render('preguntasopc', { id:id, respuesta:respuesta,user: userUser, name: userName });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -437,7 +432,6 @@ app.get('/seleccion', async (req, res) => {
             res.render('seleccion', { data: rows, user: userUser, name: userName });
 
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -447,11 +441,8 @@ app.get('/seleccion', async (req, res) => {
 });
 
 app.post('/seleccion', async(req, res) => {
-    console.log('seleccionar');
     const { id, texto } = req.body; // Recibir los datos enviados desde el cliente
     // Lógica para procesar la pregunta seleccionada
-    console.log(id);
-    console.log(texto);
     const wid = id;
     const tableName = "preguntas";
     await pool.execute(`UPDATE ${tableName} SET estado = 0`);
@@ -464,7 +455,6 @@ app.post('/seleccion', async(req, res) => {
 });
     
 app.post('/seleccion2', async(req, res) => {
-    console.log('seleccionar dos');
     // Lógica para procesar la pregunta seleccionada
     const tableName = "preguntas";
     await pool.execute(`UPDATE ${tableName} SET estado = 0`);
@@ -494,7 +484,6 @@ app.get('/opc1', async (req, res) => {
             const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.estado=1");
             res.render('opc1', { preguntas: rows, user: userUser, name: userName });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -510,7 +499,6 @@ app.get('/respuesta', async (req, res) => {
             const [rows] = await pool.execute("select a.id as idp,a.texto,a.estado,a.activo as prgact,b.id,b.respuesta,b.estado from preguntas a inner join pgtaresp b on a.id=b.idprg where a.disponer=1 and a.estado=1 and a.activo=0");
             res.render('respuesta', { preguntas: rows, user: userUser, name: userName });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -635,7 +623,6 @@ app.get('/ingpreguntas', async (req, res) => {
             res.render('ingpreguntas', { data: rows, user: userUser, name: userName });
 
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -656,7 +643,6 @@ app.get('/usuarios', async (req, res) => {
             res.render('usuarios', { data: rows, user: userUser, name: userName });
 
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -664,6 +650,44 @@ app.get('/usuarios', async (req, res) => {
                 res.status(500).send('Error conectando a la base de datos.?????');
             }
     });
+
+// Consulta Usuarios
+
+app.get('/consultausr', (req, res) => {
+    if (req.session.loggedin) {
+        res.render('consultausr');
+    } else {
+        res.redirect('/');
+    }
+});
+
+app.post('/consultausr', async (req, res) => {
+    try {
+        console.log('consulta usuarios');
+        console.log(req.body);
+        const { UsuarioNew } = req.body;
+        if (!UsuarioNew) {
+            return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios' });
+        }
+
+        const [rows] = await pool.execute('SELECT * FROM users WHERE numprop = ?', [UsuarioNew]);
+        console.log(rows);
+        if (rows.length > 0) {
+            // Usuario encontrado, enviar los datos
+            return res.json({
+                status: 'success',
+                message: 'Usuario encontrado',
+                user: rows[0] // Puedes enviar el primer resultado (o todos si es necesario)
+            });            
+
+        }
+        res.json({ status: 'success', message: '¡Usuario no existe!' });
+    } catch (error) {
+
+        console.error('Error en consulta de usuario:', error);
+        res.status(500).json({ status: 'error', message: 'Error en el servidor' });
+    }
+});
 
 // Usuarios -Resetear CONTRASEÑAS
 
@@ -677,7 +701,6 @@ app.get('/usuariosreset', async (req, res) => {
             res.render('usuariosreset', { data: rows, user: userUser, name: userName });
 
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -698,7 +721,6 @@ app.get('/resultados', async (req, res) => {
             res.render('resultados', { data: rows, user: userUser, name: userName });
 
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -724,7 +746,6 @@ app.get('/maeprop', async (req, res) => {
         if (req.session.loggedin) {
             res.render('maeprop', { data: rows });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -740,7 +761,6 @@ app.get('/maepropadi', (req, res) => {
         const { user, name } = req.session;
         res.render('maepropadi', { user, name });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -777,7 +797,6 @@ app.get('/maepropeli', (req, res) => {
     if (identificador) {
         return res.json({ status: 'success', message: '¡Tipo Propiedad ok!' });
     } else {
-        console.log('error')
         return res.json({ status: 'error', message: '¡Codigo Unidad Incorrecta!' });
     }
 });
@@ -868,7 +887,6 @@ app.get('/poderes', async (req, res) => {
         if (req.session.loggedin) {
             res.render('poderes', { data: rows });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -884,7 +902,6 @@ app.get('/poderadi', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('poderadi', { user, name });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -1018,7 +1035,6 @@ app.get('/poderesusu', async (req, res) => {
         if (req.session.loggedin) {
             res.render('poderesusu', { data: rows });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -1032,7 +1048,6 @@ app.get('/poderadiusu', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('poderadiusu', { user, name });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -1042,7 +1057,6 @@ app.get('/cargarpoder', (req, res) => {
         const { user, name } = req.session;                 // revisar
         res.render('cargarpoder', { user, name });
     } else {
-//        res.send('Por favor, inicia sesión primero.');
         res.redirect('/');
     }
 });
@@ -1152,19 +1166,15 @@ app.post('/podereliusu', async (req, res) => {
 
         // Ruta base del servidor donde están almacenados los archivos
         const rutaBase = path.join(__dirname, '../uploads');  // Ruta base relativa para Express
-        console.log(rutaBase);
         // Asumimos que 'rows' contiene los datos obtenidos de la base de datos
         const rutaArchivoRelativa = rows.length > 0 ? rows[0].ruta : null;
         
         if (rutaArchivoRelativa) {
           // Combina la ruta base con la ruta relativa del archivo
           const rutaCompleta = path.join(rutaBase, rutaArchivoRelativa.replace(/\\/g, path.sep));
-          console.log('borrar');  
-          console.log(rutaCompleta);
           try {
             // Elimina el archivo físico
             await fs.promises.unlink(rutaCompleta);
-            console.log('Archivo eliminado con éxito');
           } catch (err) {
             console.error('Error al borrar el archivo:', err);
           }
@@ -1229,7 +1239,6 @@ app.get('/bar', async (req, res) => {
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -1264,7 +1273,6 @@ app.get('/bar_resul', async (req, res) => {
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -1296,7 +1304,6 @@ app.get('/pie', async (req, res)=>{
                 dataValues: dataValues, // No es necesario usar JSON.stringify aquí
             });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -1317,7 +1324,6 @@ app.get('/opciones', async(req, res) => {
             const [rows] = await pool.execute("select * from pgtaresp where idprg = ?", [id]);
             res.render('opciones', { id, texto, data: rows, user: userUser, name: userName });
         } else {
-//            res.send('Por favor, inicia sesión primero.');
             res.redirect('/');
         }
     } catch (error) {
@@ -1328,12 +1334,89 @@ app.get('/opciones', async(req, res) => {
 
 // crgas CSV
 
+app.get('/cargausuarios', (req, res) => {
+    const id = req.query.id;
+    const texto = req.query.texto;
+    res.render('cargausuarios', { id, texto });
+});
+
 app.get('/cargascsv', (req, res) => {
     const id = req.query.id;
     const texto = req.query.texto;
     res.render('cargascsv', { id, texto });
 });
 
+app.get('/cargascsver', async (req, res) => {
+    try {
+        const tableName = "my_Tablecol2";
+        const [rows] = await pool.execute(`select * from ${tableName}`);
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const recordCount = rows.length;  // Contamos los registros
+            res.render('cargascsver', { data: rows, user: userUser, name: userName, recordCount: recordCount });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+    });
+
+app.get('/cargascsdpl', async (req, res) => {
+    try {
+        const tableName = "my_tableCol2_duplicados";
+        const [rows] = await pool.execute(`select * from ${tableName} order by numprop`);
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const recordCount = rows.length;  // Contamos los registros
+            res.render('cargascsdpl', { data: rows, user: userUser, name: userName, recordCount: recordCount });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+    });
+
+app.get('/cargascsadi', async (req, res) => {
+    try {
+        const tableName = "my_tableCol2";
+        const [rows] = await pool.execute(`select * from ${tableName} order by numprop`);
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const recordCount = rows.length;  // Contamos los registros
+            res.render('cargascsadi', { data: rows, user: userUser, name: userName, recordCount: recordCount });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+                console.error('Error conectando a la base de datos....????:', error);
+                res.status(500).send('Error conectando a la base de datos.?????');
+            }
+    });
+
+app.post('/cargascsadi', async (req, res) => {
+    try {
+        console.log('adicionar cargue');
+        await pool.execute(`
+            INSERT IGNORE INTO users (rz, id_rz, user, name, pass, numprop, coeficiente, rol)
+            SELECT rz, id_rz, user, name, pass, numprop, coeficiente, rol
+            FROM \`my_tableCol2\`
+        `);
+        res.json({ status: 'success', message: '¡registrados!' });
+    } catch (error) {
+        console.error('Error en registro:', error);
+        res.status(500).json({ status: 'error', message: 'Error en el servidor' });
+    }
+});
 
 // [login] - Autenticacion
 
@@ -1344,7 +1427,7 @@ app.post('/auth', async (req, res) => {
     // Valida Unidad
     const tableProp = 'tbl_propiedad';
     if (!unidad) {
-        return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios...AUTH' });
+        return res.status(400).json({ status: 'error', message: 'Todos los campos son obligatorios' });
     }
     
     // Hashear el nit ingresado
@@ -1381,13 +1464,12 @@ app.post('/auth', async (req, res) => {
     req.session.numprop = userRecord.numprop;
 
     // Verifica si ya hay una sesión activa
-    if (req.session.username) {
-        return res.status(400).json({ message: 'Ya estás logueado en otro dispositivo' });
-    }
+    //if (req.session.username) {
+    //    return res.status(400).json({ message: 'Ya estás logueado' });
+    //}
 
     // Si no, guarda la sesión
     req.session.username = user;
-
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
 });
 
@@ -1407,7 +1489,6 @@ export const storagepdf = multer.diskStorage({
         const numprop = req.body.Inumprop; // Usar el valor del formulario
         const Anumprop = req.body.Ipropoder; // Usar el valor del formulario
         const newFileName = `PODER_${Anumprop}_${numprop}${path.extname(file.originalname)}`;
-        console.log(newFileName);
         cb(null, newFileName); // Establecer el nombre del archivo
     }
 });
@@ -1447,7 +1528,7 @@ app.post('/uploadpdf', uploadpdf.single('file'), async (req, res) => {
   
 // End - [cargapoder] - Configuración de Multer - Para Cargar Archivos 
 
-// [preguntas] 
+// [preguntas]
 
 app.post('/preguntasreg', async (req, res) => {
     try {
@@ -1506,7 +1587,6 @@ app.post('/preguntasmod', async (req, res) => {
 
 app.post('/preguntasact', async (req, res) => {
     try {
-        console.log(req.body);
         const ids = req.body.ids;
 //        const respuesta = req.body.respuesta;
         const tableName = "preguntas";
@@ -1515,13 +1595,11 @@ app.post('/preguntasact', async (req, res) => {
         const respuesta = req.body.respuesta;
         // Convertir la respuesta en 1 o 0
         const valorActivo = respuesta === 'Sí' ? 0 : 1;
-        console.log(valorActivo);        
         // Actualizar la base de datos con el valor correspondiente
         await pool.execute(`UPDATE ${tableName} SET activo = ? WHERE id = ?`, [valorActivo, ids]);
 
         // Si quieres hacer el otro update (por ejemplo, para desactivar la otra respuesta), lo harías de esta forma:
         const valorInactivo = valorActivo === 1 ? 0 : 1;
-        console.log(valorInactivo);        
 //        await pool.execute(`UPDATE ${tableName} SET activo = ? WHERE respuesta = ? and id = ?`, [valorInactivo, respuesta, ids]);
 
         res.json({
@@ -1672,7 +1750,7 @@ app.post('/procesarseleccion', async (req, res) => {
         //const pgtas = req.body.pgtas;
         // Log para depuración
 
-        // SELECT      
+        // SELECT
         /*        
         //const tablePtas = "respusers";
         //const [rows] = await pool.execute(`SELECT respuesta FROM ${tablePtas} WHERE user = ? and idprg = ?`, [userUser, id]);
@@ -1691,7 +1769,7 @@ app.post('/procesarseleccion', async (req, res) => {
             const estado = 0; // Ejemplo de estado
             await pool.execute(`DELETE FROM ${tableName} WHERE user = ? AND idprg = ?`, [userUser, id]);
             await pool.execute(`INSERT INTO ${tableName} (user, idprg, pregunta, idpres, respuesta) VALUES (?, ?, ?, ?, ?)`, [userUser, id, texto, idp, respuesta]);
-            return res.json({   
+            return res.json({
                 status: 'success',
                 title: 'Voto Exitoso.',
                 message: '¡Registro Exitoso! BD'
@@ -1758,7 +1836,7 @@ app.post('/procesar-seleccion', async (req, res) => {
                     await pool.execute('UPDATE preguntas SET activo = ? WHERE id = ?', [selectActivo, id]);
                 }
             } else {
-                console.log('Error update procesar-seleccion');
+                //console.log('Error update procesar-seleccion');
             }
 
             return res.json({
@@ -1774,9 +1852,8 @@ app.post('/procesar-seleccion', async (req, res) => {
             });
         }
     });
-    
-    
-// [moduser] - modifica usuarios
+
+    // [moduser] - modifica usuarios
 
 app.post('/usuariomod', async (req, res) => {
     try {
@@ -1970,24 +2047,28 @@ async function processCSV(filePath) {
 // [cargascol] - Ruta para guardar datos en la tabla
 
 app.post('/save-table-data2', async (req, res) => {
-    const data = req.body;
+   const data = req.body;
     if (!Array.isArray(data) || data.length === 0) {
         return res.status(400).json({ message: 'No data provided' });
     }
 
     const connection = await pool.getConnection();
     try {
+        // Desactivar SQL_SAFE_UPDATES para esta sesión
+        await connection.execute('SET SQL_SAFE_UPDATES = 0;');
+
         await connection.beginTransaction();
         await connection.execute('DELETE FROM my_tablecol2');
 
         for (const { ip, pn, sn, pa, sa, ap, apq } of data) {
             //const user = `${pn.charAt(0)}${sa}`;
-            const user = `${pn.charAt(0).toUpperCase()}${pa}`;
+            //const user = `${pn.charAt(0).toUpperCase()}${pa}`;
+            const user = apq;
             //const name = `${pn}-${sn}-${pa}-${sa}`;
             const name = pn + ' ' + sn + ' ' + pa + ' ' + sa
             const rol = `Usuario`;
-            if (ip && name && ap && apq && rol) {
-                await connection.execute('INSERT INTO my_tablecol2 (user, name, rol) VALUES (?, ?, ?)', [user, name, rol]);
+            if (ip && name &&  pn && ap && pa && apq && rol) {
+                await connection.execute('INSERT INTO my_tablecol2 (user, name, rol, numprop, coeficiente) VALUES (?, ?, ?, ?, ?)', [user, name, rol, apq, ap]);
             }
             // Llamar a la función para ejecutar el proceso
         }
@@ -2019,6 +2100,9 @@ async function updatePasswords() {
             //console.log('No hay usuarios para actualizar.');
             return; // Salir si no hay registros
         }
+        // Desactivar SQL_SAFE_UPDATES para esta sesión
+        await pool.execute('SET SQL_SAFE_UPDATES = 0;');
+
         for (const row of rows) {
             try {
                 const transformedPassword = `${row.user.charAt(0).toUpperCase()}${row.user.slice(1)}24%`;
@@ -2073,14 +2157,14 @@ app.get('/ver_poder_usu', (req, res) => {
     const archivoPDF = `/uploads/${ruta}/${archivo}`;
     //const archivoPDF = path.join(__dirname, 'uploads', ruta, archivo);
 /*
-    console.log(archivoPDF); // Imprimirá la ruta completa en el servidor
-    console.log('inicia');
-    console.log(archivoPDF);
-    console.log('Id:', id);
-    console.log('Número de propiedad:', numprop);
-    console.log('Nombre:', name);
-    console.log('Propietario:', propoder);
-    console.log('Nombre propietario:', proname);    
+    //console.log(archivoPDF); // Imprimirá la ruta completa en el servidor
+    //console.log('inicia');
+    //console.log(archivoPDF);
+    //console.log('Id:', id);
+    //console.log('Número de propiedad:', numprop);
+    //console.log('Nombre:', name);
+    //console.log('Propietario:', propoder);
+    //console.log('Nombre propietario:', proname);    
  */
     res.render('ver_poder_usu', { pdfUrl: archivoPDF, archivoExistente: true });
 
@@ -2117,7 +2201,6 @@ try {
 
     // Ruta base del servidor donde están almacenados los archivos
     const rutaBase = path.join(__dirname, '../uploads');  // Ruta base relativa para Express
-    console.log(rutaBase);
     // Asumimos que 'rows' contiene los datos obtenidos de la base de datos
     const rutaArchivoRelativa = rows.length > 0 ? rows[0].ruta : null;
 
@@ -2129,7 +2212,7 @@ try {
     });
 }
 });
-    
+
 app.get('/ver-pdf', (req, res) => {
 //    const ruta = 'emp4';
 //    const archivo = 'poder_18401.pdf';
@@ -2138,7 +2221,7 @@ app.get('/ver-pdf', (req, res) => {
     const archivoPDF = `/uploads/${ruta}/${archivo}`;
     res.render('ver-pdf', { pdfUrl: archivoPDF });
     });
-    
+
 // Cargar PDF
 app.get('/cargarpdf', (req, res) => {
     const nomid = req.session.nomid;
@@ -2232,6 +2315,32 @@ app.post('/valregTOT', async (req, res) => {
     }
 });
 
+app.post('/delreg', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        // Llamada al procedimiento almacenado
+        await connection.execute('CALL SP_borrar()'); // Reemplaza 'SP_Validar' con tu nombre real de SP
+
+        // Recuperamos los datos de la tabla tbl_valida
+        const [rows] = await connection.execute('SELECT * FROM tbl_valida order by id_activo_numerico desc');
+
+        await connection.commit();
+
+        // Enviar el resultado de la tabla junto con el mensaje de éxito
+        res.json({
+            status: 'success',
+            title: 'Registro Exitoso',
+            message: '¡Registrado correctamente!',
+            data: rows // Enviamos los datos de la tabla
+        });
+    } catch (error) {
+        console.error('Error saving data:', error);
+        await connection.rollback();
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
 
 app.post('/valsecuen', async (req, res) => {
     const connection = await pool.getConnection();
