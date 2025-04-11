@@ -5,6 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/style.css">
     <title>Asamblea</title>
+
+    <style>        
+
+        .logo {
+            width: 70px;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .activities-title {
+            font-size: 16px;
+            margin: 0; /* Elimina espacio extra de h3 */
+        }
+
+
+        #activities {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center; /* Centra verticalmente */
+            justify-content: center;  /* Centra horizontalmente */
+            gap: 10px; /* Espacio entre logo y texto */
+            padding: 10px 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(185, 5, 5, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .activities-list {
+            font-size: 14px;
+            padding-left: 0;
+            margin: 0;
+            list-style-type: none;
+        }
+
+        .exit-button {
+            margin-left: auto; /* Esto empuja el botón a la derecha */
+            padding: 6px 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .exit-button:hover {
+            background-color: #c0392b;
+        }
+    </style>        
+
     <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
 </head>
 <body>
