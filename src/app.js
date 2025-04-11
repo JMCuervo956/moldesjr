@@ -55,6 +55,10 @@ cargarPdf('uploads/poder.pdf').catch(console.error);
 const __filename = fileURLToPath(import.meta.url);		
 const __dirname = path.dirname(__filename);		
 const app = express();		
+//app.use('/static', express.static('public'));
+//import logo from './public/images/logo.png';
+
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); 
@@ -155,6 +159,7 @@ app.get('/', async (req, res) => {
 
 // Ruta para descargar archivos
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/static', express.static(path.join(__dirname, '../public')));
 
 app.get('/origen/:folder/:filename', (req, res) => {
     const folder = req.params.folder;
