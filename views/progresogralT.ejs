@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mostrar Verticalmente</title>
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css" type="text/css">
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js" type="text/javascript"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap JS (requiere Popper.js también) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+   
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            zoom: 1; /* 80% del tamaño original - tamaño texto GLOBAL*/
+        }
+
+        #gantt_here {
+            width: 100%;
+            height: 600px;  /* ALTURA GANTT tamaño texto GLOBAL*/
+            margin-top: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            background-color: #ffffff;
+            border-radius: 8px;
+        }
+
+        #gantt_here {
+            width: 100%;
+            height: 540px;      /* ↓ Cambiá este valor: más chico = menos espacio visible */
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid #ccc;  /* Opcional para ver los límites del cuadro */
+        }
+
+        .activity-item {
+            font-size: 11px;
+            padding: 0px;
+            margin: 0px 0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        .activity-item_COPIA {
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px 0;
+            border: 2px solid #d84b13;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background-color: #f0f8ff;
+        }
+
+        /* Estilos para el modal */
+        #addTaskModal {
+            display: none; /* Inicialmente oculto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro para el modal */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #addTaskForm label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        #addTaskForm input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fafafa;
+            transition: border-color 0.3s ease;
+        }
+
+        #addTaskForm input:focus {
+            border-color: #4caf50;
+            outline: none;
+        }
+
+        #addTaskForm button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            color: white;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #addTaskForm button:hover {
+            background-color: #45a049;
+        }
+
+        /* Clase CSS para cambiar el color del domingo */
+        .sunday {
+            background-color: #ffcccc;  /* Color de fondo rojo claro */
+            color: #ff0000;  /* Color del texto (rojo) */
+        }
+        
+        /* Cambio de color de los meses */
+        .month-cell {
+            background-color: #ffffff; /* Color de fondo del mes */
+            color: #1506f3; /* Color del texto (verde) */
+            font-weight: bold;  /* Poner el texto en negrita */
+            text-align: center;
+        }
+
+        .gantt_task_cell {
+        border-color: #b1b4b3 !important; /* Cambio el color de las celdas de las tareas a rojo */
+        }
+
+        .bold-label {
+            font-weight: bold;
+        }
+
+        .gantt_grid_head_cell {
+            font-size: 16px !important; /* Ajusta el valor según lo pequeño que lo necesites  tamaño texto Inicio DP*/
+        }
+
+        /* Cambia el tamaño del texto de las filas del grid  tamaño texto Inicio DP texto*/
+        .gantt_grid_data .gantt_cell {
+            font-size: 12px !important;
+        }        
+
+        /* Solo afecta la columna de texto (Actividad) */
+        .gantt_grid_data .gantt_cell[data-column-name="text"] {
+            font-size: 10px !important;
+        }
+
+        /* tamaño texto model de datos*/ 
+        .gantt_tooltip {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            max-width: 600px;
+            word-wrap: break-word;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* tamaño texto model de datos*/ 
+        .gantt_tooltip b {
+            font-size: 16px; /* Aumenta el tamaño del texto de la tarea */
+            font-weight: bold;
+            color: #f5a623; /* Puedes cambiar el color del texto de la tarea */
+        }
+
+        .gantt_tooltip br {
+            margin-bottom: 5px;
+        }
+
+        .logo {
+            width: 70px;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .activities-title {
+            font-size: 16px;
+            margin: 0; /* Elimina espacio extra de h3 */
+        }
+
+
+        #activities {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        #activities {
+            display: flex;
+            align-items: center; /* Centra verticalmente */
+            gap: 30px; /* Espacio entre logo y texto */
+            padding: 10px 20px;
+        }
+
+        .activities-list {
+            font-size: 14px;
+            padding-left: 0;
+            margin: 0;
+            list-style-type: none;
+        }
+
+        .exit-button {
+            margin-left: auto; /* Esto empuja el botón a la derecha */
+            padding: 6px 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .exit-button:hover {
+            background-color: #c0392b;
+        }
+
+            /* Estilo básico para el tooltip manual */
+        #customTooltip {
+            position: absolute;
+            display: none;
+            background-color: #333;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            max-width: 720px;
+            white-space: normal; /* Asegura que el texto haga salto de línea */
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        #customTooltip b {
+            font-size: 14px;
+            color: #f5a623;
+        }
+
+    /* Barra de progreso (avance real) */
+    .gantt_task_progress {
+        background-color: #3d0868 !important; /* Verde para progreso */
+        opacity: 0.8;
+    }
+
+    /* Barra completa de la tarea (base gris) */
+    .gantt_task_bg {
+        background-color: #D3D3D3 !important; /* Gris claro */
+    }
+
+    /* Fuerza barra de fondo gris para todas las tareas */
+    .gantt_task_line {
+        background-color: #D3D3D3 !important; /* Gris claro */
+        border: none !important;
+    }
+
+    /* Barra de progreso: verde */
+    .gantt_task_progress {
+        background-color: #4CAF50 !important;
+        opacity: 0.8;
+    }
+    
+</style>        
+
+</head>
+
+<body>
+    <div id="customTooltip" class="gantt_tooltip"></div>
+    
+    <!-- 1 logo -->
+    <div id="activities">
+        <a href="https://moldesjr.com/" target="_blank">
+            <img src="/static/images/logo.png" alt="Logo" class="logo">
+        </a>
+        <h3 class="activities-title">MJR - Moldes para concreto</h3>
+    </div>
+   
+    <!-- 2 Regreso -->
+    <div class="d-flex justify-content-between align-items-center" style="margin: 4px 0; padding: 4px 0;">
+        <div class="ms-1">
+            <a href="/opciones" class="btn btn-success btn-sm" style="padding: 2px 8px; font-size: 0.85rem;">Regresar</a>
+        </div>
+        <div style="width: 100%; padding-left: 20px; text-align: left;">
+            <h3 class="mb-2 fw-semibold" style="font-size: 1.5rem; color: #2c3e50;">
+                Centros de Costo
+            </h3>
+        </div>
+    </div>
+
+    <div id="gantt_here"></div>
+
+    <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
+    <div style="text-align: center; margin-top: 20px;" id="addTaskButtonContainer"></div>
+
+    <script>
+        function copiarDatosFormulario() {
+            document.getElementById('maxTaskIdInput').value = maxTaskId;
+            document.getElementById('maxTaskCodeInput').value = maxTaskCode;
+            return true; // Permite el envío del formulario
+        }
+    </script>
+
+    <script>
+        const otrabajo = "<%= otrabajo %>";
+    </script>
+
+    <!-- GANTT PROCESO -->
+    <script>
+        const festivosColombia = {
+          '2025-01-01':'Año Nuevo','2025-01-06':'Reyes Magos','2025-03-24':'San José',
+          '2025-04-17':'Jueves Santo','2025-04-18':'Viernes Santo','2025-05-01':'Día del Trabajo',
+          '2025-05-26':'Ascensión del Señor','2025-06-23':'Corpus Christi',
+          '2025-06-30':'Sagrado Corazón',
+          '2025-07-20':'Independencia','2025-08-07':'Batalla de Boyacá','2025-08-15':'La Asunción',
+          '2025-10-13':'Día de la Raza','2025-11-03':'Todos los Santos','2025-11-17':'Independencia de Cartagena',
+          '2025-12-08':'Inmaculada Concepción','2025-12-25':'Navidad'
+        };
+
+        var userIdAct = 1;  // Cambia esto a 0 para simular el caso donde el usuario no tiene permisos para modificar.
+
+        gantt.config.xml_date = "%Y-%m-%d %H:%i";
+        gantt.config.drag_move = true;
+        gantt.config.drag_resize = true;
+        gantt.config.drag_links = true;
+        gantt.config.show_progress = true; // Habilita barra de progreso
+
+        gantt.templates.tooltip_text = function(start, end, task) {
+            let adjustedEndDate = new Date(task.end_date);
+            adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
+
+            return `
+                <b>Tarea:</b> ${task.task} días<br>
+                <b>${task.text}</b><br>
+                <b>Inicio:</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
+                <b>Finaliza:</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
+                <b>Duración:</b> ${task.duration} días<br>
+            `;
+        };
+
+        gantt.config.columns = [
+            {
+                label: "<b>Id</b>",
+                align: "center",
+                width: 60,
+                template: function (task) {
+                    const index = gantt.getTaskIndex(task.id);
+                    if (index === 0) {
+                        return task.task;
+                    }
+                    const prevTask = gantt.getTaskByIndex(index - 1);
+                    if (prevTask && prevTask.task === task.task) {
+                        return "";
+                    }
+                    return task.task;
+                }
+            },
+/*
+            {
+                name: "start_date", label: "<b>Inicio</b>", align: "left", width: 100,
+                template: function(task) {
+                    return `<span style="color: #0000ff; font-weight: bold;">${gantt.date.date_to_str("%d-%m-%Y")(task.start_date)}</span>`;
+                }
+            },
+            {
+                name: "end_date",
+                label: "<b>Entrega</b>",
+                align: "left",
+                width: 100,
+                template: function(task) {
+                    let fechaEntrega = new Date(task.end_date);
+                    fechaEntrega.setDate(fechaEntrega.getDate() - 1);  
+                    return `<span style="color: #0000ff; font-weight: bold;">${gantt.date.date_to_str("%d-%m-%Y")(fechaEntrega)}</span>`;
+                }
+            },
+            {
+                name: "fin_date",
+                label: "<b>Finalizado</b>",
+                align: "left",
+                width: 100,
+                template: function(task) {
+                    console.log("task en columna fin_date:", task);
+                    if (!task.fin_date) return "";  // si no hay fecha, no mostrar nada
+
+                    const fechaEntrega = new Date(task.fin_date);
+                    if (isNaN(fechaEntrega.getTime())) return "";  // si es inválida, no mostrar nada
+
+                    fechaEntrega.setDate(fechaEntrega.getDate() - 1);
+                    return `<span style="color: #0000ff; font-weight: bold;">${gantt.date.date_to_str("%d-%m-%Y")(fechaEntrega)}</span>`;
+                }
+                },
+  */
+                {
+                    name: "text",
+                    label: "<b>Actividad</b>",
+                    align: "left",
+                    width: 100,
+                    template: function(task) {
+                        return `<span style="font-size: 8px;">${task.text}</span>`;
+                    }
+                },
+            { name: "duration", label: "<b>D</b>", align: "center", width: 30 },
+        ];
+
+        gantt.locale = {
+            date: {
+                month_full: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+                month_short: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+                day_full: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
+                day_short: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+            }
+        };
+
+        gantt.config.language = "es";
+
+        gantt.plugins({ tooltip: false });
+
+        gantt.attachEvent("onMouseMove", function (id, e) {
+            const target = e.target;
+            const cell = target.closest(".gantt_cell");
+
+            if (cell && cell.getAttribute("data-column-name") === "text") {
+                const task = gantt.getTask(id);
+                if (task) {
+                    gantt.tooltip.show(e.target, task.text);
+                }
+            } else {
+                gantt.tooltip.hide();
+            }
+        });
+
+        let currentMonth = null;
+        const monthColors = ['#C00000', '#002060', '#C00000', '#002060', '#C00000', '#002060', '#C00000', '#002060', '#C00000', '#002060', '#C00000', '#002060'];
+
+        gantt.templates.date_scale = function(date) {
+            const options = { day: 'numeric', month: 'short' };
+            const formattedDate = new Date(date).toLocaleDateString('es-ES', options);
+            const monthIndex = new Date(date).getMonth();
+            const fechasfes = ['16 feb','17 feb','23 feb','2 mar','9 mar','16 mar','23 mar','30 mar','6 apr','13 apr','17 apr','18 apr','19 apr','20 apr'];
+
+            const formattedDate2 = new Date(date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+            const fechasFormateadas = fechasfes.map(fecha => new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }));
+
+            let monthStyle2;
+            if (fechasFormateadas.includes(formattedDate2)) {
+                monthStyle2 = `color: red; font-weight: bold;`;
+            } else {
+                monthStyle2 = `background-color: ${monthColors[monthIndex]}; color: white; font-weight: bold;`;
+            }
+
+            return `<span class="month-cell" style="font-size: 12px; ${monthStyle2}">${formattedDate}</span>`;
+        };
+
+        gantt.config.scale_height = 100;
+        gantt.config.row_height = 25;
+        gantt.config.task_height = 50;
+
+        gantt.config.subscales = [
+            {
+                unit: "year",
+                step: 1,
+                date: function (date) {
+                    const options = { year: 'numeric' };
+                    const formattedDate = new Date(date).toLocaleDateString('es-ES', options);
+                    return `<span style="font-size: 24px; color: #333333; font-weight: bold; text-align: left;">${formattedDate}</span>`;
+                },
+            },
+            {
+                unit: "day",
+                date: function (date) {
+                    const options = { weekday: 'short' };
+                    let dayName = new Date(date).toLocaleDateString('es-ES', options).toLowerCase();
+                    let dayNameUpper = dayName.toUpperCase();
+
+                    // Formatear la fecha en formato 'YYYY-MM-DD' para buscar en el objeto
+                    const yyyy = date.getFullYear();
+                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                    const dd = String(date.getDate()).padStart(2, '0');
+                    const fechaStr = `${yyyy}-${mm}-${dd}`;
+
+                    // Verificar si es domingo o festivo
+                    const esDomingo = (dayName === 'dom');
+                    const esFestivo = festivosColombia.hasOwnProperty(fechaStr);
+
+                    if (esDomingo || esFestivo) {
+                        // Rojo para domingo o festivos
+                        return `<span style="color: red; font-weight: bold; font-size: 14px;">${dayNameUpper}</span>`;
+                    } else {
+                        // Azul oscuro para otros días
+                        return `<span style="color: #002060; font-weight: normal; font-size: 12px;">${dayNameUpper}</span>`;
+                    }
+                },
+                align: "center"
+            },
+        ];
+
+        let maxTaskId = 0;
+        let maxTaskCode = 0;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const idot = urlParams.get('idot');
+
+        async function loadTasks() {
+            try {
+                const response = await fetch('/tareasg', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idot })
+                });
+
+                const data = await response.json();
+                console.log("Datos recibidos:", data);
+                if (data && data.tasks && data.tasks.length > 0) {
+                    maxTaskId = Math.max(...data.tasks.map(task => task.id));
+                    maxTaskCode = Math.max(...data.tasks.map(task => task.task));
+
+                    const today = new Date();
+
+
+                    const ganttData = data.tasks.map(task => {
+                    const start = parseDateNoTimezone(task.start_date);
+                    const end = parseDateNoTimezone(task.end_date);
+                    
+                    const adjustedEndDate = new Date(end);
+                    adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+                    let adjustedFinDate = null;
+                    if (task.fin_date) {
+                        adjustedFinDate = parseDateNoTimezone(task.fin_date);
+                        adjustedFinDate.setDate(adjustedFinDate.getDate() + 1);
+                    }
+
+                    let progress = 0;
+                    const today = parseDateNoTimezone(new Date().toISOString());
+
+                    if (today >= adjustedEndDate) {
+                        progress = 1;
+                    } else if (today > start) {
+                        const totalDuration = adjustedEndDate - start;
+                        const elapsed = today - start;
+                        progress = elapsed / totalDuration;
+                        if (progress > 1) progress = 1;
+                        if (progress < 0) progress = 0;
+                    }
+
+                    return {
+                        id: task.task,
+                        task: task.task,
+                        text: task.text,
+                        start_date: start,
+                        end_date: adjustedEndDate,
+                        fin_date: adjustedFinDate,
+                        duration: task.duration,
+                        color: task.color || '',
+                        progress: progress
+                    };
+                    });
+
+
+
+                    // 1. Agregar estilos por tarea
+                    ganttData.forEach(task => {
+                        if (task.color) {
+                            const style = document.createElement('style');
+                            style.innerHTML = `
+                                .gantt_task_line.custom-task-color-${task.id} {
+                                    background-color: #D3D3D3 !important;
+                                    border: 1px solid ${task.color} !important;
+                                }
+                                .gantt_task_line.custom-task-color-${task.id} .gantt_task_progress {
+                                    background-color: ${task.color} !important;
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                    });
+
+                    // 2. Aplicar clase a cada tarea para el CSS
+                    gantt.templates.task_class = function(start, end, task) {
+                        return task.color ? `custom-task-color-${task.id}` : "";
+                    };
+
+
+                    // 3. Texto negro dentro de barra
+                    gantt.templates.task_text = function(start, end, task) {
+                        const percent = Math.round(task.progress * 100);
+                        return `<span style="font-size:8px; color: black;">${task.text} (${percent}%)</span>`;
+                    };
+
+                    gantt.init("gantt_here");
+                    gantt.parse({ data: ganttData, links: [] });
+                } else {
+                    console.log("No se encontraron tareas.");
+                }
+            } catch (error) {
+                console.error("Error al cargar tareas:", error);
+            }
+        }
+
+        loadTasks();
+
+        function formatDateWithoutTimezone(date) {
+            if (!date) return "";
+
+            // Extrae año, mes y día en la zona local (sin desfase)
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0
+            const d = String(date.getDate()).padStart(2, '0');
+
+            return `${y}-${m}-${d}`;
+            }
+
+        function parseDateNoTimezone(dateString) {
+            if (!dateString) return null;
+            const [year, month, day] = dateString.split("T")[0].split("-");
+            return new Date(year, month - 1, day);  // Mes es 0-based en Date
+            }
+
+    </script>
+
+         <script>  // este
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                const target = e.target.closest(".gantt_cell[data-column-name='text']");
+                
+                const rowId = gantt.locate(e);
+
+                const tooltip = document.getElementById('customTooltip');
+                tooltip.style.display = "none";
+
+                if (target && rowId) {
+                    const task = gantt.getTask(rowId);
+                    let adjustedEndDate = new Date(task.end_date);
+                    adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
+
+                    tooltip.innerHTML = `
+                        <b>${task.text}</b><br>
+                        <b>Inicio ..... :</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
+                        <b>Finaliza ... :</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
+                        <b>Duración ... :</b> ${task.duration} días<br>
+                    `;
+                    tooltip.style.left = e.pageX + "px";
+                    tooltip.style.top = e.pageY + "px";
+                    tooltip.style.display = "block";
+                }
+            });
+
+            document.addEventListener('click', function () {
+                document.getElementById('customTooltip').style.display = "none";
+            });
+
+        </script>  
+
+
+</body>
+
+
+</html>

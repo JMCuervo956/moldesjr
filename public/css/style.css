@@ -24,7 +24,7 @@ body {
     display: flex;
     flex-direction: column;
     /* movimiento */
-    background-color: #f0f0f0;
+    background-color: #ffffff;
     min-height: 100vh;
 }
 
@@ -128,7 +128,7 @@ form{
 .register-formpgt{
     width: 100%;
     margin: 0 auto;
-    padding: 20px 20px 20px 20px;  /* Espacio : Sup, der, inf, izq */
+    padding: 0px 20px 0px 20px;  /* Espacio : Sup, der, inf, izq */
     margin-top: 35px;
     text-align: left !important;
     box-shadow: 0 19px 30px rgba(0, 0, 0, 0.5), 0 15px 12px rgba(0, 0, 0, 0.22); /* Sombras */
@@ -138,6 +138,30 @@ form{
 .register-formAncho {
     width: 100%; /* Cambia a 100% para que ocupe el ancho del contenedor */
     max-width: 900px; /* Limita el ancho máximo para pantallas grandes */
+    margin: 15px auto; /* Centra el contenedor en la pantalla */
+    padding: 10px; /* Espaciado interno */
+    font-size: 20px; 
+    box-shadow: 0 19px 30px rgba(0, 0, 0, 0.5), 0 15px 12px rgba(0, 0, 0, 0.22); /* Sombras */
+    text-align: left;
+    border-radius: 8px; /* Añadir bordes redondeados para mejorar el diseño */
+    box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
+}
+
+.register-formAnchoCM {
+    width: 100%; /* Cambia a 100% para que ocupe el ancho del contenedor */
+    max-width: 900px; /* Limita el ancho máximo para pantallas grandes */
+    margin: 15px auto; /* Centra el contenedor en la pantalla */
+    padding: 10px; /* Espaciado interno */
+    font-size: 20px; 
+    box-shadow: 0 19px 30px rgba(0, 0, 0, 0.5), 0 15px 12px rgba(0, 0, 0, 0.22); /* Sombras */
+    text-align: left;
+    border-radius: 8px; /* Añadir bordes redondeados para mejorar el diseño */
+    box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
+}
+
+.register-formAnchoCMG {
+    width: 100%; /* Cambia a 100% para que ocupe el ancho del contenedor */
+    max-width: 1000px; /* Limita el ancho máximo para pantallas grandes */
     margin: 15px auto; /* Centra el contenedor en la pantalla */
     padding: 10px; /* Espaciado interno */
     font-size: 20px; 
@@ -170,6 +194,21 @@ form{
     text-align: left;
     border-radius: 8px; /* Añadir bordes redondeados para mejorar el diseño */
     box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
+}
+
+.register-menu {
+    width: 300px;
+    margin: 15px;
+    padding: 10px;
+    margin-top: 15px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    text-align: center;
+    box-shadow: 
+        5px 5px 10px rgba(117, 23, 6, 0.856), 
+        2px 2px 5px rgba(186, 26, 26, 0.2);
+    border-radius: 8px;
+    /*border: 2px solid red; /* Contorno rojo de 2px */
 }
 
 .register-formIzq{
@@ -293,7 +332,7 @@ form button{
 
 .btn-login:hover, .btn-login:active{
     color: #fff;
-    background-color: #089733;
+    background-color: #310303;
     border-color: #61428f;
     border-radius: 15px;
 }
@@ -364,9 +403,9 @@ form button{
 
 /* Efecto al pasar el ratón */
 .btnind-hover-effect:hover {
-    background-color: #9900ff; /* Cambia el color de fondo al pasar el mouse */
-    color: #fff; /* Cambia el color del texto al pasar el mouse */
-    transform: scale(1.10); /* Aplica un leve aumento de tamaño */
+    background-color: #139248; /* Cambia el color de fondo al pasar el mouse */
+    color: #f1ebeb; /* Cambia el color del texto al pasar el mouse */
+    transform: scale(1.05); /* Aplica un leve aumento de tamaño */
     text-decoration: underline; /* Añade subrayado */
     /*font-weight: bold;  Cambia el texto a negrita */
 }
@@ -430,7 +469,7 @@ form button{
 .btn-login{
     width: 80%;
     padding: 2px;
-    background-color: #6f42c1;
+    background-color: #8f1c18;
     border: 0;
     box-sizing: border-box;
     cursor: pointer;
@@ -458,7 +497,7 @@ form button{
     }
     
 .btn-register:focus{
-    box-shadow: 0 0 0 3px rgba(9, 68, 12, 0.25)
+    box-shadow: 0 0 0 3px rgba(68, 36, 9, 0.25)
 }    
 
 .btn-continuar{
@@ -754,6 +793,11 @@ main {
     flex: 1; /* Hace que el contenido principal crezca para ocupar el espacio disponible */
 }
 
+.content2, .register-formAnchoCM {
+    width: 100%;
+    max-width: none;
+}
+
 .image-section {
     display: flex;
     justify-content: center;
@@ -766,10 +810,12 @@ img {
 }
 
 footer {
-    background-color: #4CAF50;  /* color de pie */
+    background-color: #3a1212;  /* color de pie */
     color: white;
     text-align: center;
     padding: 0px;
+    height: 20px;
+    line-height: 20px; /* Centra verticalmente el texto si es una sola línea */
 }
 
 button {
@@ -1038,3 +1084,4 @@ a.disabled {
 .button-container .btn {
     width: 170px; /* Ancho fijo para los botones */
 }
+

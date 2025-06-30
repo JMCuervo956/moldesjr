@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MJR - Ciudades</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+  </style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigation') %>
+  </header>  
+
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+        <div class="container mt-0">
+            <div class="d-flex justify-content-between align-items-center mb-0">
+                <button class="btn btn-primary btn-sm " data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar Ciudad</button>
+                <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
+            </div>
+        </div>
+        <% if (typeof mensaje !== 'undefined') { %>
+          <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+            <%= mensaje.texto %>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        <% } %>
+        <div class="container mt-0">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th class="text-center">Codigo</th>
+                <th class="text-center">Ciudad</th>
+                <th class="text-center">País</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (ciudades.length > 0) { %>
+                <% ciudades.forEach(ciudad => { %>
+                  <tr style="line-height: 2;">
+                    <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= ciudad.iso_ciudad %></td>
+                    <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= ciudad.nombre %></td>
+                    <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= ciudad.pais_nombre %></td>
+                    <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                      <button class="btn btn-warning btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;" onclick='editarCiudad(<%- JSON.stringify(ciudad) %>)' data-toggle="modal" data-target="#modalCiudad">Modificar</button>
+                      <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;" onclick="confirmarEliminacion('<%= ciudad.iso_ciudad %>', '<%= ciudad.nombre %>')">Eliminar</button>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="4">No hay ciudades registradas.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+              </div>
+              <div class="modal-body">
+                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Adicionar / Modificar Ciudad -->
+        <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <form action="/ciudades" method="POST" class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalCiudadLabel">Adicionar / Modificar </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <input type="hidden" name="editando" id="editandoCiudad" value="false">
+                <div class="form-group">
+                  <label for="iso_ciudad">Codigo Ciudad</label>
+                  <input type="number" class="form-control" name="iso_ciudad" id="iso_ciudad" required>
+                </div>
+                <div class="form-group">
+                  <label for="nombre">Nombre de la Ciudad</label>
+                  <input type="text" class="form-control" name="nombre" id="nombre_ciudad" required>
+                </div>
+                <div class="form-group">
+                  <label for="pais_codigo">País</label>
+                  <select class="form-control" name="pais_codigo" id="pais_codigo" required>
+                    <option value="">Seleccione un país</option>
+                    <% paises.forEach(p => { %>
+                      <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
+                    <% }) %>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="pais_codigo">País</label>
+                  <select class="form-control" name="pais_codigo" id="pais_codigo" required>
+                    <option value="">Seleccione un país</option>
+                    <% paises.forEach(p => { %>
+                      <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
+                    <% }) %>
+                  </select>
+                </div>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script>
+    function editarCiudad(ciudad) {
+      document.getElementById('iso_ciudad').value = ciudad.iso_ciudad;
+      document.getElementById('nombre_ciudad').value = ciudad.nombre;
+      document.getElementById('pais_codigo').value = ciudad.pais_codigo;
+      document.getElementById('editandoCiudad').value = "true";
+      document.getElementById('iso_ciudad').readOnly = true;
+    }
+
+    function limpiarFormularioCiudad() {
+      document.getElementById('iso_ciudad').value = "";
+      document.getElementById('nombre_ciudad').value = "";
+      document.getElementById('pais_codigo').value = "";
+      document.getElementById('editandoCiudad').value = "false";
+      document.getElementById('iso_ciudad').readOnly = false;
+    }
+
+    function confirmarEliminacion(id, nombre) {
+      document.getElementById('nombreAEliminar').textContent = nombre;
+      document.getElementById('confirmarEliminarLink').href = `/ciudades/delete/${id}`;
+      $('#modalConfirmarEliminar').modal('show');
+    }
+
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 1000);
+      }
+    };
+  </script>
+
+  <!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

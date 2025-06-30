@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MJR - indices</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
+
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
+
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+    </style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigation') %>
+  </header>  
+
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+        <div class="container mt-0">
+            <div class="d-flex justify-content-between align-items-center mb-0">
+                <button class="btn btn-primary btn-sm " data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
+                <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar...</a>
+            </div>
+        </div>
+        <% if (typeof mensaje !== 'undefined') { %>
+          <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+            <%= mensaje.texto %>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        <% } %>
+        <div class="container mt-0" style="max-width: 300px;">
+            <table class="table table-striped">
+                    <thead class="thead-dark">
+                    <tr>
+                        <th class="text-center">Indice</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                        <% if (indices.length > 0) {
+                            let paisAnterior = null;
+                            indices.forEach(tb_indice => {
+                            let primerCaracter = tb_indice.tb_indice.charAt(0);
+                            if (primerCaracter !== paisAnterior) { %>
+                                <tr>
+                                <td colspan="4" style="font-weight: bold; background-color: #d4dbfa; color: #1b41e9; padding: 0px 0px;">
+                                    <%= primerCaracter %>
+                                </td>
+                                </tr>
+                            <% 
+                                paisAnterior = primerCaracter;
+                            } %>
+                            <tr style="line-height: 2;">
+                                <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= tb_indice.tb_indice %></td>
+                                <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                                <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;" onclick="confirmarEliminacion('<%= tb_indice.tb_indice %>', '<%= tb_indice.tb_indice %>')">Eliminar</button>
+                                </td>
+                            </tr>
+                        <%   }) 
+                        } else { %>
+                        <tr>
+                            <td colspan="4">No hay indices registrados.</td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+            </table>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+              </div>
+              <div class="modal-body">
+                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+              </div>
+            </div> 
+          </div>
+        </div>
+
+        <!-- Modal Adicionar -->
+        
+        <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <form action="/indices" method="POST" class="modal-content">
+              <div class="modal-header" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
+                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar</h5>
+                <div>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="modal-body">
+
+                <input type="hidden" name="editando" id="editando" value="false">
+
+                <div class="form-row">
+                  <label for="nit">Indice</label>
+
+                    <input 
+                    type="number" 
+                    id="nit" 
+                    name="nit" 
+                    class="form-control form-control-sm input-con-sombra"
+                    step="any" 
+                    required
+                    >                  
+
+                </div>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+  <%- include('partials/footer') %>
+
+  <!-- AJAX para ciudad -->
+
+  <!-- JavaScript para enfocar el campo Nit cuando se abra el modal -->
+<script>
+  $('#modalCiudad').on('shown.bs.modal', function () {
+    $('#nit').trigger('focus');
+  });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Seleccionar todos los inputs con la clase "input-numerico"
+      const camposNumericos = document.querySelectorAll('.input-numerico');
+
+      camposNumericos.forEach(function(nitInput) {
+        // Evento 'input' para eliminar caracteres no numéricos
+        nitInput.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '');  // Elimina cualquier caracter que no sea dígito
+          this.setCustomValidity('');  // Limpiar el mensaje de error
+        });
+
+        // Evento 'invalid' para mostrar un mensaje de error personalizado
+        nitInput.addEventListener('invalid', function () {
+          if (!this.validity.valid) {
+            this.setCustomValidity('Por favor ingrese entre 1 y 9 dígitos numéricos.');
+          }
+        });
+
+        // Evento 'change' para limpiar los errores si el valor es válido
+        nitInput.addEventListener('change', function () {
+          this.setCustomValidity('');
+        });
+      });
+    });
+</script>
+  
+<script>
+
+    function limpiarFormularioCiudad() {
+      document.getElementById('nit').value = "";
+      document.getElementById('nit').readOnly = false;
+    }
+
+    function confirmarEliminacion(id, nombre) {
+      document.getElementById('nombreAEliminar').textContent = nombre;
+      document.getElementById('confirmarEliminarLink').href = `/indices/delete/${id}`;
+      $('#modalConfirmarEliminar').modal('show');
+    }
+
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 2000);
+      }
+    };
+  </script>
+
+  <!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

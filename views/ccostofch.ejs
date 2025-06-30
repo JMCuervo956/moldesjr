@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MJR - Centros de Costo</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
+
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
+
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }ssssssssssss
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+  .table {
+    width: 100%;
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: hwb(210 84% 9%) !important;
+  }
+    </style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigationF') %>
+  </header>  
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+          <div class="d-flex justify-content-between align-items-center mb-0 px-4">
+            <!-- Izquierda: Botones -->
+            <div class="ms-5">
+              <a href="/opciones" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            </div>
+          
+            <!-- Centro: Título centrado -->
+            <div class="flex-grow-1 text-center">
+              <h3 class="mb-2 fw-semibold d-inline-block position-relative"
+                  style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                Centros de Costo
+                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+              </h3>
+            </div>
+
+            <!-- Derecha vacía para balancear -->
+            <div style="width: 200px;"></div>
+          </div>
+          
+          <% if (typeof mensaje !== 'undefined') { %>
+            <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+              <%= mensaje.texto %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
+
+        <div class="container-fluid mt-1">
+              <div class="content2">
+                <div class="register-formAnchoCM">           
+
+                  <div style="overflow-x: auto;">
+                    <table class="table-striped">
+
+                      <thead class="thead-dark">
+                        <tr>
+                          <th class="text-center">C Costo</th>
+                          <th class="text-center">Descripción</th>
+                          <th class="text-center">Cliente</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% if (ccosto.length > 0) { %>
+                          <% ccosto.forEach(ccosto => { %>
+                            <tr style="line-height: 1.3;">
+                              <td style="width: 100px; font-size: 14px;"><%= ccosto.idcc %></td>
+                              <td style="width: 300px; font-size: 12px;"><%= ccosto.descripcion %></td>
+                              <td style="width: 300px; font-size: 12px;"><%= ccosto.clienteN %></td>
+                              <td class="text-center" style="width: 200px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                                <button 
+                                    class="btn btn-warning btn-sm" 
+                                    style="padding: 2px 4px; font-size: 11px; line-height: 1;" 
+                                    onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
+                                    data-toggle="modal" 
+                                    data-target="#modalCiudad">
+                                    Modificar
+                                </button>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="5">No hay Centro de costo registrado.</td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+
+
+                </div>
+              </div>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+              </div>
+              <div class="modal-body">
+                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Adicionar / Modificar Ciudad -->
+        
+        <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <form action="/ccostofch" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
+
+              <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
+                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Modificar</h5>
+                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;>
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+
+             
+              <div class="modal-body">
+                <input type="hidden" name="editando" id="editando" value="false">
+                <div class="form-row">
+                  <label for="idcc_visible">Centro de Costo</label>
+                  <!-- documento visible -->
+                  <input 
+                    type="text" 
+                    id="idcc_visible" 
+                    name="idcc_visible" 
+                    class="form-control form-control-sm input-con-sombra input-numerico"
+                    pattern="[0-9]{1,9}"
+                    maxlength="9" 
+                    required
+                    title="Ingrese hasta 9 dígitos numéricos">
+                </div>
+
+                <!-- Estos son los que se envían -->
+                <input type="hidden" id="idcc" name="idcc">
+
+                <div class="form-row">
+                  <label for="descripcion">Descripcion</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="descripcion" 
+                  id="descripcion"
+                  maxlength="60" 
+                  required>
+                </div>
+
+                <div class="form-row">
+                    <label for="ocompra">Orden de Compra</label>
+                    <input 
+                      type="text" 
+                      id="ocompra" 
+                      name="ocompra" 
+                      class="form-control form-control-sm input-con-sombra input-numerico"
+                      pattern="[0-9]{1,9}"
+                      maxlength="9" 
+                      required
+                      title="Ingrese hasta 9 dígitos numéricos">
+                </div>
+
+                <div class="form-row">
+                  <label for="cliente">Cliente</label>
+                  <select class="form-control form-control-sm input-con-sombra" name="cliente" id="cliente" required>
+                    <option value="">Seleccione Cliente</option>
+                    <% clienteT.forEach(p => { %>
+                      <option value="<%= p.nit %>"><%= p.cliente %></option>
+                    <% }) %>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="fecha_inicio">Fecha Inicio</label>
+                    <input type="date" class="form-control form-control-sm input-con-sombra" name="fecha_inicio" id="fecha_inicio" maxlength="60">
+                </div>
+
+                <div class="form-row">
+                    <label for="fecha_fin">Fecha Terminación</label>
+                    <input type="date" class="form-control form-control-sm input-con-sombra" name="fecha_fin" id="fecha_fin" maxlength="60">
+                </div>
+
+
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Activa tooltips en toda la página
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    });
+  </script>
+
+  <!-- Control Numeros en campos -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Seleccionar todos los inputs con la clase "input-numerico"
+      const camposNumericos = document.querySelectorAll('.input-numerico');
+
+      camposNumericos.forEach(function(nitInput) {
+        // Evento 'input' para eliminar caracteres no numéricos
+        nitInput.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '');  // Elimina cualquier caracter que no sea dígito
+          this.setCustomValidity('');  // Limpiar el mensaje de error
+        });
+
+        // Evento 'invalid' para mostrar un mensaje de error personalizado
+        nitInput.addEventListener('invalid', function () {
+          if (!this.validity.valid) {
+            this.setCustomValidity('Por favor ingrese entre 1 y 9 dígitos numéricos.');
+          }
+        });
+
+        // Evento 'change' para limpiar los errores si el valor es válido
+        nitInput.addEventListener('change', function () {
+          this.setCustomValidity('');
+        });
+      });
+    });
+  </script>
+
+  <!-- AJAX para ciudad -->
+
+  <script>
+    document.getElementById('pais').addEventListener('change', function () {
+      const paisSeleccionado = this.value;
+      const ciudadSelect = document.getElementById('ciudad');
+  
+      // Limpia las opciones anteriores
+      ciudadSelect.innerHTML = '<option value="">Seleccione Ciudad</option>';
+  
+      if (paisSeleccionado) {
+        fetch(`/ciudades/${paisSeleccionado}`)
+          .then(response => response.json())
+          .then(data => {
+            data.forEach(ciudad => {
+              const option = document.createElement('option');
+              option.value = ciudad.iso_ciudad;
+              option.textContent = ciudad.nombre;
+              ciudadSelect.appendChild(option);
+            });
+          })
+          .catch(err => {
+            console.error('Error al cargar ciudades:', err);
+          });
+      }
+    });
+  </script>
+  
+  <!-- JavaScript para enfocar el campo Nit cuando se abra el modal -->
+<script>
+  $('#modalCiudad').on('shown.bs.modal', function () {
+    $('#nit').trigger('focus');
+  });
+</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const nitInput = document.getElementById('nit');
+  
+      nitInput.addEventListener('input', function () {
+        // Elimina cualquier carácter que no sea dígito
+        this.value = this.value.replace(/\D/g, '');
+      });
+    });
+  </script>
+  
+  <script>
+    function editarCiudad(ccosto) {
+      document.getElementById('editando').value = "true";
+      // Deshabilitar todos los campos para solo lectura
+      document.getElementById('idcc_visible').disabled = false;
+      document.getElementById('descripcion').disabled = false;
+      document.getElementById('ocompra').disabled = false;
+      document.getElementById('cliente').disabled = false;
+      document.getElementById('fecha_inicio').disabled = false;
+      document.getElementById('fecha_fin').disabled = false;
+
+      // Set valores visibles (bloqueados)
+      document.getElementById('idcc_visible').value = ccosto.idcc;
+      document.getElementById('idcc_visible').disabled = true;
+
+      document.getElementById('descripcion').disabled = true;
+      document.getElementById('ocompra').disabled = true;
+      document.getElementById('cliente').disabled = true;
+
+      // Set valores ocultos que se enviarán
+      document.getElementById('idcc').value = ccosto.idcc;
+      document.getElementById('descripcion').value = ccosto.descripcion;
+      document.getElementById('ocompra').value = ccosto.ocompra;
+      document.getElementById('cliente').value = ccosto.cliente;
+      document.getElementById('fecha_inicio').value = ccosto.fecha_inicio;
+      document.getElementById('fecha_fin').value = ccosto.fecha_fin;
+
+      document.getElementById('fecha_fin').value = formatFecha(ccosto.fecha_fin);
+      document.getElementById('fecha_inicio').value = formatFecha(ccosto.fecha_inicio);
+      toggleBotonesModal('modificar');
+    }
+
+    function formatFecha(fechaTexto) {
+        if (!fechaTexto) return '';
+        const fecha = new Date(fechaTexto);
+        if (isNaN(fecha.getTime())) return ''; 
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function copiarDatosFormulario() {
+      const idccVisible = document.getElementById('idcc_visible');
+      const idccOculto = document.getElementById('idcc');
+
+      idccOculto.value = idccVisible.value;
+
+      return true; // permite el envío del formulario
+    }
+
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 2000);
+      }
+    };
+
+    function toggleBotonesModalsss(modo) {
+      const btnGuardar = document.getElementById('btnGuardar');
+      const btnCancelar = document.getElementById('btnCancelar');
+      const modalTitulo = document.getElementById('modalTitulo');
+      const modalHeader = document.querySelector('#modalCiudad .modal-header');
+
+      if (modo === 'consultar') {
+        btnGuardar.style.display = 'none';
+        btnCancelar.style.display = 'none';
+        modalTitulo.innerText = 'Consulta de Centro de Costo';
+        modalHeader.classList.remove('bg-warning');
+        modalHeader.classList.add('bg-info', 'text-white');
+      } else if (modo === 'modificar') {
+        btnGuardar.style.display = 'inline-block';
+        btnCancelar.style.display = 'inline-block';
+        modalTitulo.innerText = 'Modificar Centro de Costo';
+        modalHeader.classList.remove('bg-info', 'text-white');
+        modalHeader.classList.add('bg-warning');
+      } else if (modo === 'adicionar') {
+        btnGuardar.style.display = 'inline-block';
+        btnCancelar.style.display = 'inline-block';
+        modalTitulo.innerText = 'Nuevo Centro de Costo';
+        modalHeader.classList.remove('bg-info', 'text-white');
+        modalHeader.classList.add('bg-success', 'text-white');
+      }
+    }
+
+  </script>
+
+<!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

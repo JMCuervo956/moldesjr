@@ -285,7 +285,7 @@
         <div class="d-flex justify-content-between align-items-center mb-0 px-4">
             <!-- tamaño texto - titulo de orden */ -->
             <div class="ms-5">
-                <a href="/actividades" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>
+                <a href="/opciones" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>
             </div>
         </div>
 
@@ -294,7 +294,7 @@
             <h3 class="mb-2 fw-semibold d-inline-block position-relative"
                 style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
                 <p style="font-size: 18px; margin: 0;">
-                    Orden: 
+                    Centros de Costo 
                     <span style="color: #007bff; font-weight: bold;"><%= otrabajo %></span> — 
                     <span style="color: #5a0505; font-weight: bold;"><%= descripcion %></span>
                 </p>
@@ -304,77 +304,6 @@
 
         <div id="gantt_here"></div>
 
-        <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
-        <div style="text-align: center; margin-top: 20px;" id="addTaskButtonContainer">
-            <button 
-                class="btn btn-primary btn-sm" 
-                id="openModalButton" 
-                onclick="limpiarFormulario()">
-                Adicionar
-            </button>
-
-            <button 
-                class="btn btn-warning btn-sm" 
-                onclick="location.href='/respmod?idot=<%= encodeURIComponent(otrabajo) %>&descripcion=<%= encodeURIComponent(descripcion) %>'">
-                Modificar
-            </button>
-
-            <button 
-                class="btn btn-danger btn-sm" 
-                onclick="location.href='/reseli?idot=<%= encodeURIComponent(otrabajo) %>&descripcion=<%= encodeURIComponent(descripcion) %>'">
-                Eliminar
-            </button>
-        </div>
-
-        <!-- 5 Modal para agregar una nueva ACTIVIDAD  ESTE -->
-        <div id="addTaskModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4>Agregar nueva Actividad</h4>
-                </div>
-                <form action="/respuesta" id="addTaskForm" method="POST" onsubmit="return copiarDatosFormulario()">
-
-
-                    <input type="hidden" id="maxTaskIdInput" name="maxTaskId">
-                    <input type="hidden" id="maxTaskCodeInput" name="maxTaskCode">
-
-                    <!-- Campo oculto para otrabajo -->
-                    <input type="hidden" name="idot" value="<%= otrabajo %>">
-                    
-                    <!-- Campo oculto para descripcion -->
-                    <input type="hidden" name="descripcion" value="<%= descripcion %>">
-
-                    <label for="taskName">Nombre de la tarea:</label>
-                    <input type="text" id="taskName" name="taskname" required placeholder="Ingrese el nombre de la tarea">
-                    
-                    <label for="taskStartDate">Fecha de inicio:</label>
-                    <input type="date" id="taskStartDate" name="taskStartDate" required>
-                    
-                    <label for="taskDuration">Duración (días):</label>
-                    <input type="number" id="taskDuration" min="1" name="taskDuration" required placeholder="Ingrese la duración en días">
-                    
-                    <button type="submit" id="addTaskButton">Agregar Tarea</button>
-
-                    <div class="form-feedback" id="formFeedback"></div>
-                </form>
-                <div class="modal-footer">
-                    <button type="button" id="closeModalButton">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <script>
-            function copiarDatosFormulario() {
-                document.getElementById('maxTaskIdInput').value = maxTaskId;
-                document.getElementById('maxTaskCodeInput').value = maxTaskCode;
-                return true; // Permite el envío del formulario
-            }
-        </script>
-
-        <script>
-                const otrabajo = "<%= otrabajo %>";
-        </script>
-
         <!-- GANTT PROCESO -->
         <script>
             var userIdAct = 1;  // Cambia esto a 0 para simular el caso donde el usuario no tiene permisos para modificar.
@@ -383,6 +312,23 @@
             gantt.config.drag_move = true;
             gantt.config.drag_resize = true;
             gantt.config.drag_links = true;
+
+            //<b>Actividad:</b> ${task.text}<br>
+            //<b>Fin:</b> ${gantt.date.date_to_str("%d %M %Y")(task.end_date)}<br>
+
+                gantt.templates.tooltip_text = function(start, end, task) {
+                    // Restar 1 día a la fecha final
+                    let adjustedEndDate = new Date(task.end_date);
+                    adjustedEndDate.setDate(adjustedEndDate.getDate() - 1); // Restamos 1 día
+                    return `
+                        <b>Tarea:</b> ${task.task} días<br>
+                        <b>${task.text}</b><br>
+                        <b>Inicio:</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
+                        <b>Finaliza:</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
+                        <b>Duración:</b> ${task.duration} días<br>
+                        <b>Progreso:</b> ${task.progress * 100}%<br>
+                    `;
+                };
 
             /* tamaño texto Actividad*/
             let lastTaskShown = null;
@@ -405,6 +351,7 @@
                         return task.task;
                     }
                 },
+                
                 { name: "text", label: "<span style='font-size: 14px;'><b>Actividad</b></span>", align: "left", width: 350 },
                 { name: "start_date", label: "<b>Inicio</b>", align: "left", width: 100,
                         template: function(task) {
@@ -575,7 +522,7 @@
             async function loadTasks() {
                 try {
                     console.log('idot recibido:', idot);  // ← ya no será undefined
-                    const response = await fetch('/tareas', {
+                    const response = await fetch('/tareasg', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -609,7 +556,9 @@
                         gantt.clearAll();
                         // Ordenar las tareas por fecha de inicio (start_date)
                         ganttData.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
                         gantt.parse({ data: ganttData, links: [] });
+        
                         loadActivities(data.tasks);
                     } else {
                         console.error('No se encontraron tareas.');
@@ -622,93 +571,6 @@
             loadTasks();
         </script>
         <!-- end GANTT PROCESO -->
-
-        <!-- MODAL -detalle ACTIVIDAD -->
-
-        <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const modal = document.getElementById("addTaskModal");
-            const openModalButton = document.getElementById("openModalButton"); // Asegúrate de tener este botón en tu HTML
-            const closeModalButton = document.getElementById("closeModalButton");
-            const addTaskButton = document.getElementById("addTaskButton");
-            const formFeedback = document.getElementById("formFeedback");
-
-            // Mostrar el modal
-            if (openModalButton) {
-                openModalButton.addEventListener("click", () => {
-                    modal.style.display = "flex";
-                });
-            }
-
-            // Cerrar el modal
-            closeModalButton.addEventListener("click", () => {
-                modal.style.display = "none";
-                clearForm();
-            });
-
-            // Agregar tarea
-            addTaskButton.addEventListener("click", () => {
-                const name = document.getElementById("taskName").value.trim();
-                const startDate = document.getElementById("taskStartDate").value;
-                const duration = document.getElementById("taskDuration").value;
-
-                if (!name || !startDate || !duration || parseInt(duration) < 1) {
-                    formFeedback.textContent = "Por favor, complete todos los campos correctamente.";
-                    formFeedback.style.color = "red";
-                    return;
-                }
-
-                // Aquí puedes insertar la lógica para guardar la tarea  BASE DE DATOS
-                formFeedback.textContent = "Tarea agregada exitosamente.";
-                formFeedback.style.color = "green";
-
-                // Opcional: cerrar el modal después de un segundo
-                setTimeout(() => {
-                    modal.style.display = "none";
-                    clearForm();
-                }, 2000);
-            });
-
-            // Función para limpiar el formulario
-            function clearForm() {
-                document.getElementById("addTaskForm").reset();
-                formFeedback.textContent = "";
-            }
-        });
-        </script>
-
-         <script>  // este
-            document.addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-                const target = e.target.closest(".gantt_cell[data-column-name='text']");
-                
-                const rowId = gantt.locate(e);
-
-                const tooltip = document.getElementById('customTooltip');
-                tooltip.style.display = "none";
-
-                if (target && rowId) {
-                    const task = gantt.getTask(rowId);
-                    let adjustedEndDate = new Date(task.end_date);
-                    adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
-
-                    tooltip.innerHTML = `
-                        <b>${task.text}</b><br>
-                        <b>Inicio ..... :</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
-                        <b>Finaliza ... :</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
-                        <b>Duración ... :</b> ${task.duration} días<br>
-                        <b>Progreso ... :</b> ${task.progress * 100}%
-                    `;
-                    tooltip.style.left = e.pageX + "px";
-                    tooltip.style.top = e.pageY + "px";
-                    tooltip.style.display = "block";
-                }
-            });
-
-            document.addEventListener('click', function () {
-                document.getElementById('customTooltip').style.display = "none";
-            });
-        </script>  
 
 </body>
 </html>

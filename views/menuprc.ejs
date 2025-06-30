@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/style.css">
-    <title>Asamblea</title>
+    <title>MJR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
     <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
 
     <style>
@@ -25,121 +27,247 @@
         .dropdown:hover .dropdown-content {
           display: block; /* Mostrar contenido al pasar el mouse */
         }
+
+        h1 {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        /* Lista de ítems del menú */
+        nav ul {
+          list-style: none;
+          padding-left: 0;
+          margin: 0;
+        }
+
+        /* Elementos del menú */
+        nav li {
+          position: relative;
+          margin: 10px 0;
+          transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        nav a {
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          padding: 12px 15px;
+          color: #333;
+          font-weight: 500;
+          border-radius: 6px;
+          background-color: #f8f8f8;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+        }
+
+        /* Color de los íconos - General */
+        nav i {
+          margin-right: 15px;
+          font-size: 1.2em;
+          color: #666; /* Color base gris para los íconos */
+          transition: color 0.3s ease;
+        }
+
+        /* Colores personalizados por tipo de ítem */
+        nav li a:hover {
+          background-color: #d6d6d6;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav li a:hover i {
+          color: #4CAF50; /* Cambiar color de los íconos al pasar el ratón */
+        }
+
+        /* Colores de íconos personalizados para los elementos */
+        nav li a i.fas.fa-home {
+          color: #2196F3; /* Azul para 'Inicio' */
+        }
+
+        nav li a i.fas.fa-cogs {
+          color: #FF9800; /* Naranja para 'Servicios' */
+        }
+
+        nav li a i.fas.fa-users {
+          color: #9C27B0; /* Púrpura para 'Sobre Nosotros' */
+        }
+
+        /* Asegurarnos que los íconos dentro de los submenús también tengan color */
+        nav li a i.fas.fa-code,
+        nav li a i.fas.fa-paint-brush,
+        nav li a i.fas.fa-user-friends,
+        nav li a i.fas.fa-history {
+          color: #555; /* Colores predeterminados para los subíconos */
+        }
+
+        nav li a:hover i.fas.fa-code,
+        nav li a:hover i.fas.fa-paint-brush,
+        nav li a:hover i.fas.fa-user-friends,
+        nav li a:hover i.fas.fa-history {
+          color: #4CAF50; /* Cambiar color de los subíconos al pasar el ratón */
+        }
+
+        /* Submenú desplegable */
+        nav ul ul {
+          margin-left: 20px;
+          display: none;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+        }
+
+        nav li.open > ul {
+          display: block;
+          max-height: 500px; /* Suficiente para submenús */
+        }
+
+        nav li.open > a {
+          background-color: #e1f5fe; /* Color de fondo al abrir el submenú */
+          color: #0277bd; /* Texto azul al abrir */
+        }
+
+        /* Responsividad para pantallas pequeñas */
+        @media (max-width: 768px) {
+          nav {
+            max-width: 100%;
+            padding: 20px;
+            }
+
+          nav li {
+            margin: 5px 0;
+            }
+
+          nav a {
+            justify-content: flex-start;
+            padding: 8px 12px;
+            }
+
+          nav ul ul {
+            display: none;
+            max-height: 0;
+            }
+
+          nav li.open > ul {
+            display: block;
+            }
+        }
+
+        nav ul ul {
+          display: none;
+          margin-left: 20px;
+        }
+
+        nav li.open > ul {
+          display: block;
+        }
+        
+        nav ul {
+          list-style: none;
+          padding-left: 0;
+        }
+
+        nav ul ul {
+          display: none;
+          margin-left: 20px;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+        }
+
+        nav li.open > ul {
+          display: block;
+          max-height: 500px;
+        }
+
+        nav li.active > a {
+          background-color: #d0e7ff;
+          color: #df350b;
+          font-weight: bold;
+        }
+
+        nav li.active > a i {
+          color: #004b8d;
+        }
+
+
+        html, body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden; /* Evita que el body entero tenga scroll */
+          font-family: 'Roboto', sans-serif;
+        }
+
+        .encabezado {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          background-color: #fff;
+          z-index: 1000;
+          padding: 15px 20px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Altura reservada para el encabezado */
+        .detalle-scroll {
+          margin-top: 120px; /* Ajusta según el alto real del header */
+          height: calc(100% - 120px);
+          overflow-y: auto;
+          padding: 20px;
+          background-color: #f7f7f7;
+        }
+
+
+      /* iconColors.css */
+      .icon-home       { color: #4caf50; }   /* verde */
+      .icon-users      { color: #2196f3; }   /* azul */
+      .icon-cogs       { color: #ff9800; }   /* naranja */
+      .icon-envelope   { color: #f44336; }   /* rojo */
+      .icon-file-alt   { color: #3f51b5; }   /* azul oscuro */
+      .icon-users-cog  { color: #9b59b6; }   /* púrpura */
+      .icon-history    { color: #f1c40f; }   /* amarillo */
+
       </style>
 
 </head>
 <body class="body.imagen">
-    <% if (rol==='Administrador') { %>
-        <%- include('partials/navigat') %>  
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+    <% if (rol==='1') { %>
+        <%- include('partials/navigationF') %>  
     <% } else { %> 
-        <%- include('partials/navigatusr') %>  
+        <%- include('partials/navigation') %>   
     <% } %>
-    <br>    
-    <div style="display: inline;">
-        <h5 style="font-size: 14px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); transition: color 0.3s ease;" 
-            onmouseover="this.querySelector('.user').style.color='darkblue'; this.querySelector('.name').style.color='darkred';" 
-            onmouseout="this.querySelector('.user').style.color='blue'; this.querySelector('.name').style.color='green';">
-            <span class="user" style="color: blue; padding-left: 10px;"><%= userUser %></span>
-            <span class="name" style="color: green;"> - <%= name %></span>
-        </h5>
-    </div>    
-    <div class="content">
-        <div class="register-formIzq1">
-                <div style="display: inline;">
-                    <div style="display: inline;">
-                        <br>
-                        <input type="submit" id="btnSeleccion" class="btn-salir" value="Votar" style="padding: 6px; width: 40%; margin: 0 auto; display: block;">
-                        <br>
-                        <input type="submit" id="btnresultados" class="btn-salir" value="Grafico" style="padding: 6px; width: 40%; margin: 0 auto; display: block;">
-                        <br>    
-                    </div>                    
-                </div>
-        </div> 
-     
-        <% if (rol!='Administration') { %>
-            <div class="register-formIzq">
-                <div>
-                    <div style="display: inline;">
-                        <a href="/ver_poder" class="btn btn-light btn-sm ">Formato PODER</a>
-                        <br><br>    
-                    </div>
-                    <div style="display: inline;">
-                        <a href="/poderesusu" class="btn btn-light btn-sm ">Registrar PODER</a>
-                        <br><br>    
-                    </div>
-                    <div style="display: inline;">
-                        <a href="/moduserpass?user=<%= user %>&name=<%= name %>" class="btn btn-light btn-sm ">Cambiar Contraseña</a>
-                        <br><br>    
-                    </div>
-<!--
-                    <li class="nav-item dropdown">
-                        <h5></h5>
-                        <button class="btn btn-light btn-sm ">Poderes</button>
-                        <div class="dropdown-content">
-                        <a href="/poderes">Registrar Poder</a>
-                        <a href="/ver-word">Descargar Formato</a>
-                        <a href="/valida">validar</a>
-                        </div>
-                        <br><br>    
-                    </li>
--->
-                </div>  
-            </div>
-        <% } else { %> 
-            <div class="register-formIzq">
-                <div style="display: inline;">
-                    <li class="nav-item dropdown">
-                        <h5></h5>
-                        <button class="btn btn-light btn-sm ">Poderes</button>
-                        <div class="dropdown-content">
-                        <a href="/poderes">Registrar Poder</a>
-                        <a href="/ver-word">Descargar Formato</a>
-                        <a href="/valida">validar</a>
-                        </div>
-                        <br><br>    
-                    </li>
-                </div>
-            </div>
-        <% } %>        
 
-        <br>    
-        <h5></h5>
-            <input type="submit" id="btnSalir" class="btn-salirS" value="Salir" style="padding: 7px; width: 40%; margin: 0 auto; display: block;">
-        <br><br>    
-
+    <div style="display: flex; justify-content: flex-end; padding: 10px 20px;">
+      <h5 style="font-size: 10px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); transition: color 0.3s ease; margin: 0;"
+        onmouseover="this.querySelector('.user').style.color='darkblue'; this.querySelector('.name').style.color='darkred';"
+        onmouseout="this.querySelector('.user').style.color='blue'; this.querySelector('.name').style.color='green';">
+        <span class="user" style="color: blue; padding-left: 10px;"><%= name %></span>
+        <span class="name" style="color: green;"> - <%= rol %></span>
+      </h5>
+    </div>
     
-    </div>   
+  </header>
 
-    <script>
-        document.getElementById('btnSeleccion').addEventListener('click', function() {
-            // Acción para el botón "Votaciones"
-            window.location.href = '/respuesta'; // Redirige a la página de votaciones
-        });
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+ <!--   <button id="generarPDF">Crear PDF</button>  -->
+    <div class="content">
+      <div style="display: inline;">
+        <div class="register-menu">
+          <% if (rol === '1') { %>
+            <nav id="menu"></nav>
+          <% } else { %>
+            <nav id="menu2"></nav>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        document.getElementById('btnresultados').addEventListener('click', function() {
-            // Acción para el botón "Votaciones"
-            window.location.href = '/resultados'; // Redirige a la página de votaciones
-        });
-
-        document.getElementById('btnSalir').addEventListener('click', function() {
-            // Realiza la solicitud GET a /logout para destruir la sesión
-            fetch('/logout', {
-                method: 'GET'
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Si la sesión se cerró correctamente, redirige al usuario
-                if (data.message === 'Sesión cerrada exitosamente') {
-                    // Redirige a la página de inicio o login
-                    window.location.href = '/'; // Puedes cambiar la ruta según tus necesidades
-                }
-            })
-            .catch(error => {
-                console.log('Error al cerrar sesión:', error);
-            });
-        });
-    </script>
-
-    <%- include('partials/footer') %>  
+  <script type="module" src="./main.js"></script>
+  <script type="module" src="./pdf.js"></script>
+  <%- include('partials/footer') %>  
 </body>
+
 </html>

@@ -1,85 +1,260 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <title>Asamblea</title>
-    <!-- Enlace a Bootstrap CSS desde CDN -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <!-- cabecera -->
-    <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
+  <meta charset="UTF-8">
+  <title>MJR - Consultas</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <%- include('partials/head') %>
+
     <style>
-            th {
-            border: 1px solid rgb(247, 244, 244);
-            padding: 8px;
-            text-align: left;
+        body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f2f4f8;
+        margin: 0;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
         }
 
-        .successImage {
-            display: none; /* Ocultar inicialmente */
-            width: 50px; /* Ajusta el tamaño según necesites */
-            margin-top: 10px; /* Espacio superior */
-        }        
+
+        .modern-btn {
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 500;
+  padding: 14px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #3b82f6); /* color por defecto */
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.modern-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modern-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.1);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+        /* Modal */
+        .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        }
+
+        .modal.show {
+        display: flex;
+        animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+        }
+
+        .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        position: relative;
+        }
+
+        .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #555;
+        }
+
+        form input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        }
+
+        form button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background: #3b82f6;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        }
+
+        /* Colores individuales */
+        .btn-rojo { background: linear-gradient(135deg, #ef4444, #a85b5b); }
+        .btn-verde { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-azul { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-amarillo { background: linear-gradient(135deg, #fde047, #facc15); color: #333; }
+        .btn-morado { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+        .btn-cyan { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
+        .btn-naranja { background: linear-gradient(135deg, #fb923c, #f97316); }
+        .btn-rosa { background: linear-gradient(135deg, #f472b6, #ec4899); }
+        .btn-gris { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+
+        .contenedor-botones {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+.modern-btn {
+  width: 30%; /* Esto hace que se ajuste al ancho de la columna */
+}
+
+.modern-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+/* titulos */
+.titulo-moderno {
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  font-size: 2em;
+  font-weight: 400;
+  color: transparent;
+  background-image: linear-gradient(to right, #3498db, #9b59b6);
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-align: center;
+  position: relative;
+  margin-bottom: 50px;
+  animation: fadeInText 1s ease-out;
+}
+
+.titulo-moderno::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(to right, #3498db, #9b59b6);
+  border-radius: 2px;
+  animation: underlineExpand 1s ease-out forwards;
+}
+
+/* Animaciones */
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes underlineExpand {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-
 <body>
-    <%- include('partials/navigation') %>  
-    <br><br>
-    <div class="content">
-        <div style="text-align: center;">
-            <h5 style="color: #e04010c7; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); display: inline; margin-right: 30px; margin-left: 80px;">Pregunta :</h5>
-            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;&nbsp;<%= texto %></h6>
-        </div>    
-        <div class="register-form30">    
-            <h5 style="color: #5a6904c7; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); text-align: center;">Opciones de respuesta</h5>
-            <div class="container mt-1">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <th>
-                            <a href="/ingpreguntas" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
-                            <a href="/preguntasopc?id=<%= id %>&respuesta=<%= texto %>" class="btn btn-primary btn-sm">Adicionar</a>
-                        </th>
-                    </thead>        
-                </table>
+      <!-- Encabezado fijo -->
+    <header class="encabezado">
+        <%- include('partials/navigation') %>
+    </header>
+
+    <div>
+      <h1 class="titulo-moderno">Informes / Consultas</h1>
+      </div>
+      <div class="contenedor-botones"> 
+        <!-- Contenido desplazable -->
+                <a href="/ccostocc" class="modern-btn btn-verde">Centros de Costo</a>
+                <a href="/ccostofch" class="modern-btn btn-azul">CCosto Actualizar Fechas</a>
+                <a href="/users_consulta" class="modern-btn btn-amarillo">Consulta Usuarios</a>
+                <button class="modern-btn btn-cyan" data-form="form6">Inspecciones</button>
+
+                <!--<a href="/general" class="modern-btn btn-naranja">General</a> -->
+                <a href="/progresogral" class="modern-btn btn-rojo">Progreso</a>
+                <a href="/progresogralT?idot=1792&descripcion=C Costo" class="modern-btn btn-azul">Ir a progreso</a>
+
+
+                <!--<button class="modern-btn btn-morado" data-form="form9">...</button>
+                <button class="modern-btn btn-gris" data-form="form1">...</button>
+                <button class="modern-btn btn-rojo" data-form="form5">...</button> -->
+                <a href="/ccostoexp" class="modern-btn btn-gris"> Exportar a Excel Centros de Costo</a>
+
             </div>
-            <div class="container mt-1">
-                        <table class="table table-bordered table-hover">
-                            <thead></thead>        
-                            <tbody>
-                                <% if (data && data.length > 0) { %>
-                                    <% data.forEach(function(item) { %>
-                                        <tr>
-                                            <td class="tex-hover-effect"><%= item.respuesta %></td>
-                                            <td>
-                                                <a href="/modopc?idvlrprg=<%= item.id %>&respuesta=<%= item.respuesta %><%idp= id %><%pgp= texto %>" class="btn btn-warning btn-sm btn-hover-effect ">Mod</a>
-                                            </td>
-                                            <td>
-                                                <a href="/eliopc?idvlrprg=<%= item.id %>&respuesta=<%= item.respuesta %><%idp= id %><%pgp= texto %>" class="btn btn-danger btn-sm btn-hover-effect ">Ret</a>
-                                            </td>
-                                        </tr>
-                                    <% }); %>
-                                <% } else { %> 
-                                    <tr>
-                                        <td colspan="3">No hay datos disponibles</td> <!-- Cambié colspan a 3 -->
-                                    </tr>
-                                <% } %>
-                            </tbody>
-                        </table>
-            </div>    
-        </div>
     </div>
-    <%- include('partials/footer') %>
-    <!-- Enlace a Bootstrap JS y dependencias desde CDN -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <br>
+    <div class="d-flex justify-content-start align-items-center mb-0">
+        <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeModal">&times;</span>
+        <h2 id="modalTitle">Formulario</h2>
+        <form id="modalForm"></form>
+      </div>
+    </div>
+  
+
+    <!-- JS -->
+    <script type="module" src="/js/modales.js"></script>
+
 </body>
-
-
-
 </html>

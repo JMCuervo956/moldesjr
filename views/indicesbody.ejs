@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Descripciones</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 100px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 0px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
+
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
+
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+  .table {
+    width: 100%;
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: hwb(210 84% 9%) !important;
+  }
+
+  .thead-small th {
+    font-size: 12px;
+  }
+
+.tabla-compacta td {
+  padding: 2px 4px;
+  font-size: 12px;
+}
+</style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigationF') %>
+  </header>  
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+          <div class="d-flex justify-content-between align-items-center mb-0 px-4">
+            <!-- Izquierda: Botones -->
+            <div class="ms-5">
+              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
+              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            </div>
+          
+            <!-- Centro: Título centrado -->
+            <div class="flex-grow-1 text-center">
+              <h3 class="mb-2 fw-semibold d-inline-block position-relative"
+                  style="letter-spacing: 1px; color: #2c3e50; font-size: 1rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                Cumplimiento de Actividades Diarias
+              </h3>
+            </div>
+
+            <!-- Derecha vacía para balancear -->
+            <div style="width: 200px;"></div>
+          </div>
+          
+          <% if (typeof mensaje !== 'undefined') { %>
+            <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+              <%= mensaje.texto %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar" style="background-color: rgb(243, 131, 131); color: white; border: none; padding: 4px 8px; border-radius: 4px;">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <% } %>
+
+        <div class="container-fluid mt-1">
+              <div class="content2">
+                <div class="register-formpgt11">           
+
+                <div style="max-height: 550px; overflow-y: auto;">
+                    <table class="table table-bordered">
+                       <thead class="thead-small" style="position: sticky; top: 0; z-index: 10; background-color: #343a40; color: white;">
+                            <tr>
+                                <th rowspan="2" class="text-center">Orden</th>
+                                <th rowspan="2" class="text-center">Índice</th>
+                                <th rowspan="2" class="text-center">Descripcion</th>
+
+                                <th colspan="3" class="text-center">Lun</th>
+                                <th colspan="3" class="text-center">Mar</th>
+                                <th colspan="3" class="text-center">Mié</th>
+                                <th colspan="3" class="text-center">Jue</th>
+                                <th colspan="3" class="text-center">Vie</th>
+
+                                <th rowspan="2" class="text-center">Acciones</th>
+                            </tr>
+
+                        <tr>
+                            <th class="text-center" style="color: #4f4b66;">Si</th>
+                            <th class="text-center" style="color: #4f4b66;">No</th>
+                            <th class="text-center" style="color: #4f4b66;">Na</th>
+
+                            <th class="text-center" style="color: #4f4b66;">Si</th>
+                            <th class="text-center" style="color: #4f4b66;">No</th>
+                            <th class="text-center" style="color: #4f4b66;">Na</th>
+
+                            <th class="text-center" style="color: #4f4b66;">Si</th>
+                            <th class="text-center" style="color: #4f4b66;">No</th>
+                            <th class="text-center" style="color: #4f4b66;">Na</th>
+
+                            <th class="text-center" style="color: #4f4b66;">Si</th>
+                            <th class="text-center" style="color: #4f4b66;">No</th>
+                            <th class="text-center" style="color: #4f4b66;">Na</th>
+
+                            <th class="text-center" style="color: #4f4b66;">Si</th>
+                            <th class="text-center" style="color: #4f4b66;">No</th>
+                            <th class="text-center" style="color: #4f4b66;">Na</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% if (otrabajo.length > 0) { %>
+                          <% otrabajo.forEach(otrabajo => { %>
+                            <tr style="line-height: 1.3;">
+                              <td style="width: 100px; font-size: 15px;"><%= otrabajo.idot%></td>
+                              <td style="width: 50px; font-size: 15px; 
+                                <%= otrabajo.indice.length === 1 ? 'background-color: #d1e7dd; color: #0f5132; font-weight: bold;' : '' %>">
+                                <%= otrabajo.indice %>
+                            </td>
+                            <td style="width: 1000px; font-size: 15px; 
+                                <%= otrabajo.indice.length === 1 ? 'background-color: #d1e7dd; color: #0f5132; font-weight: bold;' : '' %>">
+                                <%= otrabajo.descripcion %>
+                            </td>
+
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.l_si%></td>
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.l_no%></td>
+                              <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.l_na %></td> <!-- Línea separadora -->
+
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.m_si%></td>
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.m_no%></td>
+                              <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.m_na %></td> <!-- Línea separadora -->
+
+
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.mi_si%></td>
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.mi_no%></td>
+                              <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.mi_na %></td> <!-- Línea separadora -->
+
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.j_si%></td>
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.j_no%></td>
+                              <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.j_na %></td> <!-- Línea separadora -->
+
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.v_si%></td>
+                              <td style="width: 10px; font-size: 12px;"><%= otrabajo.v_no%></td>
+                              <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.v_na %></td> <!-- Línea separadora -->
+
+                              <td class="text-center" style="width: 300px; padding: 2px 4px; font-size: 8px; vertical-align: middle;">
+                                  <% if (otrabajo.indice.length > 1) { %>
+                                    <button 
+                                      class="btn btn-warning btn-sm" 
+                                      style="padding: 2px 4px; font-size: 10px; line-height: 1;" 
+                                      onclick='editarCiudad(<%- JSON.stringify(otrabajo) %>)' 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad">
+                                      Modificar
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 10px; line-height: 1;" onclick="confirmarEliminacion('<%= otrabajo.indice %>')">Eliminar</button>
+                                  <% } %>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="5">No hay Centro de costo registrado.</td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+              </div>
+              <div class="modal-body">
+                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Adicionar / Modificar -->
+        
+        <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xl" role="document">
+            <form action="/indicesbody" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
+
+              <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
+                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
+                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+             
+              <div class="modal-body">
+                <input type="hidden" name="editando" id="editando" value="false">
+                <input type="hidden" id="idot-hidden" name="idot" value="">
+
+              <div class="d-flex align-items-center " style="width: 100%;">
+                <label for="torden" class="mb-0 " style="min-width: 60px;">Orden</label>
+                <select class="form-control form-control-sm input-con-sombra ms-2" name="torden" id="torden" required style="flex: 1;">
+                  <option value="">Seleccione Orden</option>
+                  <% otrb.forEach(p => { %>
+                    <option value="<%= p.idot %>"><%= p.idot %> - <%= p.descripcion %></option>
+                  <% }) %>
+                </select>
+              </div>
+                              
+
+              <div class="d-flex align-items-center " style="width: 100%;">
+                <label for="dise" class="mb-0 " style="min-width: 60px;">Indice</label>
+                <select class="form-control form-control-sm input-con-sombra ms-2" name="dise" id="dise" required style="flex: 1;">
+                  <option value="">Seleccione Indice</option>
+                  <% dise.forEach(p => { %>
+                    <option value="<%= p.indice %>"><%= p.indice %> - <%= p.descripcion %></option>
+
+                  <% }) %>
+                </select>
+              </div>
+
+                <label for="dise" class="mb-0 " style="min-width: 60px;">Cumplimiento</label>
+
+                <div>
+
+<!-- Lunes -->                
+<div class="d-flex align-items-start gap-3 ">
+  <!-- Título: Lunes -->
+  <label class="mb-0 " style="min-width: 10ch;">Lunes</label>
+
+  <!-- Si -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="l_si" class="mb-1">Si</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_si" id="l_si">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- No -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="l_no" class="mb-1">No</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_no" id="l_no">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- Na -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="l_na" class="mb-1">Na</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_na" id="l_na">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+</div>
+                  
+
+<!-- Martes -->                
+<div class="d-flex align-items-start gap-3 ">
+  <label class="mb-0 " style="min-width: 10ch;">Martes</label>
+
+  <!-- Si -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="m_si" class="mb-1">Si</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_si" id="m_si">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- No -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="m_no" class="mb-1">No</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_no" id="m_no">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- Na -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="m_na" class="mb-1">Na</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_na" id="m_na">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+</div>
+
+<!-- Miercoles -->                
+<div class="d-flex align-items-start gap-3 ">
+  <label class="mb-0 " style="min-width: 60px;">Miercoles</label>
+
+  <!-- Si -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="mi_si" class="mb-1">Si</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_si" id="mi_si">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- No -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="mi_no" class="mb-1">No</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_no" id="mi_no">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- Na -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="mi_na" class="mb-1">Na</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_na" id="mi_na">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+</div>
+
+<!-- jueves -->                
+<div class="d-flex align-items-start gap-3 ">
+  <label class="mb-0 " style="min-width:  10ch;">Jueves</label>
+
+  <!-- Si -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="j_si" class="mb-1">Si</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_si" id="j_si">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- No -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="j_no" class="mb-1">No</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_no" id="j_no">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- Na -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="j_na" class="mb-1">Na</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_na" id="j_na">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+</div>
+
+
+<!-- viernes -->                
+<div class="d-flex align-items-start gap-3 ">
+  <label class="mb-0 " style="min-width:  10ch;">Viernes</label>
+
+  <!-- Si -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="v_si" class="mb-1">Si</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_si" id="v_si">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- No -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="v_no" class="mb-1">No</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_no" id="v_no">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+
+  <!-- Na -->
+  <div class="d-flex flex-column align-items-center">
+    <label for="v_na" class="mb-1">Na</label>
+    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_na" id="v_na">
+      <option value="">-</option>
+      <option value="S">X</option>
+    </select>
+  </div>
+</div>
+
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+  </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = ['l_si', 'l_no', 'l_na'];
+
+    selects.forEach(id => {
+      document.getElementById(id).addEventListener('change', function () {
+        if (this.value === 'S') {
+          // Si este select es "S", vaciar los demás
+          selects.forEach(otherId => {
+            if (otherId !== id) {
+              document.getElementById(otherId).value = '';
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = ['m_si', 'm_no', 'm_na'];
+
+    selects.forEach(id => {
+      document.getElementById(id).addEventListener('change', function () {
+        if (this.value === 'S') {
+          // Si este select es "S", vaciar los demás
+          selects.forEach(otherId => {
+            if (otherId !== id) {
+              document.getElementById(otherId).value = '';
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = ['mi_si', 'mi_no', 'mi_na'];
+
+    selects.forEach(id => {
+      document.getElementById(id).addEventListener('change', function () {
+        if (this.value === 'S') {
+          // Si este select es "S", vaciar los demás
+          selects.forEach(otherId => {
+            if (otherId !== id) {
+              document.getElementById(otherId).value = '';
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = ['j_si', 'j_no', 'j_na'];
+
+    selects.forEach(id => {
+      document.getElementById(id).addEventListener('change', function () {
+        if (this.value === 'S') {
+          // Si este select es "S", vaciar los demás
+          selects.forEach(otherId => {
+            if (otherId !== id) {
+              document.getElementById(otherId).value = '';
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = ['v_si', 'v_no', 'v_na'];
+
+    selects.forEach(id => {
+      document.getElementById(id).addEventListener('change', function () {
+        if (this.value === 'S') {
+          // Si este select es "S", vaciar los demás
+          selects.forEach(otherId => {
+            if (otherId !== id) {
+              document.getElementById(otherId).value = '';
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+      // Activa tooltips en toda la página
+      document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+          new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+      });
+  </script>
+
+  <!-- Control Numeros en campos -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Seleccionar todos los inputs con la clase "input-numerico"
+      const camposNumericos = document.querySelectorAll('.input-numerico');
+
+      camposNumericos.forEach(function(nitInput) {
+        // Evento 'input' para eliminar caracteres no numéricos
+        nitInput.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '');  // Elimina cualquier caracter que no sea dígito
+          this.setCustomValidity('');  // Limpiar el mensaje de error
+        });
+
+        // Evento 'invalid' para mostrar un mensaje de error personalizado
+        nitInput.addEventListener('invalid', function () {
+          if (!this.validity.valid) {
+            this.setCustomValidity('Por favor ingrese entre 1 y 9 dígitos numéricos.');
+          }
+        });
+
+        // Evento 'change' para limpiar los errores si el valor es válido
+        nitInput.addEventListener('change', function () {
+          this.setCustomValidity('');
+        });
+      });
+    });
+  </script>
+  
+  <!-- JavaScript para enfocar el campo Nit cuando se abra el modal -->
+<script>
+  $('#modalCiudad').on('shown.bs.modal', function () {
+    $('#nit').trigger('focus');
+  });
+</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const nitInput = document.getElementById('nit');
+  
+      nitInput.addEventListener('input', function () {
+        // Elimina cualquier carácter que no sea dígito
+        this.value = this.value.replace(/\D/g, '');
+      });
+    });
+  </script>
+  
+  <script>
+    function editarCiudad(otrabajo) {
+      document.getElementById('editando').value = "true";
+
+      // Habilitar campos para edición
+      document.getElementById('descripcion').disabled = false;
+
+      // Set valores
+      document.getElementById('torden').value = otrabajo.indice;
+      document.getElementById('torden').disabled = true; // Bloquear si es solo visible
+      document.getElementById('descripcion').value = otrabajo.descripcion;
+      document.getElementById('prd').value = otrabajo.prd;
+
+      document.getElementById('idot-hidden').value = otrabajo.idot;
+
+      toggleBotonesModal('modificar');
+    }
+
+    function formatFecha(fechaTexto) {
+        const fecha = new Date(fechaTexto);
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function limpiarFormularioCiudad() {
+      // Si el campo de idot (select) estaba deshabilitado, habilítalo para el próximo uso
+      document.getElementById('torden').disabled = false;
+      document.getElementById('idot-hidden').value = "";
+
+      document.getElementById('descripcion').value = "";
+      document.getElementById('torden').value = "";
+      document.getElementById('prd').value = "";
+
+      // Si usas un campo oculto para "editando"
+      document.getElementById('editando').value = "false";
+    }
+
+
+    function copiarDatosFormulario() {
+      const idotSelect = document.getElementById('torden');
+      const idotHidden = document.getElementById('idot-hidden');
+
+      if (!idotSelect.value) {
+        alert("Debes seleccionar un valor válido.");
+        return false;
+      }
+
+      idotHidden.value = idotSelect.value;
+      return true;
+    }
+
+    function confirmarEliminacion(idot) {
+      document.getElementById('nombreAEliminar').textContent = idot;
+      document.getElementById('confirmarEliminarLink').href = `/indicesbody/delete/${idot}`;
+      $('#modalConfirmarEliminar').modal('show');
+    }
+
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 2000);
+      }
+    };
+
+  </script>
+
+
+<!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

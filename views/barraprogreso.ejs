@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Progreso con Días y Finalización</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+    .register-formAncho {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .estado-mes {
+      display: flex;
+      justify-content: space-between; /* separa a izquierda y derecha */
+      align-items: baseline;          /* alinea por abajo del texto */
+      margin-bottom: 0px;
+    }
+
+    #estado,
+    #nombre-mes {
+      font-size: 1.2rem;
+      font-weight: bold;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+    }
+
+    .barra-scroll-wrap {
+      overflow-x: auto;
+      width: 100%;
+      border: 1px solid #bbb;
+      margin-bottom: 20px;
+      padding-bottom: 30px; /* espacio para etiquetas */
+      position: relative;
+    }
+    .barra-contenedor {
+      position: relative;
+      height: 30px;  /* alto de barra */
+      background-color: #eee;
+      min-width: 100%; /* se ajustará en JS */
+    }
+    .barra {
+      position: absolute;
+      height: 100%;
+      top: 0;
+      left: 0;
+      border-radius: 4px;
+    }
+    .barra.fondo {
+      background-color: #ccc;
+    }
+    .barra.progreso {
+      background-color: #00c853;
+      width: 0;
+    }
+    .linea-dia {
+      position: absolute;
+      top: 0;
+      bottom: 20px;
+      width: 1px;
+      background-color: rgb(42, 10, 156);
+    }
+    .linea-mes {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #FF5722;
+    }
+    .dia-label {
+      position: absolute;
+      top: 34px;
+      font-size: 10px;
+      user-select: none;
+      z-index: 4;
+      width: 30px;
+      transform: translateX(-50%);
+      text-align: center;
+      color: #333;
+      white-space: nowrap;
+    }
+    .dia-finde, .dia-festivo {
+      color: red;
+      font-weight: bold;
+    }
+    .fechas {
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: bold;
+      color: #2b0202;
+      margin-bottom: 10px;
+    }
+
+    .fechas-secundarias {
+      max-width: 900px;
+      font-size: 14px;
+      color: darkblue;
+      font-weight: bold;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 3px;
+    }
+
+    #nombre-mes {
+      font-weight: bold;
+      text-align: center;
+      color: #0e011d;
+      margin-bottom: 20px;
+      font-size: 20px;
+      height: 25px; 
+    }
+
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .modal-table td {
+      padding: 2px 12px;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    .modal-table tr.resaltado td {
+      background-color: #f0f8ff;
+      font-weight: bold;
+      color: #1a237e;
+      font-size: 15px;
+    }
+
+    .modal-table td.col {
+      font-weight: bold;
+      color: #2e7d32;
+    }
+
+    .modal-table td.sin-negrilla {
+      font-weight: normal;
+      color: #555;
+    }
+
+    .modal-table strong {
+      color: #000;
+    }
+
+    .modal-table tr:last-child td {
+      border-bottom: none;
+    }
+
+
+</style>
+</head>
+<body>
+  <div class="ms-5">
+    <a href="/ccosto" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+  </div>
+
+  <div class="register-formAncho">
+    <div class="estado-mes">
+      <div id="estado"></div>
+      <div id="nombre-mes"></div>
+    </div>
+
+    <div class="barra-scroll-wrap" id="barra-scroll-wrap">
+      <div class="barra-contenedor" id="barra-contenedor">
+        <div id="barra-fondo" class="barra fondo"></div>
+        <div id="barra-progreso" class="barra progreso"></div>
+      </div>
+    </div>
+
+
+    <div class="fechas">
+      <div id="fecha-inicio"></div>
+      <div id="fecha-hoy"></div>
+      <div id="fecha-final"></div>
+    </div>
+
+    <div class="fechas-secundarias">
+      <div id="fecha-fin"></div>
+    </div>
+
+    <div id="datos-centro-costo"></div>
+  </div>
+
+  <script>
+
+  const datosBD = <%- JSON.stringify(datosBD) %>;
+    const html = `
+    <hr>
+    <hr>
+    <table class="modal-table" style="margin-top: 30px;">
+      <tr class="resaltado">
+        <td><strong>Centro de Costo:</strong></td>
+        <td colspan="2">${datosBD.cc}</td>
+      </tr>
+      <tr>
+        <td><strong>Descripción:</strong></td>
+        <td colspan="2">${datosBD.descripcion}</td>
+      </tr>
+      <tr><td colspan="3" style="height: 16px;"></td></tr>
+      <tr>
+        <td class="sin-negrilla">Cliente:</td>
+        <td colspan="2">${datosBD.cliente}</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td class="col" style="color: blue;">${datosBD.ncliente}</td>
+      </tr>
+      <tr>
+        <td class="sin-negrilla">Fecha Orden:</td>
+        <td class="col">${datosBD.FechaOrden}</td>
+      </tr>
+      <tr>
+        <td class="sin-negrilla">Fecha Entrega:</td>
+        <td class="col">${datosBD.FechaEntrega}</td>
+      </tr>
+      <tr>
+        <td class="sin-negrilla">Cantidad:</td>
+        <td class="col">${datosBD.cantidad}</td>
+      </tr>
+      <tr>
+        <td class="sin-negrilla">Peso:</td>
+        <td class="col">${datosBD.peso}</td>
+      </tr>
+      <tr>
+        <td class="sin-negrilla">Unidad:</td>
+        <td class="col">${datosBD.nunidad}</td>
+      </tr>
+      <tr><td colspan="3" style="height: 16px;"></td></tr>
+      <tr>
+        <td><strong>Observación:</strong></td>
+        <td colspan="2">${datosBD.comentarios}</td>
+      </tr>
+    </table>
+  `;
+  document.getElementById('datos-centro-costo').innerHTML = html;
+</script>
+
+  <script>
+    const datos = {
+      FechaOrden: datosBD.FechaOrden,
+      FechaEntrega: datosBD.FechaEntrega,
+      FechaFin: datosBD.FechaFin,
+    };
+
+    const nombresMeses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const nombresDias = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
+
+    function crearFechaLocal(str) {
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function formatYMD(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function calcularEstadoYProgreso(o, e, f = null) {
+      const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+      const orden = crearFechaLocal(o);
+      const entrega = crearFechaLocal(e);
+      const entregaFin = new Date(entrega.getFullYear(), entrega.getMonth(), entrega.getDate(), 23, 59, 59, 999);
+      const fin = f ? crearFechaLocal(f) : null;
+      if (fin) fin.setHours(23, 59, 59, 999);
+
+      const hoyMs = hoy.getTime(),
+        ordenMs = orden.getTime(),
+        entregaMs = entregaFin.getTime(),
+        finMs = fin ? fin.getTime() : null;
+      let estado = '', color = 'gray', porcentaje = 0;
+
+      if (!fin) {
+        if (ordenMs > hoyMs) {
+          estado = 'Por iniciar'; color = 'gray';
+        } else if (hoyMs <= entregaMs) {
+          estado = 'En proceso'; color = 'green';
+        } else {
+          estado = 'En retraso'; color = 'red';
+        }
+        const total = entregaMs - ordenMs;
+        porcentaje = total > 0 ? ((hoyMs - ordenMs) / total) * 100 : 100;
+      } else {
+        if (finMs < entregaMs) {
+          estado = 'Finalizada antes de tiempo'; color = 'blue';
+        } else if (finMs === entregaMs) {
+          estado = 'Finalizada en tiempo'; color = 'green';
+        } else {
+          estado = 'Entrega atrasada'; color = 'red';
+        }
+        porcentaje = 100;
+      }
+      porcentaje = Math.min(100, Math.max(0, porcentaje));
+      return { estado, color, porcentaje, fechaOrden: orden, fechaEntrega: entrega, hoy, fechaFin: fin };
+    }
+
+    const festivosColombia = {
+      '2025-01-01': 'Año Nuevo',
+      '2025-01-06': 'Reyes Magos',
+      '2025-03-24': 'San José',
+      '2025-04-17': 'Jueves Santo',
+      '2025-04-18': 'Viernes Santo',
+      '2025-05-01': 'Día del Trabajo',
+      '2025-05-26': 'Ascensión del Señor',
+      '2025-06-16': 'Corpus Christi',
+      '2025-06-23': 'Sagrado Corazón',
+      '2025-07-20': 'Independencia',
+      '2025-08-07': 'Batalla de Boyacá',
+      '2025-08-15': 'La Asunción',
+      '2025-10-13': 'Día de la Raza',
+      '2025-11-03': 'Todos los Santos',
+      '2025-11-17': 'Independencia de Cartagena',
+      '2025-12-08': 'Inmaculada Concepción',
+      '2025-12-25': 'Navidad'
+    };
+
+    const res = calcularEstadoYProgreso(datos.FechaOrden, datos.FechaEntrega, datos.FechaFin);
+
+    // Mostrar estado
+    const estadoDiv = document.getElementById('estado');
+    estadoDiv.textContent = res.estado;
+    estadoDiv.style.color = res.color;
+
+    // Mostrar fechas
+    document.getElementById('fecha-inicio').textContent = 'Inicio: ' + formatYMD(res.fechaOrden);
+    document.getElementById('fecha-hoy').textContent = 'Hoy: ' + formatYMD(res.hoy);
+    document.getElementById('fecha-final').textContent = 'Entrega: ' + formatYMD(res.fechaEntrega);
+
+    const fechaFinDiv = document.getElementById('fecha-fin');
+    if (res.fechaFin) {
+      fechaFinDiv.textContent = 'Finalización: ' + formatYMD(res.fechaFin);
+    }
+
+    // Calcular días y ancho
+    const anchoDiaPx = 40;
+    const totalDias = Math.floor((res.fechaEntrega - res.fechaOrden) / (864e5)) + 1;
+    const anchoTotal = totalDias * anchoDiaPx;
+
+    const cont = document.getElementById('barra-contenedor');
+    cont.style.minWidth = anchoTotal + 'px';
+
+    // Ajustar barra de progreso y fondo para todo el ancho
+    const barraFondo = document.getElementById('barra-fondo');
+    const barraProgreso = document.getElementById('barra-progreso');
+    barraFondo.style.width = anchoTotal + 'px';
+
+    const diasTranscurridos = Math.min(totalDias, Math.floor((res.hoy - res.fechaOrden) / (1000 * 60 * 60 * 24)) + 1);
+    const anchoProgresoPx = diasTranscurridos * anchoDiaPx;
+    barraProgreso.style.width = anchoProgresoPx + 'px';
+
+    barraProgreso.style.backgroundColor = res.color;
+
+    // Dibujar líneas y etiquetas
+    let mesAnt = res.fechaOrden.getMonth();
+    const fechasArray = [];
+
+    for (let i = 0; i <= totalDias; i++) {
+      // Líneas de días en múltiplos exactos (0, 40, 80...)
+      const leftLineaPx = i * anchoDiaPx;
+
+      const linea = document.createElement('div');
+      linea.className = 'linea-dia';
+      linea.style.left = leftLineaPx + 'px';
+      cont.appendChild(linea);
+
+      // Línea cambio de mes (excepto la primera línea)
+      if (i > 0 && i < totalDias) {
+        const fecha = new Date(res.fechaOrden.getTime());
+        fecha.setDate(fecha.getDate() + i - 1);
+        if (fecha.getMonth() !== mesAnt) {
+          const lineaMes = document.createElement('div');
+          lineaMes.className = 'linea-mes';
+          lineaMes.style.left = leftLineaPx + 'px';
+          cont.appendChild(lineaMes);
+          mesAnt = fecha.getMonth();
+        }
+      }
+    }
+
+    // Etiquetas centradas entre líneas (en 0.5, 1.5, 2.5...)
+    mesAnt = res.fechaOrden.getMonth();
+    for (let i = 0; i < totalDias; i++) {
+      const fecha = new Date(res.fechaOrden.getTime());
+      fecha.setDate(fecha.getDate() + i);
+      fechasArray.push(fecha);
+      const diaIndex = (fecha.getDay() + 6) % 7;
+      const ymd = formatYMD(fecha);
+      const leftLabelPx = i * anchoDiaPx + anchoDiaPx / 2;
+
+      const label = document.createElement('div');
+      label.className = 'dia-label';
+      label.textContent = `${nombresDias[diaIndex]} ${fecha.getDate()}`;
+      label.style.left = leftLabelPx + 'px';
+      if (diaIndex >= 5) label.classList.add('dia-finde');
+      if (festivosColombia[ymd]) {
+        label.classList.add('dia-festivo');
+        label.title = festivosColombia[ymd];
+      }
+      cont.appendChild(label);
+    }
+
+    // Función para mostrar meses visibles al hacer scroll
+    const barraScrollWrap = document.getElementById('barra-scroll-wrap');
+    const nombreMesDiv = document.getElementById('nombre-mes');
+
+    function actualizarMesesVisibles() {
+      const scrollLeft = barraScrollWrap.scrollLeft;
+      const anchoVisible = barraScrollWrap.clientWidth;
+
+      // Día más a la izquierda visible
+      let indexIzq = Math.floor(scrollLeft / anchoDiaPx);
+      if (indexIzq < 0) indexIzq = 0;
+      if (indexIzq >= fechasArray.length) indexIzq = fechasArray.length - 1;
+
+      // Día más a la derecha visible
+      let indexDer = Math.floor((scrollLeft + anchoVisible) / anchoDiaPx);
+      if (indexDer < 0) indexDer = 0;
+      if (indexDer >= fechasArray.length) indexDer = fechasArray.length - 1;
+
+      const fechaIzq = fechasArray[indexIzq];
+      const fechaDer = fechasArray[indexDer];
+
+      const mesIzq = nombresMeses[fechaIzq.getMonth()];
+      const anioIzq = fechaIzq.getFullYear();
+      const mesDer = nombresMeses[fechaDer.getMonth()];
+      const anioDer = fechaDer.getFullYear();
+
+      if (mesIzq === mesDer && anioIzq === anioDer) {
+        nombreMesDiv.textContent = `${mesIzq} ${anioIzq}`;
+      } else {
+        nombreMesDiv.textContent = `${mesIzq} ${anioIzq} - ${mesDer} ${anioDer}`;
+      }
+    }
+
+    // Inicializar meses visibles
+    actualizarMesesVisibles();
+
+    // Evento scroll para actualizar meses visibles
+    barraScrollWrap.addEventListener('scroll', actualizarMesesVisibles);
+  </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Actividades</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
+
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
+
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+  .table {
+    width: 100%;
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: hwb(210 84% 9%) !important;
+  }
+    </style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigationF') %>
+  </header>  
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+          <div class="d-flex justify-content-between align-items-center mb-0 px-4">
+            <!-- Izquierda: Botones -->
+            <div class="ms-5">
+              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            </div>         
+            <!-- Centro: Título centrado -->
+            <div>
+              <h3
+                  style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                Actividades Ordenes de Trabajo
+                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+              </h3>
+            </div>
+
+            <!-- Derecha vacía para balancear -->
+            <div style="width: 200px;"></div>
+          </div>
+    <div class="container-fluid mt-1">
+      <div class="content2">
+        <div class="register-formAncho">
+          <div style="overflow-x: auto;">
+            <table class="table-striped" style="font-size: 15px;"> <!-- Reduce font-size a nivel de tabla -->
+              <thead class="thead-dark">
+                <tr style="line-height: 1.1;"> <!-- Menor altura de línea -->
+                  <th class="text-center">Orden</th>
+                  <th class="text-center">Descripción</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (otrabajo.length > 0) { %>
+                  <% otrabajo.forEach(otrabajo => { %>
+                    <tr style="line-height: 1; font-size: 16px;"> <!-- Aún más compacto -->
+                      <td style="width: 100px;" class="text-center"><%= otrabajo.idot %></td>
+                      <td style="width: 300px;"><%= otrabajo.descripcion %></td>
+                      <td class="text-center" style="width: 100px; padding: 2px 4px;">
+                        <a 
+                          href="/respuesta?idot=<%= otrabajo.idot %>&descripcion=<%= encodeURIComponent(otrabajo.descripcion) %>" 
+                          class="btn btn-primary btn-sm" 
+                          style="padding: 1px 4px; font-size: 10px; line-height: 2;">
+                          Actividades
+                        </a>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr style="font-size: 10px;">
+                    <td colspan="5" class="text-center">No hay Actividades registradas.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</div>
+
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+ 
+  <script>
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 2000);
+      }
+    };
+
+  </script>
+
+<!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

@@ -11,7 +11,7 @@
   .dropbtn {
     background-color: transparent; /* Opcional: para eliminar el fondo de los botones */
     border: none; /* Opcional: para eliminar el borde */
-    color: rgb(239, 245, 240); /* Color del texto */
+    color: rgb(148, 148, 148); /* Color del texto */
     font-weight: bold; /* Peso de la fuente */
     cursor: pointer; /* Cambiar cursor al pasar por encima */
     padding: 10px; /* Espaciado interno */
@@ -19,56 +19,18 @@
 
 </style>
 
-<nav class="navbar navbar-expand-lg custom-navbar-bg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #ffffff; border: 1px solid #BA1A1A;">
+
   <div class="container">
     <div class="d-flex align-items-center gap-3">
-      <img src="/static/images/jsoft.jpg" alt="Logo" style="height: 80px; padding-left: 15px; border-radius: 10px;">
+      <img src="/static/images/logo.jpg" alt="Logo" style="height: 80px; padding-left: 15px; border-radius: 10px;">
 
       <div>
-        <h3 class="activities-title" style="color: rgb(14, 2, 32);">........</h3>
+        <h3 class="navbar navbar-expand-lg navbar-dark" style="color: #ffffff;">........</h3>
       </div>
     </div>
-    <h3 class="activities-title" style="color: white;">A S A M B L E A - 2025</h3>
+    <h6 class="activities-title" style="color: #BA1A1A; font-size: 25px; font-weight: bold;">Moldes para concreto</h6>
         
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ms-auto">
-
-        <li class="nav-item dropdown">
-          <button class="dropbtn">Registros</button>
-          <div class="dropdown-content">
-            <a href="/registros">Tabla</a>
-          </div>
-        </li>
-
-
-        <li class="nav-item dropdown">
-          <button class="dropbtn">Usuarios</button>
-          <div class="dropdown-content">
-            <a href="/usuarios">Actualizar</a>
-            <a href="/usuariosreset">Resetear Contraseña</a>
-            <a href="/cargausuarios">Cargar Usuarios (formato .csv)</a>
-            <!-- <a href="/cargascol">Usuarios (col)</a> -->
-          </div>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/ingpreguntas">Preguntas</a>
-        </li>
-        <li class="nav-item dropdown">
-          <button class="dropbtn">Votacion</button>
-          <div class="dropdown-content">
-            <a href="/seleccion">Seleccionar Voto</a>
-            <a href="/disponer">Asignar</a>
-            <a href="/cerrar">Cerrar</a>
-            <a href="/totales">totales</a>
-            <a href="/valida">Validar</a>
-          </div>
-        </li>
-      </ul>
-    </div>
   </div>
 </nav>
 

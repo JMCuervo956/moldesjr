@@ -18,8 +18,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';	
 import mammoth from 'mammoth'; // docx a pdf
 import { componentsToColor, defaultCheckBoxAppearanceProvider, PDFDocument } from 'pdf-lib'; // docx a pdf
-import { calcularEstadoConColor } from './estadoFechas.js';
-
 
 // Configuración de rutas y variables		
 const app = express();
@@ -185,6 +183,7 @@ app.get('/ccosto', async (req, res) => {
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
+
             res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
         } else {
             res.redirect('/');
@@ -352,221 +351,6 @@ app.get('/modal', async (req, res) => {
     }
 });
 
-/*** C COSTO ACTUALIZAR FECHAS */
-
-/* CCOSTO */  /*************************************************************************************/
-
-app.get('/ccostofch', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-
-            const fechaHoraBogota = getBogotaDateTime();
-            const [ccosto] = await pool.execute(` 
-                SELECT a.*, b.cliente as clienteN,
-                CASE
-                    WHEN ? < a.fecha_orden THEN 'Por Iniciar'
-                    WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
-                    WHEN ? > a.fecha_entrega THEN 'Atrasado'
-                    ELSE 'Sin Estado'
-                END AS estado_actual
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
-
-            const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad');
-            const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-            const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('ccostofch', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
-});
- 
-// Crear o actualizar ciudad
-app.post('/ccostofch', async (req, res) => {
-    try {
-            console.log('solo actualizar fechas');
-            console.log(req.body);
-
-const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
-
-// Convertir '' en null
-const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
-const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
-
-let mensaje;
-
-if (editando === "true") {
-  const campos = [];
-  const valores = [];
-
-  if ('fecha_inicio' in req.body) {
-    campos.push('fecha_inicio = ?');
-    valores.push(fechaInicioFinal); // ahora puede ser null
-  }
-
-  if ('fecha_fin' in req.body) {
-    campos.push('fecha_fin = ?');
-    valores.push(fechaFinFinal); // ahora puede ser null
-  }
-
-  if (campos.length > 0) {
-    const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
-    valores.push(idcc);
-
-    await pool.execute(sql, valores);
-
-    mensaje = {
-      tipo: 'success',
-      texto: 'Actualizado exitosamente.'
-    };
-  } else {
-    mensaje = {
-      tipo: 'info',
-      texto: 'No se enviaron campos para actualizar.'
-    };
-  }
-}
-
-
-
-            // Obtener clientes
-
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `);
-
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('ccostofch', {
-            mensaje,
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-        `);
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-
-        res.status(500).render('ccostofch', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
-    }
-}); 
-
-
-/*** C COSTO CONSULTAR ********/ 
-
-app.get('/ccostocc', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-
-            const [ccosto] = await pool.execute(` 
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `);
-
-            const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad');
-            const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-            
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
-            res.render('ccostocc', { ccosto, unidadT, clienteT, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
-});
-
-/* modalcc */
-
-app.get('/modalcc', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-
-            //const id = req.params.id;
-            const id = req.query.idcc;
-
-            //const id = 1792;
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
-                WHERE idcc = ?
-            `, [id]);            
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-                cc: row.idcc,
-                descripcion: row.descripcion,
-                oc: row.ocompra,
-                cliente: row.cliente,
-                ncliente: row.client,
-                cantidad: row.cantidad,
-                peso: row.peso,
-                unidad: row.unidad,
-                nunidad: row.nund,
-                comentarios: row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>'),
-                FechaOrden: row.fecha_orden.toISOString().split('T')[0],
-                FechaEntrega: row.fecha_entrega.toISOString().split('T')[0]
-            };
-           
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
-            res.render('modalcc', { datos: data });
-
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
-});
 
 
 /* ORDEN DE TRABAJO /***************************************************************************/
@@ -721,9 +505,6 @@ app.post('/otrabajo', async (req, res) => {
     }
 });
 
-
-//  funcion hora  Bogota
-
 function getBogotaDateTime() {
     const now = new Date();
   
@@ -741,6 +522,7 @@ function getBogotaDateTime() {
     const hh = String(bogotaTime.getHours()).padStart(2, '0');
     const min = String(bogotaTime.getMinutes()).padStart(2, '0');
     const ss = String(bogotaTime.getSeconds()).padStart(2, '0');
+  
     return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
   }
  
@@ -988,47 +770,21 @@ app.get('/complementar', (req, res) => {
 });
 
 
+
+
+
+
 /** respmod ******************************************************************/
 
 app.get('/respmod', async (req, res) => {
   const idot = req.query.idot;
   const descripcion = req.query.descripcion;
 
-  // Recupera y borra el mensaje de la sesión
-  const mensaje = req.session.mensaje;
-  delete req.session.mensaje;
-
   const [acti] = await pool.execute(
     `SELECT id, task, text, duration, start_date FROM tbl_actividad WHERE type = 'Principal' AND idot = ?`,
     [idot]
   );
-
-  res.render('respmod', { mensaje, idot, descripcion, acti });
-});
-
-
-// Ruta POST para modificar actividad
-app.post('/modificar-actividad', async(req, res) => {
-  const { id, task, text, start_date, duration, idot, descripcion } = req.body;  
-  try {
-    // actualiza una actividad específica
-    await pool.execute(
-      `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? and task = ?`,
-      [text, start_date, duration, idot, task]
-    );
-
-    req.session.mensaje = {
-      tipo: 'success',
-      texto: `Actualizado exitosamente - Actividad: ${task}`,
-    };
-  } catch (err) {
-    console.error('Error al eliminar actividad:', err);
-    req.session.mensaje = {
-      tipo: 'danger',
-      texto: 'No se puede modificar actividad',
-    };
-  }
-  res.redirect(`/respmod?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
+  res.render('respmod', { idot, descripcion, acti });
 });
 
 /** reseli ******************************************************************/
@@ -1062,6 +818,30 @@ app.post('/reseli/delete/:task', async (req, res) => {
     };
   }
   res.redirect(`/reseli?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
+});
+
+// Ruta POST para modificar actividad
+app.post('/modificar-actividad', async(req, res) => {
+  const { id, task, text, start_date, duration, idot, descripcion } = req.body;  
+  try {
+    // actualiza una actividad específica
+    await pool.execute(
+      `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? and task = ?`,
+      [text, start_date, duration, idot, task]
+    );
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Actualizado exitosamente - Actividad: ${task}`,
+    };
+  } catch (err) {
+    console.error('Error al eliminar actividad:', err);
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: 'No se puede modificar actividad',
+    };
+  }
+  res.redirect(`/respmod?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
 });
 
 /* PAISES *************************************************************************************************/
@@ -1659,6 +1439,18 @@ app.get('/clientes/delete/:id', async (req, res) => {
     res.redirect('/clientes');
   });
 
+
+
+
+
+
+
+
+
+
+
+
+
 /* EQUIPO FUNCIONAL */
 
 app.get('/efuncional', async (req, res) => {
@@ -1923,6 +1715,9 @@ app.get('/usuariosreset', async (req, res) => {
             }
     });
 
+
+
+
 //  Gestionar -  AQUI
 
 app.get('/gestionar', async (req, res) => {
@@ -2034,6 +1829,7 @@ app.post('/gestionar', async (req, res) => {
             oequipo,
             prov
         });
+
     } catch (error) {
         console.error('Error guardando ciudad:', error);
         const [oequipo] = await pool.execute(` 
@@ -2230,6 +2026,10 @@ const uploadpdf = multer({ storage: storagepdf }); // Usar el almacenamiento con
     res.status(500).json({ error: 'Error al obtener ciudades' });
   }
 });
+
+
+
+
 
 /***  PIEZAS ***************************************************************************************************/
 
@@ -2607,56 +2407,7 @@ app.post('/users/delete/:id', async (req, res) => {
   });
 });
 
-/*consulta usuarios*/
-
-app.get('/users_consulta', async (req, res) => {
-    try {
-        if (!req.session.loggedin) {
-            return res.redirect('/');
-        }
-
-        const userUser = req.session.user;
-        const userName = req.session.name;
-
-        const [estados] = await pool.execute('SELECT * FROM tbl_estados');
-        const [roles] = await pool.execute('SELECT * FROM tbl_rol');
-        const [users] = await pool.execute(`SELECT * FROM users ORDER BY DATE_FORMAT(fecha_nac, '%m-%d')`);
-
-
-        // ✅ Manejo seguro del mensaje de sesión
-        const mensaje = req.session.mensaje || null;
-        delete req.session.mensaje; // Limpieza después de usar
-        res.render('users_consulta', {
-        users,
-        estados,
-        roles,
-        user: userUser,
-        name: userName,
-        mensaje,
-        formatFecha: function (fechaStr) {
-            if (!fechaStr) return '';
-            const fecha = new Date(fechaStr);
-            if (isNaN(fecha)) return '';
-            const dia = String(fecha.getDate()).padStart(2, '0');
-            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-            const anio = fecha.getFullYear();
-            return `${dia}/${mes}/${anio}`;
-        },
-        formatDiaMes: function (fechaStr) {
-            if (!fechaStr) return '';
-            const fecha = new Date(fechaStr);
-            if (isNaN(fecha)) return '';
-            const dia = String(fecha.getDate()).padStart(2, '0');
-            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-            return `${dia}/${mes}`;
-        }
-        });
-    } catch (error) {
-        console.error('Error al obtener los datos:', error);
-        res.status(500).send('Error al obtener los datos');
-    }
-});
-
+/*codigos*/
 
 /*****************************************************************************************************/
 
@@ -2674,6 +2425,9 @@ app.get('/users_consulta', async (req, res) => {
  */
 
 /**************************************************************** */
+
+
+
 
 app.get('/complementar', async (req, res) => {
   const idot = req.query.idot;
@@ -2840,7 +2594,9 @@ app.post('/usuariomodpass', async (req, res) => {
 app.post('/usuarioeli', async (req, res) => {
     try {
         const ids = req.body.ids;
+
         // Log para depuración delete
+
         const [result] = await pool.execute('DELETE FROM users WHERE (estado IS NULL OR estado = 0) AND user = ?', [ids]);
         if (result.affectedRows > 0) {
             // El registro fue eliminado con éxito
@@ -2920,617 +2676,8 @@ app.post('/valreg', async (req, res) => {
     }
 });
 
-/* Generañ ***************************************************************************************/
 
-/* RESPUESTA **********************************************************/
-
-app.get('/general', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            // Recuperar datos de la URL
-            const otrabajo = req.query.idot;
-            const descripcion = req.query.descripcion;
-            const [rows] = await pool.execute("select * from users");
-            res.render('general', { otrabajo, descripcion, preguntas: rows, user: userUser, name: userName });
-
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error real:', error);
-        res.status(500).send('Error conectando a la base de datos.');
-    }
-});
-
-/* BarraProgreso **********************************************************/
-
-app.get('/barraprogreso', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            // Recuperar datos de la URL
-            //const id = req.params.id;
-            const id = req.query.idcc;
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
-                WHERE idcc = ?
-            `, [id]);
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-            cc: row.idcc,
-            descripcion: row.descripcion,
-            oc: row.ocompra,
-            cliente: row.cliente,
-            ncliente: row.client,
-            cantidad: row.cantidad,
-            peso: row.peso,
-            unidad: row.unidad,
-            nunidad: row.nund,
-            comentarios: row.comentarios
-                ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
-                : '',
-            FechaOrden: row.fecha_orden
-                ? row.fecha_orden.toISOString().split('T')[0]
-                : null,
-            FechaEntrega: row.fecha_entrega
-                ? row.fecha_entrega.toISOString().split('T')[0]
-                : null,
-            FechaFin: row.fecha_fin
-                ? row.fecha_fin.toISOString().split('T')[0]
-                : null
-            };
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('barraprogreso', { preguntas: rows, user: userUser, name: userName, datosBD: data });
-
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error real:', error);
-        res.status(500).send('Error conectando a la base de datos.');
-    }
-});
-
-
-/* BarraProgreso **********************************************************/
-
-app.get('/progresogral', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            // Recuperar datos de la URL
-            //console.log(req.query);
-            //const id = req.params.id;
-            //const id = req.query.idcc;
-            //console.log(req.query.idcc);
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad 
-            `);
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('progresogral', { user: userUser, name: userName, datosBD: rows });
-
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error real:', error);
-        res.status(500).send('Error conectando a la base de datos.');
-    }
-});
-
-/* PROGRESO  BARRA LINEAL **********************************************************/
-
-app.get('/progresogralT', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-
-            /* ciudades */
-            const [otrabajo] = await pool.execute(` 
-                SELECT * FROM tbl_ccosto order by idcc desc
-            `);
-            const [prov] = await pool.execute('select * from tbl_efuncional where perfil=1;');
-            const [dise] = await pool.execute('select * from tbl_efuncional where perfil=2;');
-            const [supe] = await pool.execute('select * from tbl_efuncional where perfil=3;');
-            const [sold] = await pool.execute('select * from tbl_efuncional where perfil=4;');
-            
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('progresogralT', { otrabajo, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
-    }
-});
-
-
-/* TAREAS G*/
-
-app.post('/tareasg', async (req, res) => {
-  try {
-    // Consulta para obtener las tareas
-    const [rows] = await pool.execute("SELECT * FROM tbl_ccosto order by idcc desc");
-
-    // Consultas para obtener fechas mínima y máxima
-    const [[{ min_fecha_orden }]] = await pool.execute(
-      "SELECT MIN(fecha_orden) AS min_fecha_orden FROM tbl_ccosto"
-    );
-    const [[{ max_fecha_entrega }]] = await pool.execute(
-      "SELECT MAX(fecha_entrega) AS max_fecha_entrega FROM tbl_ccosto"
-    );
-
-    // Función para formatear fecha como YYYY/MM/DD
-    function formatDate(date) {
-      const d = new Date(date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}/${month}/${day}`;
-    }
-
-    // Construcción del array de tareas
-    const tasks = rows.map(row => {
-      const start = new Date(row.fecha_orden);
-      const end = new Date(row.fecha_entrega);
-      let duration = 1;
-
-      if (!isNaN(start) && !isNaN(end) && end >= start) {
-        duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      }
-
-      let progress = 0;
-      if (row.estado === 1) progress = 1;
-      else if (row.estado === 2) progress = 0.5;
-      else if (row.estado === 3) progress = 0.25;
-
-      let color = "#008080";
-      switch (row.estado) {
-        case 4: color = "#A9A9A9"; break;
-        case 2: color = "#1E90FF"; break;
-        case 3: color = "#FF6347"; break;
-        case 1: color = "#90EE90"; break;
-      }
-
-      //  fechas           
-
-    // Función para extraer solo fecha (sin horas)
-    function getDateOnly(dateString) {
-    const date = new Date(dateString);
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    }
-
-    // Ejemplo de un objeto row con las 4 fechas
-
-
-    // Normalizamos las fechas
-    const fechaOrden = getDateOnly(row.fecha_orden);
-    const fechaEntrega = getDateOnly(row.fecha_entrega);
-    let fechaFin = null;
-    if (row.fecha_fin !== null && row.fecha_fin !== undefined) {
-        fechaFin = getDateOnly(row.fecha_fin);
-    }
-
-    let fechaInicio = null;
-    if (row.fecha_inicio !== null && row.fecha_inicio !== undefined) {
-        fechaInicio = getDateOnly(row.fecha_inicio);
-    }
-
-    // Ahora puedes comparar
-//    console.log("Fecha Orden:", fechaOrden.toISOString().slice(0,10));
-//    console.log("Fecha Entrega:", fechaEntrega.toISOString().slice(0,10));
-//    console.log("Fecha Inicio:", fechaInicio.toISOString().slice(0,10));
-//    console.log("Fecha Fin:", fechaFin.toISOString().slice(0,10));
-
-    // Comparaciones ejemplo
-//    if (fechaOrden <= fechaInicio && fechaInicio <= fechaEntrega && fechaEntrega <= fechaFin) {
-//    console.log("Las fechas están en orden cronológico correcto.");
-//    } else {
-//    console.log("Las fechas NO están en orden cronológico.");
- //   }
-
-    // Comparación individual (ejemplo)
-    
-    color = "#808080"; // color por defecto
-    const hoy = getDateOnly(new Date());
-    if (fechaFin !== null) {
-        if (fechaFin <= fechaEntrega) {
-            color = "#1E90FF"; // Azul - terminó antes
-        } else if (fechaFin.getTime() === fechaEntrega.getTime()) {
-            color = "#90EE90"; // Verde - terminó a tiempo
-        } else if (fechaFin > fechaEntrega) {
-            color = "#FF6347"; // Rojo - terminó después
-        }
-    } else {
-        if (fechaInicio > fechaOrden) {
-            color = "#FFD700"; // Dorado - inició tarde
-        } else if (hoy >= fechaOrden && hoy <= fechaEntrega) {
-            color = "#90EE90"; // Verde - en curso a tiempo
-        } else if (hoy > fechaEntrega) {
-            color = "#FF6347"; // Rojo - aún no finaliza y está vencida
-        }
-    }
-
-    
-
-      // *********************************************************************
-    console.log(row);
-
-      return {
-        task: row.idcc,
-        text: row.descripcion || "Tarea sin descripción",
-        start_date: row.fecha_orden,
-        end_date: row.fecha_entrega,
-        fin_date: row.fecha_fin,
-        duration,
-        progress,
-        color
-      };
-    });
-
-    // Enviar la respuesta al cliente  start_date
-
-    res.json({
-      tasks,
-      links: [],
-      min_fecha_orden: formatDate(min_fecha_orden),
-      max_fecha_entrega: formatDate(max_fecha_entrega)
-    });
-
-  } catch (error) {
-    console.error('Error en el servidor:', error);
-    res.status(500).json({ message: 'Error al procesar la solicitud' });
-  }
-});
-
-
-/***     INDICES    */
-
-app.get('/indices', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-
-            const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
-
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('indices', { indices, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ciudades:', error);
-        res.status(500).send('Error al obtener las ciudades');
-    }
-});
-
-
-app.post('/indices', async (req, res) => {
-    try {
-        const { nit, editando } = req.body;
-        const id = nit;
-        let mensaje;
-        let texto;
-        
-        // Verificar si ya existe
-        const [rows] = await pool.execute(
-            'SELECT COUNT(*) AS count FROM tbl_insp_indices WHERE tb_indice = ?',
-            [nit]
-        );
-
-        if (rows[0].count > 0) {
-            mensaje = {
-                tipo: 'danger',
-                texto: 'Ya existe'
-            };
-        } else {
-            // Insertar nuevo proveedor
-            await pool.execute(
-                `INSERT INTO tbl_insp_indices (tb_indice) VALUES (?)`,
-                [nit]
-            );
-
-            mensaje = {
-                tipo: 'success',
-                texto: `Guardada exitosamente. Indice: ${id}` 
-                //texto = `Ciudad guardada exitosamente - NIT: ${id}`;
-            };
-        }
-
-        const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
-        res.render('indices', { indices, mensaje });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
-        res.status(500).render('indices', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            indices
-        });
-    }
-});
-
-app.get('/indices/delete/:id', async (req, res) => {
-    try {
-      const id = req.params.id;
-      await pool.execute('DELETE FROM tbl_insp_indices WHERE tb_indice = ?', [id]);
-      let texto = `Eliminado exitosamente - Indice: ${id}`;
-      req.session.mensaje = { tipo: 'success', texto, id };
-    } catch (err) {
-      const id = req.params.id;  
-      let texto = `Error al eliminar: ${id}`;
-      if (err.message.includes('foreign key constraint fails')) {
-        texto = 'No se puede eliminar porque tiene elementos asociados.'; // Ajusta si hace falta
-      }
-      req.session.mensaje = { tipo: 'danger', texto, id };
-    }
-    res.redirect('/indices');
-  });
-
-
-
-/* INDICE DESCRIPCIONES /***************************************************************************/
-
-app.get('/indicesdes', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(`select * from tbl_insp_opc order by indice`);
-            const [dise] = await pool.execute('select * from tbl_insp_indices;');
-
-            //  Recuperar mensaje de sesión  idots
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
-            res.render('indicesdes', { otrabajo, dise, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
-    }
-});
-
-app.post('/indicesdes', async (req, res) => {
-    try {
-        const { idot, descripcion, prd, editando } = req.body;
-        let mensaje;
-        let texto;
-        
-        if (editando === "true") {
-            // Actualizar Ciudad
-            await pool.execute(
-                `UPDATE tbl_insp_opc SET descripcion= ?, prd= ? WHERE indice = ?`,
-                [descripcion, prd, idot]
-            );
-            mensaje = {
-                tipo: 'success',
-                texto: 'Actualizado exitosamente.'
-            };
-        } else {
-            // Verificar si Ciudad ya existe
-            const [rows] = await pool.execute(
-                'SELECT COUNT(*) AS count FROM tbl_insp_opc WHERE indice = ?',
-                [idot]
-            );
-
-            if (rows[0].count > 0) {
-                mensaje = {
-                    tipo: 'danger',
-                    texto: 'Ya existe Id "Indice"'
-                };
-            } else {
-
-                // Insertar nuevo proveedor
-                const comentarios = req.body.comentarios?.trim();
-                const fechaHoraBogota = getBogotaDateTime();
-                await pool.execute(
-                    `INSERT INTO tbl_insp_opc (indice, descripcion, prd) VALUES (?, ?, ?)`,
-                    [idot, descripcion, prd]
-                );
-                mensaje = {
-                    tipo: 'success',
-                    texto: `Guardado exitosamente. : ${idot}` 
-                };
-            }
-        }
-        // Obtener clientes
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(`select * from tbl_insp_opc order by indice`);
-            const [dise] = await pool.execute('select * from tbl_insp_indices;');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('indicesdes', { otrabajo, dise, mensaje });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [otrabajo] = await pool.execute(`select * from tbl_insp_opc order by indice`);
-        const [dise] = await pool.execute('select * from tbl_insp_indices;');
-
-        res.status(500).render('indicesdes', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            otrabajo,
-            dise
-        });
-    }
-});
-
-app.get('/indicesdes/delete/:idot', async (req, res) => {
-    const idot = req.params.idot;
-    try {
-      await pool.execute('DELETE FROM tbl_insp_opc WHERE indice = ?', [idot]);
-      req.session.mensaje = {
-        tipo: 'success',
-        texto: `Eliminado exitosamente - ID: ${idot}`
-      };
-    } catch (err) {
-            console.error('Error al eliminar :', err);
-            let texto = `Error al eliminar Orden de Trabajo - ID: ${idot}`;
-            if (err.message && err.message.includes('foreign key constraint fails')) {
-                texto = 'No se puede eliminar la Orden de Trabajo porque tiene elementos asociados (restricción de clave foránea).';
-            }
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto
-            };
-            }
-    res.redirect('/indicesdes');
-  });
-
-
-
-/* INDICE DESCRIPCIONES /***************************************************************************/
-
-app.get('/indicesbody', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(`select a.*,b.descripcion from tbl_insp_body a inner join tbl_insp_opc b on a.indice=b.indice order by indice`);
-            const [otrb] = await pool.execute('select * from tbl_otrabajo;');
-            const [dise] = await pool.execute('select * from tbl_insp_opc;');
-
-            //  Recuperar mensaje de sesión  idots
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
-            res.render('indicesbody', { otrabajo, otrb, dise, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
-    }
-});
-
-app.post('/indicesbody', async (req, res) => {
-    try {
-        const { idot, descripcion, prd, editando } = req.body;
-        let mensaje;
-        let texto;
-        
-        if (editando === "true") {
-            // Actualizar Ciudad
-            await pool.execute(
-                `UPDATE tbl_insp_opc SET descripcion= ?, prd= ? WHERE indice = ?`,
-                [descripcion, prd, idot]
-            );
-            mensaje = {
-                tipo: 'success',
-                texto: 'Actualizado exitosamente.'
-            };
-        } else {
-            // Verificar si Ciudad ya existe
-            const [rows] = await pool.execute(
-                'SELECT COUNT(*) AS count FROM tbl_insp_opc WHERE indice = ?',
-                [idot]
-            );
-
-            if (rows[0].count > 0) {
-                mensaje = {
-                    tipo: 'danger',
-                    texto: 'Ya existe Id "Indice"'
-                };
-            } else {
-
-                // Insertar nuevo proveedor
-                const comentarios = req.body.comentarios?.trim();
-                const fechaHoraBogota = getBogotaDateTime();
-                await pool.execute(
-                    `INSERT INTO tbl_insp_opc (indice, descripcion, prd) VALUES (?, ?, ?)`,
-                    [idot, descripcion, prd]
-                );
-                mensaje = {
-                    tipo: 'success',
-                    texto: `Guardado exitosamente. : ${idot}` 
-                };
-            }
-        }
-        // Obtener clientes
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(`select * from tbl_insp_opc order by indice`);
-            const [dise] = await pool.execute('select * from tbl_insp_indices;');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('indicesbody', { otrabajo, dise, mensaje });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [otrabajo] = await pool.execute(`select * from tbl_insp_opc order by indice`);
-        const [dise] = await pool.execute('select * from tbl_insp_indices;');
-
-        res.status(500).render('indicesbody', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            otrabajo,
-            dise
-        });
-    }
-});
-
-app.get('/indicesbody/delete/:idot', async (req, res) => {
-    const idot = req.params.idot;
-    try {
-      await pool.execute('DELETE FROM tbl_insp_opc WHERE indice = ?', [idot]);
-      req.session.mensaje = {
-        tipo: 'success',
-        texto: `Eliminado exitosamente - ID: ${idot}`
-      };
-    } catch (err) {
-            console.error('Error al eliminar :', err);
-            let texto = `Error al eliminar Orden de Trabajo - ID: ${idot}`;
-            if (err.message && err.message.includes('foreign key constraint fails')) {
-                texto = 'No se puede eliminar la Orden de Trabajo porque tiene elementos asociados (restricción de clave foránea).';
-            }
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto
-            };
-            }
-    res.redirect('/indicesbody');
-  });
-
-
-
-
-  /* SALIDA ******************************************************************************************/
+/* PORT ******************************************************************************************/
 
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
@@ -3538,5 +2685,4 @@ app.listen(PORT, () => {
 
 /// CERRAR CONEXIONES :  connection.release(); //
 
-// FIN //
 

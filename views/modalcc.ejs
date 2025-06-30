@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MJR - Consulta Centro de Costo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .modal-container {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(251, 253, 249, 0.8);
+      backdrop-filter: blur(5px);
+      padding: 20px;
+      width: 80%;
+      max-width: 1000px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+      background: linear-gradient(90deg, #007bff, #BA1A1A, #007bff);
+      background-size: 200% auto;
+      color: transparent;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .modal-table tr {
+      border-bottom: 1px solid #ccc;
+    }
+
+    .modal-table td {
+      padding: 2px 4px;
+      vertical-align: top;
+    }
+
+    .modal-table td:first-child {
+      width: 25%;
+      font-weight: bold;
+      color: #2a3d66;
+    }
+
+    .modal-table td[colspan="2"] {
+      width: 75%;
+    }
+
+    .resaltado {
+      background-color: #e6f2ff;
+      border-left: 4px solid #BA1A1A;
+      font-weight: bold;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        background-color: #fff3cd;
+      }
+      to {
+        background-color: #e6f2ff;
+      }
+    }
+
+    .modal-footer {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .modal-button {
+      padding: 6px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .modal-button:hover {
+      background-color: #0056b3;
+    }
+
+    .boton-regresar-fijo {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+      background-color: #28a745;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s ease;
+    }
+
+    .boton-regresar-fijo:hover {
+      background-color: #1e7e34;
+    }
+
+    .imagen-fondo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .modal-close {
+      display: none !important;
+    }
+
+    .modal-table tr td:nth-child(2),
+    .modal-table tr td:nth-child(3) {
+      padding-left: 6px;
+      padding-right: 6px;
+      width: auto;
+    }
+
+    .modal-table tr td:nth-child(3) {
+      white-space: nowrap;
+    }
+
+    .modal-table td.col {
+      width: 25%;
+      padding-left: 4px;
+      padding-right: 4px;
+      white-space: nowrap;
+    }
+
+    .modal-table td.sin-negrilla {
+      font-weight: normal;
+    }
+
+  </style>
+
+</head>
+<body>
+  <img src="/static/images/im1.png" alt="Logo" class="imagen-fondo">
+
+<script type="module">
+    import { Modal } from '/modal.js';
+    const datos = <%- JSON.stringify(datos) %>;
+
+    const modal = new Modal({
+  title: 'Consulta Centro de Costo',
+  content: `
+    <table class="modal-table">
+          <tr class="resaltado">
+            <td><strong>Centro de Costo:</strong></td>
+            <td colspan="2">${datos.cc}</td>
+          </tr>
+          <tr>
+            <td><strong>Descripción:</strong></td>
+            <td colspan="2">${datos.descripcion}</td>
+          </tr>
+          <tr><td colspan="3" style="height: 16px;"></td></tr>
+          <tr>
+            <td class="sin-negrilla">Cliente:</td>
+            <td colspan="2">${datos.cliente}</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="col" style="color: blue;">${datos.ncliente}</td>
+          </tr>
+          <tr>
+            <td class="sin-negrilla">Fecha Orden:</td>
+            <td class="col">${datos.FechaOrden}</td>
+          </tr>
+          <tr>
+            <td class="sin-negrilla">Fecha Entrega:</td>
+            <td class="col">${datos.FechaEntrega}</td>
+          </tr>
+          <tr>
+            <td class="sin-negrilla">Cantidad:</td>
+            <td class="col">${datos.cantidad}</td>
+          </tr>
+          <tr>
+            <td class="sin-negrilla">Peso:</td>
+            <td class="col">${datos.peso}</td>
+          </tr>
+          <tr>
+            <td class="sin-negrilla">Unidad:</td>
+            <td class="col">${datos.nunidad}</td>
+          </tr>
+
+          <tr><td colspan="3" style="height: 16px;"></td></tr>
+          <tr>
+            <td><strong>Observación:</strong></td>
+            <td colspan="2">${datos.comentarios}</td>
+          </tr>
+    </table>
+  `,
+  buttons: [
+      {
+        text: 'Cerrar',
+        onClick: () => window.location.href = '/ccostocc'
+      }
+    ],
+    onClose: () => window.location.href = '/ccostocc'
+  });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      modal.open();
+    });
+  </script>
+  <a href="/ccostocc" class="boton-regresar-fijo">Regresar...</a>
+
+</body>
+</html>

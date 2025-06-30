@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Descripciones</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <%- include('partials/head') %>
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+      }
+
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
+
+      .alert.fade.show {
+      opacity: 1;
+      }
+
+      .alert.fade.hide {
+      opacity: 0;
+      }
+
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
+
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
+
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+  .table {
+    width: 100%;
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: hwb(210 84% 9%) !important;
+  }
+
+  .thead-small th {
+    font-size: 12px;
+  }
+  
+</style>
+
+</head>
+<body>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigationF') %>
+  </header>  
+  <!-- Contenido desplazable -->
+  <div class="detalle-scroll">
+          <div class="d-flex justify-content-between align-items-center mb-0 px-4">
+            <!-- Izquierda: Botones -->
+            <div class="ms-5">
+              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
+              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            </div>
+          
+            <!-- Centro: Título centrado -->
+            <div class="flex-grow-1 text-center">
+              <h3 class="mb-2 fw-semibold d-inline-block position-relative"
+                  style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                Inspecciones de Actividades Diarias
+                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+              </h3>
+            </div>
+
+            <!-- Derecha vacía para balancear -->
+            <div style="width: 200px;"></div>
+          </div>
+          
+          <% if (typeof mensaje !== 'undefined') { %>
+            <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+              <%= mensaje.texto %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar" style="background-color: rgb(243, 131, 131); color: white; border: none; padding: 4px 8px; border-radius: 4px;">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <% } %>
+
+        <div class="container-fluid mt-1">
+              <div class="content2">
+                <div class="register-formAnchoCMG">           
+                  <div style="overflow-x: auto;">
+                    <table class="table-striped">
+                      <thead class="thead-dark thead-small">
+                            <tr>
+                                <th rowspan="2" class="text-center">Orden</th>
+                                <th rowspan="2" class="text-center">Índice</th>
+
+                                <th colspan="3" class="text-center">Lun</th>
+                                <th colspan="3" class="text-center">Mar</th>
+                                <th colspan="3" class="text-center">Mié</th>
+                                <th colspan="3" class="text-center">Jue</th>
+                                <th colspan="3" class="text-center">Vie</th>
+
+                                <th rowspan="2" class="text-center">Acciones</th>
+                            </tr>
+
+                         <tr>
+                            <th class="text-center">1</th>
+                            <th class="text-center">2</th>
+                            <th class="text-center">3</th>
+
+                            <th class="text-center">1</th>
+                            <th class="text-center">2</th>
+                            <th class="text-center">3</th>
+
+                            <th class="text-center">1</th>
+                            <th class="text-center">2</th>
+                            <th class="text-center">3</th>
+
+                            <th class="text-center">1</th>
+                            <th class="text-center">2</th>
+                            <th class="text-center">3</th>
+
+                            <th class="text-center">1</th>
+                            <th class="text-center">2</th>
+                            <th class="text-center">3</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% if (otrabajo.length > 0) { %>
+                          <% otrabajo.forEach(otrabajo => { %>
+                            <tr style="line-height: 1.3;">
+                              <td style="width: 20px; font-size: 15px;"><%= otrabajo.idot%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.indice%></td>
+
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.l_si%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.l_no%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.l_na%></td>
+
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.m_si%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.m_no%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.m_na%></td>
+
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.mi_si%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.mi_no%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.mi_na%></td>
+
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.j_si%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.j_no%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.j_na%></td>
+
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.v_si%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.v_no%></td>
+                              <td style="width: 10px; font-size: 15px;"><%= otrabajo.v_na%></td>
+
+                              <td class="text-center" style="width: 300px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                                <button 
+                                    class="btn btn-warning btn-sm" 
+                                    style="padding: 2px 4px; font-size: 11px; line-height: 2;" 
+                                    onclick='editarCiudad(<%- JSON.stringify(otrabajo) %>)' 
+                                    data-toggle="modal" 
+                                    data-target="#modalCiudad">
+                                    Modificar
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 2;" onclick="confirmarEliminacion('<%= otrabajo.indice %>')">Eliminar</button>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="5">No hay Centro de costo registrado.</td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+              </div>
+              <div class="modal-body">
+                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Adicionar / Modificar -->
+        
+        <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <form action="/indicesdes" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
+
+              <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
+                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
+                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;>
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+             
+              <div class="modal-body">
+                <input type="hidden" name="editando" id="editando" value="false">
+                <input type="hidden" id="idot-hidden" name="idot" value="">
+
+                <div class="form-row w-50">
+                    <label for="proveedor">Indice</label>
+                    <select class="form-control form-control-sm input-con-sombra" name="proveedor" id="proveedor" required>
+                      <option value="">Seleccione Indice</option>
+                      <% dise.forEach(p => { %>
+                        <option value="<%= p.tb_indice %>"><%= p.tb_indice %></option>
+                      <% }) %>
+                    </select>
+                </div>    
+                <div class="form-row">
+                      <label for="descripcion">Descripcion</label>
+                      <input type="text" 
+                      class="form-control form-control-sm input-con-sombra" 
+                      name="descripcion" 
+                      id="descripcion"
+                      maxlength="100" 
+                      required>
+                </div>
+
+                <div class="form-row  w-50">
+                    <label for="prd">Tipo</label>
+                    <select 
+                        class="form-control form-control-sm input-con-sombra w-30" 
+                        name="prd" 
+                        id="prd" 
+                        required
+                    >
+                        <option value="">Tipo</option>
+                        <option value="S">S - Selección</option>
+                        <option value="T">T - Texto</option>
+                    </select>
+                </div>
+
+
+
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+        
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+      // Activa tooltips en toda la página
+      document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+          new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+      });
+  </script>
+
+  <!-- Control Numeros en campos -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Seleccionar todos los inputs con la clase "input-numerico"
+      const camposNumericos = document.querySelectorAll('.input-numerico');
+
+      camposNumericos.forEach(function(nitInput) {
+        // Evento 'input' para eliminar caracteres no numéricos
+        nitInput.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '');  // Elimina cualquier caracter que no sea dígito
+          this.setCustomValidity('');  // Limpiar el mensaje de error
+        });
+
+        // Evento 'invalid' para mostrar un mensaje de error personalizado
+        nitInput.addEventListener('invalid', function () {
+          if (!this.validity.valid) {
+            this.setCustomValidity('Por favor ingrese entre 1 y 9 dígitos numéricos.');
+          }
+        });
+
+        // Evento 'change' para limpiar los errores si el valor es válido
+        nitInput.addEventListener('change', function () {
+          this.setCustomValidity('');
+        });
+      });
+    });
+  </script>
+  
+  <!-- JavaScript para enfocar el campo Nit cuando se abra el modal -->
+<script>
+  $('#modalCiudad').on('shown.bs.modal', function () {
+    $('#nit').trigger('focus');
+  });
+</script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const nitInput = document.getElementById('nit');
+  
+      nitInput.addEventListener('input', function () {
+        // Elimina cualquier carácter que no sea dígito
+        this.value = this.value.replace(/\D/g, '');
+      });
+    });
+  </script>
+  
+  <script>
+    function editarCiudad(otrabajo) {
+      document.getElementById('editando').value = "true";
+
+      // Habilitar campos para edición
+      document.getElementById('descripcion').disabled = false;
+
+      // Set valores
+      document.getElementById('proveedor').value = otrabajo.indice;
+      document.getElementById('proveedor').disabled = true; // Bloquear si es solo visible
+      document.getElementById('descripcion').value = otrabajo.descripcion;
+      document.getElementById('prd').value = otrabajo.prd;
+
+      document.getElementById('idot-hidden').value = otrabajo.idot;
+
+      toggleBotonesModal('modificar');
+    }
+
+    function formatFecha(fechaTexto) {
+        const fecha = new Date(fechaTexto);
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function limpiarFormularioCiudad() {
+      // Si el campo de idot (select) estaba deshabilitado, habilítalo para el próximo uso
+      document.getElementById('proveedor').disabled = false;
+      document.getElementById('idot-hidden').value = "";
+
+      document.getElementById('descripcion').value = "";
+      document.getElementById('proveedor').value = "";
+      document.getElementById('prd').value = "";
+
+      // Si usas un campo oculto para "editando"
+      document.getElementById('editando').value = "false";
+    }
+
+
+    function copiarDatosFormulario() {
+      const idotSelect = document.getElementById('proveedor');
+      const idotHidden = document.getElementById('idot-hidden');
+
+      if (!idotSelect.value) {
+        alert("Debes seleccionar un valor válido.");
+        return false;
+      }
+
+      idotHidden.value = idotSelect.value;
+      return true;
+    }
+
+    function confirmarEliminacion(idot) {
+      document.getElementById('nombreAEliminar').textContent = idot;
+      document.getElementById('confirmarEliminarLink').href = `/indicesdes/delete/${idot}`;
+      $('#modalConfirmarEliminar').modal('show');
+    }
+
+    // Auto cerrar la alerta luego de 5 segundos
+    window.onload = function () {
+      const alerta = document.getElementById('alertaMensaje');
+      if (alerta) {
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+          alerta.classList.remove('show');
+          alerta.classList.add('hide');
+          // Luego de que se desvanezca, eliminar el elemento completamente del DOM
+          setTimeout(() => {
+            alerta.remove();
+          }, 300); // Espera a que la animación de opacidad termine antes de eliminar
+        }, 2000);
+      }
+    };
+
+  </script>
+
+<!-- Scripts requeridos -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+</body>
+</html>

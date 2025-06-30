@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Progreso de Órdenes</title>
+  <title>Progreso con Días y Finalización</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; background: #f9f9f9; }
+    .orden-container { background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; padding: 15px 20px; max-width: 1300px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .estado { font-weight: bold; font-size: 1.3rem; margin-bottom: 10px; }
+    .barra-scroll-wrap { overflow-x: auto; width: 100%; border: 1px solid #bbb; margin-bottom: 0px; padding-bottom: 20px; position: relative; }
+    .barra-contenedor { position: relative; height: 30px; background-color: #eee; min-width: 100%; }
+    .barra { position: absolute; height: 100%; top: 0; left: 0; border-radius: 4px; }
+    .barra.fondo { background-color: #ccc; }
+    .barra.progreso { background-color: #00c853; width: 0; }
+    .linea-dia { position: absolute; top: 0; bottom: 20px; width: 1px; background-color: rgb(42, 10, 156); }
+    .linea-mes { position: absolute; top: 0; bottom: 0; width: 2px; background-color: #FF5722; }
+    .dia-label { position: absolute; top: 34px; font-size: 10px; user-select: none; z-index: 4; width: 30px; transform: translateX(-50%); text-align: center; color: #333; white-space: nowrap; }
+    .dia-finde, .dia-festivo { color: red; font-weight: bold; }
+ 
+    .fechas {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #2b0202;
+      margin-top: 0px;
+      margin-bottom: 0px;
+      border-top: 1px solid #ccc;
+      padding-top: 6px; 
+    }
+
+    .fechas-secundarias {
+      max-width: 900px;
+      font-size: 14px;
+      color: rgb(2, 194, 98);
+      font-weight: bold;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 3px;
+      border: 1px solid darkblue;      /* borde azul */
+      padding: 4px 8px;                 /* espacio interior para que el borde no quede pegado */
+      text-decoration: underline;       /* subrayado */
+      border-radius: 4px;               /* bordes redondeados opcionales */
+    }
+
+
+.fechas > div {
+  margin: 0;      /* elimina márgenes verticales */
+  padding: 0;     /* elimina padding */
+  line-height: 1.2; /* reduce altura línea */
+}
+
+/*
+    .estado-mes {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+*/
+.estado-mes {
+  display: flex;
+  flex-direction: row-reverse; /* ← Esta línea invierte el orden */
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0px;
+}
+
+.estado-mes {
+  margin-bottom: 5px;
+}
+.estado {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.nombre-mes {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #0e011d;
+}
+
+.btn-regresar {
+  margin-bottom: 4px;
+}
+
+</style>
+</head>
+<body>
+  <div class="ms-0">
+    <a href="/opciones" class="btn btn-warning btn-sm btn-regresar">Regresar...</a>
+  </div>
+  <div id="contenedor-ordenes"></div>
+  <!-- Inyección de datos desde backend -->
+  <script> const datosBD = <%- JSON.stringify(datosBD) %>; </script>
+
+  <script>
+    const nombresMeses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const nombresDias = ['L','M','Mi','J','V','S','D'];
+    const festivosColombia = {
+      '2025-01-01':'Año Nuevo','2025-01-06':'Reyes Magos','2025-03-24':'San José',
+      '2025-04-17':'Jueves Santo','2025-04-18':'Viernes Santo','2025-05-01':'Día del Trabajo',
+      '2025-05-26':'Ascensión del Señor','2025-06-16':'Corpus Christi','2025-06-23':'Sagrado Corazón',
+      '2025-07-20':'Independencia','2025-08-07':'Batalla de Boyacá','2025-08-15':'La Asunción',
+      '2025-10-13':'Día de la Raza','2025-11-03':'Todos los Santos','2025-11-17':'Independencia de Cartagena',
+      '2025-12-08':'Inmaculada Concepción','2025-12-25':'Navidad'
+    };
+
+    function crearFechaLocal(str) {
+      const [y,m,d] = str.slice(0,10).split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    function formatYMD(d) { return d.toISOString().slice(0,10); }
+
+    function calcularEstadoYProgreso(o,e,f=null) {
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const ord = crearFechaLocal(o), ent = crearFechaLocal(e),
+            entFin = new Date(ent.getFullYear(),ent.getMonth(),ent.getDate(),23,59,59,999),
+            fin = f ? crearFechaLocal(f) : null;
+      if(fin) fin.setHours(23,59,59,999);
+      const hm = hoy.getTime(), om=ord.getTime(), em=entFin.getTime(), fm=fin?.getTime();
+      let estado='', color='gray', pct=0;
+      if(!fin){
+        if(om>hm){estado='Por iniciar';color='gray';}
+        else if(hm<=em){estado='En proceso';color='green';}
+        else{estado='En retraso';color='red';}
+        const tot=em-om; pct=tot>0?((hm-om)/tot)*100:100;
+      } else {
+        if(fm<em){estado='Finalizada antes de tiempo';color='blue';}
+        else if(fm===em){estado='Finalizada en tiempo';color='green';}
+        else{estado='Entrega atrasada';color='red';}
+        pct=100;
+      }
+      pct = Math.min(100, Math.max(0, pct));
+      return {estado,color,pct,fechaOrden:ord,fechaEntrega:ent,hoy,fechaFin:fin};
+    }
+
+    const contenedor = document.getElementById('contenedor-ordenes');
+    if(!datosBD || datosBD.length===0){
+      contenedor.innerHTML = '<p>No hay órdenes para mostrar.</p>';
+    } else {
+      datosBD.forEach(datos => {
+        const res = calcularEstadoYProgreso(datos.fecha_orden, datos.fecha_entrega, datos.fecha_fin);
+        const ordDiv = document.createElement('div');
+        ordDiv.className = 'orden-container';
+
+
+        const estadoMesDiv = document.createElement('div');
+        estadoMesDiv.className = 'estado-mes';
+
+        const titulo = document.createElement('div');
+        titulo.className = 'estado';
+        titulo.textContent = `Orden : ${datos.idcc} — ${res.estado}`;
+        titulo.style.color = res.color;
+
+        const nombreMes = document.createElement('div');
+        nombreMes.className = 'nombre-mes';
+
+        estadoMesDiv.appendChild(nombreMes); // Mes a la izquierda
+        estadoMesDiv.appendChild(titulo);    // Estado a la derecha
+
+        ordDiv.appendChild(estadoMesDiv);
+                
+        const scroll = document.createElement('div');
+        scroll.className = 'barra-scroll-wrap';
+        const contBarra = document.createElement('div');
+        contBarra.className = 'barra-contenedor';
+        const bf = document.createElement('div');
+        bf.className='barra fondo';
+        const bp = document.createElement('div');
+        bp.className='barra progreso'; bp.style.backgroundColor = res.color;
+        contBarra.appendChild(bf); contBarra.appendChild(bp);
+        scroll.appendChild(contBarra);
+        ordDiv.appendChild(scroll);
+
+        const fechasDiv = document.createElement('div');
+        fechasDiv.className = 'fechas';
+        [ ['Inicio',res.fechaOrden], ['Hoy',res.hoy], ['Entrega',res.fechaEntrega] ]
+          .forEach(([n,fd]) => {
+            const el = document.createElement('div');
+            el.textContent = `${n}: ${formatYMD(fd)}`;
+            fechasDiv.appendChild(el);
+          });
+        if(res.fechaFin){
+          const eff = document.createElement('div');
+          eff.className = 'fechas-secundarias';  
+          eff.textContent = `Finalización: ${formatYMD(res.fechaFin)}`;
+          fechasDiv.appendChild(eff);
+        }
+
+
+        ordDiv.appendChild(fechasDiv);
+        contenedor.appendChild(ordDiv);
+
+        const anchoDia = 40;
+        const tdias = Math.floor((res.fechaEntrega - res.fechaOrden) / (864e5)) + 1;
+        const anchoTot = tdias * anchoDia;
+        contBarra.style.minWidth = anchoTot+'px';
+        bf.style.width = anchoTot+'px';
+        const diasTrans = Math.min(tdias, Math.floor((res.hoy - res.fechaOrden)/(864e5))+1);
+        bp.style.width = (diasTrans*anchoDia)+'px';
+
+        let mesAnt = res.fechaOrden.getMonth();
+        const fechasArray = [];
+        for(let i=0;i<=tdias;i++){
+          const left = i*anchoDia;
+          const ld = document.createElement('div');
+          ld.className='linea-dia'; ld.style.left = left+'px';
+          contBarra.appendChild(ld);
+          if(i>0&&i<tdias){
+            const fd = new Date(res.fechaOrden.getTime());
+            fd.setDate(fd.getDate()+i-1);
+            if(fd.getMonth()!=mesAnt){
+              const lm = document.createElement('div');
+              lm.className='linea-mes'; lm.style.left = left+'px';
+              contBarra.appendChild(lm);
+              mesAnt = fd.getMonth();
+            }
+          }
+        }
+        for(let i=0;i<tdias;i++){
+          const fd = new Date(res.fechaOrden.getTime());
+          fd.setDate(fd.getDate()+i);
+          fechasArray.push(fd);
+          const idx = (fd.getDay()+6)%7;
+          const lab = document.createElement('div');
+          lab.className='dia-label';
+          lab.textContent = `${nombresDias[idx]} ${fd.getDate()}`;
+          lab.style.left = (i*anchoDia+anchoDia/2)+'px';
+          if(idx>=5) lab.classList.add('dia-finde');
+          const ymd = formatYMD(fd);
+          if(festivosColombia[ymd]){
+            lab.classList.add('dia-festivo');
+            lab.title = festivosColombia[ymd];
+          }
+          contBarra.appendChild(lab);
+        }
+        function updMes(){
+          const sl = scroll.scrollLeft;
+          const av = scroll.clientWidth;
+          let iz = Math.floor(sl/anchoDia);
+          iz = Math.min(Math.max(0,iz), fechasArray.length-1);
+          let dr = Math.floor((sl+av)/anchoDia);
+          dr = Math.min(Math.max(0,dr), fechasArray.length-1);
+          const fi = fechasArray[iz], fd = fechasArray[dr];
+          const mi = nombresMeses[fi.getMonth()]+' '+fi.getFullYear();
+          const md = nombresMeses[fd.getMonth()]+' '+fd.getFullYear();
+          nombreMes.textContent = mi === md ? mi : `${mi} - ${md}`;
+        }
+        updMes();
+        scroll.addEventListener('scroll', updMes);
+      });
+    }
+  </script>
+</body>
+</html>
