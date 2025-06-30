@@ -395,48 +395,46 @@ app.get('/ccostofch', async (req, res) => {
 // Crear o actualizar ciudad
 app.post('/ccostofch', async (req, res) => {
     try {
-            console.log('solo actualizar fechas');
-            console.log(req.body);
 
-const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
+            const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
 
-// Convertir '' en null
-const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
-const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
+            // Convertir '' en null
+            const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
+            const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
 
-let mensaje;
+            let mensaje;
 
-if (editando === "true") {
-  const campos = [];
-  const valores = [];
+            if (editando === "true") {
+            const campos = [];
+            const valores = [];
 
-  if ('fecha_inicio' in req.body) {
-    campos.push('fecha_inicio = ?');
-    valores.push(fechaInicioFinal); // ahora puede ser null
-  }
+            if ('fecha_inicio' in req.body) {
+                campos.push('fecha_inicio = ?');
+                valores.push(fechaInicioFinal); // ahora puede ser null
+            }
 
-  if ('fecha_fin' in req.body) {
-    campos.push('fecha_fin = ?');
-    valores.push(fechaFinFinal); // ahora puede ser null
-  }
+            if ('fecha_fin' in req.body) {
+                campos.push('fecha_fin = ?');
+                valores.push(fechaFinFinal); // ahora puede ser null
+            }
 
-  if (campos.length > 0) {
-    const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
-    valores.push(idcc);
+            if (campos.length > 0) {
+                const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
+                valores.push(idcc);
 
-    await pool.execute(sql, valores);
+                await pool.execute(sql, valores);
 
-    mensaje = {
-      tipo: 'success',
-      texto: 'Actualizado exitosamente.'
-    };
-  } else {
-    mensaje = {
-      tipo: 'info',
-      texto: 'No se enviaron campos para actualizar.'
-    };
-  }
-}
+                mensaje = {
+                tipo: 'success',
+                texto: 'Actualizado exitosamente.'
+                };
+            } else {
+                mensaje = {
+                tipo: 'info',
+                texto: 'No se enviaron campos para actualizar.'
+                };
+            }
+            }
 
 
 
@@ -3007,11 +3005,6 @@ app.get('/progresogral', async (req, res) => {
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
-            // Recuperar datos de la URL
-            //console.log(req.query);
-            //const id = req.params.id;
-            //const id = req.query.idcc;
-            //console.log(req.query.idcc);
             const [rows] = await pool.execute(`
                 SELECT a.*, b.cliente as client,c.unidad as nund
                 FROM tbl_ccosto a
@@ -3168,12 +3161,6 @@ app.post('/tareasg', async (req, res) => {
             color = "#FF6347"; // Rojo - aún no finaliza y está vencida
         }
     }
-
-    
-
-      // *********************************************************************
-    console.log(row);
-
       return {
         task: row.idcc,
         text: row.descripcion || "Tarea sin descripción",
