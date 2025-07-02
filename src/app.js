@@ -9,7 +9,6 @@ import bodyParser from 'body-parser';
 import fastcsv from 'fast-csv';
 import csv from 'csv-parser'; // CARGAR		
 import bcryptjs from 'bcryptjs';		
-import Swal from 'sweetalert2';
 import fs from 'fs'; // Importación del módulo fs
 import crypto from 'crypto';
 import { pool } from './db.js';		
@@ -95,23 +94,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.static(path.join(__dirname, '../src')));
 app.use(express.json()); // Para procesar cuerpos JSON, si se envían datos JSON
 
-// Función de alerta		
-function showAlert() {		
-    Swal.fire({		
-        title: 'Conexión Exitosa',		
-        text: '!LOGIN Correcto',		
-        icon: 'success',		
-        showConfirmButton: false,		
-        timer: 1500 // Duración en milisegundos (1500 ms = 1.5 segundos)		
-    });		
-}		
-
-
-// Rutas 		
-//console.log('DB_HOST:', process.env.DB_HOST);  // Debería mostrar la IP o hostname
-//console.log('DB_USER:', process.env.DB_USER);  // Debería mostrar 'josema'
-//console.log('DB_PASSWORD:', process.env.DB_PASSWORD);  // Debería mostrar la contraseña
-
 app.get('/', async (req, res) => {		
     try {		
         res.render('login');		
@@ -160,130 +142,112 @@ app.get('/menuprc', (req, res) => {
 /* CCOSTO */  /*************************************************************************************/
 
 app.get('/ccosto', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+  if (!req.session.loggedin) return res.redirect('/');
 
-            const fechaHoraBogota = getBogotaDateTime();
-            const [ccosto] = await pool.execute(` 
-                SELECT a.*, b.cliente as clienteN,
-                CASE
-                    WHEN ? < a.fecha_orden THEN 'Por Iniciar'
-                    WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
-                    WHEN ? > a.fecha_entrega THEN 'Atrasado'
-                    ELSE 'Sin Estado'
-                END AS estado_actual
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
 
-            const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad');
-            const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-            const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
+    const [ccosto] = await conn.execute(` 
+      SELECT a.*, b.cliente as clienteN,
+        CASE
+            WHEN ? < a.fecha_orden THEN 'Por Iniciar'
+            WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
+            WHEN ? > a.fecha_entrega THEN 'Atrasado'
+            ELSE 'Sin Estado'
+        END AS estado_actual
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
 
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente order by cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  } finally {
+    conn.release(); // 👈 Siempre libera la conexión
+  }
 });
  
-// Crear o actualizar ciudad
+// POST CCOSTO
+
 app.post('/ccosto', async (req, res) => {
-    try {
-        const { idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, editando } = req.body;
-        let mensaje;
-        let texto;
-        
-        if (editando === "true") {
-            // Actualizar Ciudad
-            await pool.execute(
-                `UPDATE tbl_ccosto SET descripcion= ?, ocompra= ?, cliente= ?, fecha_orden= ?, fecha_entrega= ?, cantidad= ?, unidad= ?, peso= ?, pais= ?, ciudad= ?, comentarios= ? WHERE idcc = ?`,
-                [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
-            );
-            mensaje = {
-                tipo: 'success',
-                texto: 'Centro de costo actualizado exitosamente.'
-            };
-        } else {
+  const conn = await pool.getConnection();
+  try {
+    const {
+      idcc, descripcion, ocompra, cliente, fecha_orden,
+      fecha_entrega, cantidad, unidad, peso, pais,
+      ciudad, comentarios, editando
+    } = req.body;
 
-            // Verificar si Ciudad ya existe
-            const [rows] = await pool.execute(
-                'SELECT COUNT(*) AS count FROM tbl_ccosto WHERE idcc = ?',
-                [idcc]
-            );
+    let mensaje;
 
-            if (rows[0].count > 0) {
-                mensaje = {
-                    tipo: 'danger',
-                    texto: 'Ya existe Centro de Costo'
-                };
-            } else {
+    if (editando === "true") {
+      await conn.execute(
+        `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, comentarios=? WHERE idcc=?`,
+        [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
+      );
 
-                // Insertar nuevo proveedor
-                const comentarios = req.body.comentarios?.trim();
-                await pool.execute(
-                    `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios]
-                );
-                mensaje = {
-                    tipo: 'success',
-                    texto: `Centro de Costo guardado exitosamente. : ${idcc}` 
-                };
-            }
-        }
+      mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
+    } else {
+      const [rows] = await conn.execute(
+        'SELECT COUNT(*) AS count FROM tbl_ccosto WHERE idcc = ?',
+        [idcc]
+      );
 
-        // Obtener clientes
+      if (rows[0].count > 0) {
+        mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
+      } else {
+        await conn.execute(
+          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios?.trim()]
+        );
 
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `);
-
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('ccosto', {
-            mensaje,
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-        `);
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-
-        res.status(500).render('ccosto', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
+        mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
+      }
     }
+
+    // Recargar datos para mostrar de nuevo el formulario
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.render('ccosto', { mensaje, ccosto, unidadT, clienteT, paisesl });
+
+  } catch (error) {
+    console.error('Error guardando ccosto:', error);
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.status(500).render('ccosto', {
+      mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
+      ccosto, unidadT, clienteT, paisesl
+    });
+  } finally {
+    conn.release(); // 🔴 Muy importante
+  }
 });
 
 app.get('/ccosto/delete/:idcc', async (req, res) => {
@@ -304,185 +268,166 @@ app.get('/ccosto/delete/:idcc', async (req, res) => {
     res.redirect('/ccosto');
   });
 
+  /* GET MODAL */
+
 app.get('/modal', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+  if (!req.session.loggedin) return res.redirect('/');
 
-            //const id = req.params.id;
-            const id = req.query.idcc;
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const id = req.query.idcc;
 
-            //const id = 1792;
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
-                WHERE idcc = ?
-            `, [id]);
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-                cc: row.idcc,
-                descripcion: row.descripcion,
-                oc: row.ocompra,
-                cliente: row.cliente,
-                ncliente: row.client,
-                cantidad: row.cantidad,
-                peso: row.peso,
-                unidad: row.unidad,
-                nunidad: row.nund,
-                comentarios: row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>'),
-                FechaOrden: row.fecha_orden.toISOString().split('T')[0],
-                FechaEntrega: row.fecha_entrega.toISOString().split('T')[0]
-            };
-           
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+    const [rows] = await conn.execute(`
+      SELECT a.*, b.cliente as client, c.unidad as nund
+      FROM tbl_ccosto a
+      LEFT JOIN tbl_cliente b ON a.cliente = b.nit
+      LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
+      WHERE idcc = ?
+    `, [id]);
 
-            res.render('modal', { datos: data });
+    const row = rows[0];
 
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
+    const data = {
+      cc: row.idcc,
+      descripcion: row.descripcion,
+      oc: row.ocompra,
+      cliente: row.cliente,
+      ncliente: row.client,
+      cantidad: row.cantidad,
+      peso: row.peso,
+      unidad: row.unidad,
+      nunidad: row.nund,
+      comentarios: row.comentarios?.replace(/(\r\n|\n|\r)/g, '<br>') || '',
+      FechaOrden: row.fecha_orden.toISOString().split('T')[0],
+      FechaEntrega: row.fecha_entrega.toISOString().split('T')[0]
+    };
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('modal', { datos: data });
+
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener centro de costo');
+  } finally {
+    conn.release();
+  }
 });
 
-/*** C COSTO ACTUALIZAR FECHAS */
 
-/* CCOSTO */  /*************************************************************************************/
+/*** C COSTO ACTUALIZAR FECHAS */  
 
 app.get('/ccostofch', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+  if (!req.session.loggedin) return res.redirect('/');
 
-            const fechaHoraBogota = getBogotaDateTime();
-            const [ccosto] = await pool.execute(` 
-                SELECT a.*, b.cliente as clienteN,
-                CASE
-                    WHEN ? < a.fecha_orden THEN 'Por Iniciar'
-                    WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
-                    WHEN ? > a.fecha_entrega THEN 'Atrasado'
-                    ELSE 'Sin Estado'
-                END AS estado_actual
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
 
-            const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad');
-            const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-            const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
+    const [ccosto] = await conn.execute(` 
+      SELECT a.*, b.cliente as clienteN,
+        CASE
+          WHEN ? < a.fecha_orden THEN 'Por Iniciar'
+          WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
+          WHEN ? > a.fecha_entrega THEN 'Atrasado'
+          ELSE 'Sin Estado'
+        END AS estado_actual
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
 
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-            res.render('ccostofch', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('ccostofch', {
+      ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  } finally {
+    conn.release();
+  }
 });
+
  
-// Crear o actualizar ciudad
+// POST
+
 app.post('/ccostofch', async (req, res) => {
-    try {
+  const conn = await pool.getConnection();
+  try {
+    const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
+    const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
+    const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
+    let mensaje;
 
-            const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
+    if (editando === "true") {
+      const campos = [];
+      const valores = [];
 
-            // Convertir '' en null
-            const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
-            const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
+      if ('fecha_inicio' in req.body) {
+        campos.push('fecha_inicio = ?');
+        valores.push(fechaInicioFinal);
+      }
+      if ('fecha_fin' in req.body) {
+        campos.push('fecha_fin = ?');
+        valores.push(fechaFinFinal);
+      }
 
-            let mensaje;
+      if (campos.length > 0) {
+        const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
+        valores.push(idcc);
+        await conn.execute(sql, valores);
 
-            if (editando === "true") {
-            const campos = [];
-            const valores = [];
-
-            if ('fecha_inicio' in req.body) {
-                campos.push('fecha_inicio = ?');
-                valores.push(fechaInicioFinal); // ahora puede ser null
-            }
-
-            if ('fecha_fin' in req.body) {
-                campos.push('fecha_fin = ?');
-                valores.push(fechaFinFinal); // ahora puede ser null
-            }
-
-            if (campos.length > 0) {
-                const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
-                valores.push(idcc);
-
-                await pool.execute(sql, valores);
-
-                mensaje = {
-                tipo: 'success',
-                texto: 'Actualizado exitosamente.'
-                };
-            } else {
-                mensaje = {
-                tipo: 'info',
-                texto: 'No se enviaron campos para actualizar.'
-                };
-            }
-            }
-
-
-
-            // Obtener clientes
-
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `);
-
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('ccostofch', {
-            mensaje,
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [ccosto] = await pool.execute(`
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-        `);
-        const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad'); /* paisesl */
-        const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-        const [paisesl] = await pool.execute('SELECT * FROM tbl_paises');
-
-        res.status(500).render('ccostofch', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            ccosto,
-            unidadT,
-            clienteT,
-            paisesl
-        });
+        mensaje = { tipo: 'success', texto: 'Actualizado exitosamente.' };
+      } else {
+        mensaje = { tipo: 'info', texto: 'No se enviaron campos para actualizar.' };
+      }
     }
-}); 
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.render('ccostofch', {
+      mensaje, ccosto, unidadT, clienteT, paisesl
+    });
+
+  } catch (error) {
+    console.error('Error guardando fechas:', error);
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.status(500).render('ccostofch', {
+      mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
+      ccosto, unidadT, clienteT, paisesl
+    });
+  } finally {
+    conn.release(); // ✅ Cierra la conexión
+  }
+});
 
 
 /*** C COSTO CONSULTAR ********/ 
@@ -992,7 +937,7 @@ app.post('/tareas', async (req, res) => {
  
 app.get('/complementar', (req, res) => {
     const idot = req.query.idot;
-    res.render('Complementar', { idot })
+    res.render('complementar', { idot })
 });
 
 
