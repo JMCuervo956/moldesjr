@@ -2410,7 +2410,7 @@ app.post('/dacabados', async (req, res) => {
         console.error('Error guardando: ', error);
         const idot = req.body.codigo;
         const [acabados] = await pool.execute(`SELECT * FROM tbl_acabados order by id`);
-        res.status(500).render('Dacabados', {
+        res.status(500).render('dacabados', {
             idot,
             mensaje: {
                 tipo: 'danger',

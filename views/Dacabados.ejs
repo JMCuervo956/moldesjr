@@ -161,7 +161,7 @@
         <!-- Modal Adicionar / Modificar Estado -->
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
-            <form action="/Dacabados" method="POST" class="modal-content">
+            <form action="/dacabados" method="POST" class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="modalCiudadLabel">Adicionar / Modificar </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
@@ -225,7 +225,7 @@
     function confirmarEliminacion(id, nombre) {
       document.getElementById('nombreAEliminar').textContent = nombre;
       const form = document.getElementById('formEliminar');
-      form.action = `/Dacabados/delete/${id}?idot=<%= idot %>`;
+      form.action = `/dacabados/delete/${id}?idot=<%= idot %>`;
       // Usando Bootstrap 5 JavaScript API para mostrar modal
       const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
       modal.show();
