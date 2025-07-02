@@ -433,261 +433,272 @@ app.post('/ccostofch', async (req, res) => {
 /*** C COSTO CONSULTAR ********/ 
 
 app.get('/ccostocc', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+  if (!req.session.loggedin) return res.redirect('/');
 
-            const [ccosto] = await pool.execute(` 
-                SELECT a.*, b.cliente as clienteN
-                FROM tbl_ccosto a
-                JOIN tbl_cliente b ON a.cliente = b.nit;
-            `);
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
 
-            const [unidadT] = await pool.execute('SELECT * FROM tbl_unidad');
-            const [clienteT] = await pool.execute('SELECT * FROM tbl_cliente order by cliente');
-            
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
 
-            res.render('ccostocc', { ccosto, unidadT, clienteT, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('ccostocc', { ccosto, unidadT, clienteT, user: userUser, name: userName, mensaje });
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  } finally {
+    conn.release();
+  }
 });
 
 /* modalcc */
 
 app.get('/modalcc', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+  if (!req.session.loggedin) return res.redirect('/');
 
-            //const id = req.params.id;
-            const id = req.query.idcc;
+  const conn = await pool.getConnection();
+  try {
+    const id = req.query.idcc;
 
-            //const id = 1792;
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
-                WHERE idcc = ?
-            `, [id]);            
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-                cc: row.idcc,
-                descripcion: row.descripcion,
-                oc: row.ocompra,
-                cliente: row.cliente,
-                ncliente: row.client,
-                cantidad: row.cantidad,
-                peso: row.peso,
-                unidad: row.unidad,
-                nunidad: row.nund,
-                comentarios: row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>'),
-                FechaOrden: row.fecha_orden.toISOString().split('T')[0],
-                FechaEntrega: row.fecha_entrega.toISOString().split('T')[0]
-            };
-           
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+    const [rows] = await conn.execute(`
+      SELECT a.*, b.cliente as client, c.unidad as nund
+      FROM tbl_ccosto a
+      LEFT JOIN tbl_cliente b ON a.cliente = b.nit
+      LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
+      WHERE idcc = ?
+    `, [id]);
 
-            res.render('modalcc', { datos: data });
+    const row = rows[0];
+    const data = {
+      cc: row.idcc,
+      descripcion: row.descripcion,
+      oc: row.ocompra,
+      cliente: row.cliente,
+      ncliente: row.client,
+      cantidad: row.cantidad,
+      peso: row.peso,
+      unidad: row.unidad,
+      nunidad: row.nund,
+      comentarios: row.comentarios?.replace(/(\r\n|\n|\r)/g, '<br>') || '',
+      FechaOrden: row.fecha_orden?.toISOString().split('T')[0],
+      FechaEntrega: row.fecha_entrega?.toISOString().split('T')[0]
+    };
 
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo ccosto:', error);
-        res.status(500).send('Error al obtener ccosto');
-    }
+    res.render('modalcc', { datos: data });
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  } finally {
+    conn.release();
+  }
 });
 
 
 /* ORDEN DE TRABAJO /***************************************************************************/
 
 app.get('/otrabajo', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const fechaHoraBogota = getBogotaDateTime();
+  if (!req.session.loggedin) return res.redirect('/');
 
-const [
-  [otrabajo],
-  [prov],
-  [dise],
-  [supe],
-  [sold],
-  [ccost]
-] = await Promise.all([
-  pool.execute(` 
-    SELECT 
-        a.*, 
-        b.funcionario as clienteN, 
-        c.descripcion as descco,
-        CASE
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
+
+    const [
+      [otrabajo],
+      [prov],
+      [dise],
+      [supe],
+      [sold],
+      [ccost]
+    ] = await Promise.all([
+      conn.execute(`
+        SELECT 
+          a.*, b.funcionario as clienteN, c.descripcion as descco,
+          CASE
             WHEN ? < c.fecha_orden THEN 'Por Iniciar'
             WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
             WHEN ? > c.fecha_entrega THEN 'Atrasado'
             ELSE 'Sin Estado'
-        END AS estado_actual
-    FROM 
-        tbl_otrabajo a
-    LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-    LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
-  `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
-  pool.execute('select * from tbl_efuncional where perfil=1;'),
-  pool.execute('select * from tbl_efuncional where perfil=2;'),
-  pool.execute('select * from tbl_efuncional where perfil=3;'),
-  pool.execute('select * from tbl_efuncional where perfil=4;'),
-  pool.execute('SELECT * FROM tbl_ccosto')
-]);
+          END AS estado_actual
+        FROM tbl_otrabajo a
+        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
+      `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
+      conn.execute('SELECT * FROM tbl_ccosto')
+    ]);
 
-            //  Recuperar mensaje de sesión  idots
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
 
-            res.render('otrabajo', { otrabajo, ccost, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
-    }
+    res.render('otrabajo', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+  } catch (error) {
+    console.error('Error obteniendo otrabajo:', error);
+    res.status(500).send('Error al obtener otrabajo');
+  } finally {
+    conn.release();
+  }
 });
+
 
 app.post('/otrabajo', async (req, res) => {
-    try {
-        const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando } = req.body;
-        let mensaje;
-        let texto;
-        
-        if (editando === "true") {
-            // Actualizar Ciudad
-            await pool.execute(
-                `UPDATE tbl_otrabajo SET descripcion= ?, proveedor= ?, disenador= ?, supervisor= ?, soldador= ?, observacion= ? WHERE idot = ?`,
-                [descripcion, proveedor, 0, 0, 0, observacion, idot]
-            );
-            mensaje = {
-                tipo: 'success',
-                texto: 'Centro de costo actualizado exitosamente.'
-            };
-        } else {
-            // Verificar si Ciudad ya existe
-            const [rows] = await pool.execute(
-                'SELECT COUNT(*) AS count FROM tbl_otrabajo WHERE idot = ?',
-                [idot]
-            );
+  if (!req.session.loggedin) return res.redirect('/');
 
-            if (rows[0].count > 0) {
-                mensaje = {
-                    tipo: 'danger',
-                    texto: 'Ya existe Orden de Trabajo'
-                };
-            } else {
+  const conn = await pool.getConnection();
+  try {
+    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando } = req.body;
+    let mensaje;
 
-                // Insertar nuevo proveedor
-                const comentarios = req.body.comentarios?.trim();
-                const fechaHoraBogota = getBogotaDateTime();
-                await pool.execute(
-                    `INSERT INTO tbl_otrabajo (idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, fecharg) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [idot, descripcion, proveedor, 0, 0, 0, observacion, fechaHoraBogota]
-                );
-                mensaje = {
-                    tipo: 'success',
-                    texto: `Orden de Trabajo guardado exitosamente. : ${idot}` 
-                };
-            }
-        }
-        // Obtener clientes
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(` 
-            SELECT 
-                a.*, 
-                b.funcionario as clienteN, 
-                c.descripcion as descco,
-                CASE
-                WHEN ? < c.fecha_orden THEN 'Por Iniciar'
-                WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
-                WHEN ? > c.fecha_entrega THEN 'Atrasado'
-                ELSE 'Sin Estado'
-                END AS estado_actual
-            FROM 
-                tbl_otrabajo a
-            LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-            LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
-            `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
+    if (editando === "true") {
+      // Actualizar registro
+      await conn.execute(
+        `UPDATE tbl_otrabajo 
+         SET descripcion = ?, proveedor = ?, disenador = ?, supervisor = ?, soldador = ?, observacion = ? 
+         WHERE idot = ?`,
+        [descripcion, proveedor, 0, 0, 0, observacion, idot]
+      );
+      mensaje = {
+        tipo: 'success',
+        texto: 'Centro de costo actualizado exitosamente.'
+      };
+    } else {
+      // Verificar si ya existe el idot
+      const [rows] = await conn.execute(
+        'SELECT COUNT(*) AS count FROM tbl_otrabajo WHERE idot = ?',
+        [idot]
+      );
 
-            const [prov] = await pool.execute('select * from tbl_efuncional where perfil=1;');
-            const [dise] = await pool.execute('select * from tbl_efuncional where perfil=2;');
-            const [supe] = await pool.execute('select * from tbl_efuncional where perfil=3;');
-            const [sold] = await pool.execute('select * from tbl_efuncional where perfil=4;');
-            const [ccost] = await pool.execute('SELECT * FROM tbl_ccosto');
-    
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('otrabajo', {
-            mensaje,
-            otrabajo,
-            prov,
-            dise,
-            supe,
-            sold,
-            ccost
-        });
-
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [otrabajo] = await pool.execute(`
-                SELECT a.*, b.funcionario as clienteN
-                FROM tbl_otrabajo a
-                LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador;
-        `);
-        const [prov] = await pool.execute('select * from tbl_efuncional where perfil=1;');
-        const [dise] = await pool.execute('select * from tbl_efuncional where perfil=2;');
-        const [supe] = await pool.execute('select * from tbl_efuncional where perfil=3;');
-        const [sold] = await pool.execute('select * from tbl_efuncional where perfil=4;');
-        const [ccost] = await pool.execute('SELECT * FROM tbl_ccosto');
-
-        res.status(500).render('otrabajo', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            otrabajo,
-            prov,
-            dise,
-            supe,
-            sold,
-            ccost
-        });
+      if (rows[0].count > 0) {
+        mensaje = {
+          tipo: 'danger',
+          texto: 'Ya existe Orden de Trabajo'
+        };
+      } else {
+        const fechaHoraBogota = getBogotaDateTime();
+        await conn.execute(
+          `INSERT INTO tbl_otrabajo 
+           (idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, fecharg) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [idot, descripcion, proveedor, 0, 0, 0, observacion, fechaHoraBogota]
+        );
+        mensaje = {
+          tipo: 'success',
+          texto: `Orden de Trabajo guardado exitosamente: ${idot}`
+        };
+      }
     }
+
+    // Consultas paralelas para obtener datos actualizados
+    const fechaHoraBogota = getBogotaDateTime();
+    const [
+      [otrabajo],
+      [prov],
+      [dise],
+      [supe],
+      [sold],
+      [ccost]
+    ] = await Promise.all([
+      conn.execute(`
+        SELECT 
+          a.*, 
+          b.funcionario as clienteN, 
+          c.descripcion as descco,
+          CASE
+            WHEN ? < c.fecha_orden THEN 'Por Iniciar'
+            WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
+            WHEN ? > c.fecha_entrega THEN 'Atrasado'
+            ELSE 'Sin Estado'
+          END AS estado_actual
+        FROM tbl_otrabajo a
+        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
+      `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
+      conn.execute('SELECT * FROM tbl_ccosto')
+    ]);
+
+    res.render('otrabajo', {
+      mensaje,
+      otrabajo,
+      prov,
+      dise,
+      supe,
+      sold,
+      ccost
+    });
+  } catch (error) {
+    console.error('Error guardando orden de trabajo:', error);
+
+    try {
+      // Si hay error, recupera datos para renderizar la vista con mensaje de error
+      const [
+        [otrabajo],
+        [prov],
+        [dise],
+        [supe],
+        [sold],
+        [ccost]
+      ] = await Promise.all([
+        conn.execute(`
+          SELECT a.*, b.funcionario as clienteN
+          FROM tbl_otrabajo a
+          LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador;
+        `),
+        conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
+        conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
+        conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
+        conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
+        conn.execute('SELECT * FROM tbl_ccosto')
+      ]);
+
+      res.status(500).render('otrabajo', {
+        mensaje: {
+          tipo: 'danger',
+          texto: 'Error al procesar la solicitud.'
+        },
+        otrabajo,
+        prov,
+        dise,
+        supe,
+        sold,
+        ccost
+      });
+    } catch (innerError) {
+      console.error('Error recuperando datos tras fallo:', innerError);
+      res.status(500).send('Error crítico en la aplicación.');
+    }
+  } finally {
+    conn.release();
+  }
 });
 
 
-//  funcion hora  Bogota
+//  funcion hora  Bogota   Promise.all  Promise.all
 
 function getBogotaDateTime() {
     const now = new Date();
-  
-    // Convertir a tiempo UTC
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const bogotaOffsetHours = -5;
+    const bogotaTime = new Date(utc + bogotaOffsetHours * 3600000);
   
-    // Bogotá está en UTC-5
-    const bogotaOffset = -5; // en horas
-    const bogotaTime = new Date(utc + 3600000 * bogotaOffset);
-  
-    // Formatear a 'YYYY-MM-DD HH:mm:ss'
     const yyyy = bogotaTime.getFullYear();
     const mm = String(bogotaTime.getMonth() + 1).padStart(2, '0');
     const dd = String(bogotaTime.getDate()).padStart(2, '0');
@@ -695,144 +706,137 @@ function getBogotaDateTime() {
     const min = String(bogotaTime.getMinutes()).padStart(2, '0');
     const ss = String(bogotaTime.getSeconds()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-  }
+}
+
  
 app.get('/otrabajo/delete/:idot', async (req, res) => {
     const idot = req.params.idot;
     try {
-      await pool.execute('DELETE FROM tbl_otrabajo WHERE idot = ?', [idot]);
-      req.session.mensaje = {
-        tipo: 'success',
-        texto: `Eliminado exitosamente - ID: ${idot}`
-      };
+        await pool.execute('DELETE FROM tbl_otrabajo WHERE idot = ?', [idot]);
+        req.session.mensaje = {
+            tipo: 'success',
+            texto: `Eliminado exitosamente - ID: ${idot}`
+        };
     } catch (err) {
-            console.error('Error al eliminar Orden de Trabajo:', err);
-            let texto = `Error al eliminar Orden de Trabajo - ID: ${idot}`;
-            if (err.message && err.message.includes('foreign key constraint fails')) {
-                texto = 'No se puede eliminar la Orden de Trabajo porque tiene elementos asociados (restricción de clave foránea).';
-            }
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto
-            };
-            }
+        console.error('Error al eliminar Orden de Trabajo:', err);
+        let texto = `Error al eliminar Orden de Trabajo - ID: ${idot}`;
+        if (err.message && err.message.includes('foreign key constraint fails')) {
+            texto = 'No se puede eliminar la Orden de Trabajo porque tiene elementos asociados (restricción de clave foránea).';
+        }
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto
+        };
+    }
     res.redirect('/otrabajo');
-  });
+});
+
 
 
 /* MODAL PANTALLA CCOSTO*/  
 
 app.get('/modalot', async (req, res) => {
     try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const id = req.query.idot;
-            const [rows] = await pool.execute(`
-                SELECT a.*, b.funcionario as prov, c.funcionario as dise, d.funcionario as supe, e.funcionario as sold
-                FROM tbl_otrabajo a
-                LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-                LEFT JOIN tbl_efuncional c ON a.disenador = c.identificador
-                LEFT JOIN tbl_efuncional d ON a.supervisor = d.identificador
-                LEFT JOIN tbl_efuncional e ON a.soldador = e.identificador
-                WHERE idot = ?
-            `, [id]);
+        if (!req.session.loggedin) return res.redirect('/');
+        
+        const id = req.query.idot;
+        const [rows] = await pool.execute(`
+            SELECT a.*, b.funcionario AS prov, c.funcionario AS dise, d.funcionario AS supe, e.funcionario AS sold
+            FROM tbl_otrabajo a
+            LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+            LEFT JOIN tbl_efuncional c ON a.disenador = c.identificador
+            LEFT JOIN tbl_efuncional d ON a.supervisor = d.identificador
+            LEFT JOIN tbl_efuncional e ON a.soldador = e.identificador
+            WHERE idot = ?
+        `, [id]);
 
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-                ot: row.idot,
-                descripcion: row.descripcion,
-                prov: row.proveedor,
-                dise: row.disenador,
-                supe: row.supervisor,
-                sold: row.soldador,
-                nprov: row.prov,
-                ndise: row.dise,
-                nsupe: row.supe,
-                nsold: row.sold,
-                comentarios: row.observacion.replace(/(\r\n|\n|\r)/g, '<br>'),
-            };
-           
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
-            res.render('modalot', { datos: data });
-
-        } else {
-            res.redirect('/');
+        if (!rows.length) {
+            return res.status(404).send('Orden de trabajo no encontrada');
         }
+
+        const row = rows[0];
+        const data = {
+            ot: row.idot,
+            descripcion: row.descripcion,
+            prov: row.proveedor,
+            dise: row.disenador,
+            supe: row.supervisor,
+            sold: row.soldador,
+            nprov: row.prov,
+            ndise: row.dise,
+            nsupe: row.supe,
+            nsold: row.sold,
+            comentarios: row.observacion ? row.observacion.replace(/(\r\n|\n|\r)/g, '<br>') : '',
+        };
+
+        res.render('modalot', { datos: data });
+
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener orden de trabajo');
     }
 });
 
 app.get('/modalotcc', async (req, res) => {
     try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const id = req.query.idot;
-            const [rows] = await pool.execute(`SELECT * FROM tbl_otrabajo WHERE idot = ?`, [id]);
-            const row = rows[0]; // obtenemos la primera fila
-            const data = {
-                cc: row.idot,
-                descripcion: row.descripcion,
-                oc: row.proveedor,
-                cliente: row.disenador,
-                cantidad: row.supervisor,
-                comentarios: row.observacion.replace(/(\r\n|\n|\r)/g, '<br>'),
-            };
-           
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+        if (!req.session.loggedin) return res.redirect('/');
 
-            res.render('modalotcc', { datos: data });
+        const id = req.query.idot;
+        const [rows] = await pool.execute('SELECT * FROM tbl_otrabajo WHERE idot = ?', [id]);
 
-        } else {
-            res.redirect('/');
+        if (!rows.length) {
+            return res.status(404).send('Orden de trabajo no encontrada');
         }
+
+        const row = rows[0];
+        const data = {
+            cc: row.idot,
+            descripcion: row.descripcion,
+            oc: row.proveedor,
+            cliente: row.disenador,
+            cantidad: row.supervisor,
+            comentarios: row.observacion ? row.observacion.replace(/(\r\n|\n|\r)/g, '<br>') : '',
+        };
+
+        res.render('modalotcc', { datos: data });
+
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener orden de trabajo');
     }
 });
+
 
 /* ACTIVIDADES /***************************************************************************/
 
 app.get('/actividades', async (req, res) => {
     try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
+        if (!req.session.loggedin) return res.redirect('/');
 
-            /* ciudades */
-            const [otrabajo] = await pool.execute(` 
-                SELECT a.*, b.funcionario as clienteN
-                FROM tbl_otrabajo a
-                LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador;
-            `);
+        const userUser = req.session.user;
+        const userName = req.session.name;
 
-            const [prov] = await pool.execute('select * from tbl_efuncional where perfil=1;');
-            const [dise] = await pool.execute('select * from tbl_efuncional where perfil=2;');
-            const [supe] = await pool.execute('select * from tbl_efuncional where perfil=3;');
-            const [sold] = await pool.execute('select * from tbl_efuncional where perfil=4;');
-            
-            //  Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+        const [otrabajo] = await pool.execute(`
+            SELECT a.*, b.funcionario AS clienteN
+            FROM tbl_otrabajo a
+            LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+        `);
 
-            res.render('actividades', { otrabajo, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
+        const [prov] = await pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1');
+        const [dise] = await pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2');
+        const [supe] = await pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3');
+        const [sold] = await pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4');
+
+        const mensaje = req.session.mensaje;
+        delete req.session.mensaje;
+
+        res.render('actividades', { otrabajo, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener orden de trabajo');
     }
 });
+
 
 /* RESPUESTA **********************************************************/
 
@@ -856,81 +860,87 @@ app.get('/respuesta', async (req, res) => {
 });
 
 app.post('/respuesta', async (req, res) => {
-  try {
-    const { idot, taskname, taskStartDate, taskDuration } = req.body;
-    let safeIdot = idot;
-    if (typeof idot !== 'string' && typeof idot !== 'number') {
-        console.error("IDOT no es un string ni un número válido:", idot);
-        return res.status(400).send('IDOT inválido');
+    try {
+        let { idot, taskname, taskStartDate, taskDuration, descripcion } = req.body;
+
+        if (!idot || (typeof idot !== 'string' && typeof idot !== 'number')) {
+            return res.status(400).send('IDOT inválido');
+        }
+
+        idot = String(idot).trim();
+
+        const [rowsTask] = await pool.execute(
+            `SELECT COALESCE(MAX(task), 0) + 1 AS siguiente_task FROM tbl_actividad WHERE idot = ?`,
+            [idot]
+        );
+
+        const [rowsId] = await pool.execute(
+            `SELECT COALESCE(MAX(id), 0) + 1 AS siguiente_id FROM tbl_actividad WHERE idot = ?`,
+            [idot]
+        );
+
+        const ultid = rowsId[0].siguiente_id;
+        const ulttask = rowsTask[0].siguiente_task;
+
+        await pool.execute(
+            'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [ultid, ulttask, idot, `${taskname} (Planificada)`, taskStartDate, taskDuration, 1, 'Principal']
+        );
+
+        await pool.execute(
+            'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [ultid + 1, ulttask, idot, taskname, taskStartDate, taskDuration, 0, 'Real']
+        );
+
+        res.redirect(`/respuesta?idot=${idot}&descripcion=${encodeURIComponent(descripcion || '')}`);
+    } catch (error) {
+        console.error('Error al guardar actividad:', error);
+        res.status(500).send('Error al guardar actividad');
     }
-    safeIdot = String(idot).trim();
-    const [rowsTask] = await pool.execute(
-        `SELECT COALESCE(MAX(task), 0) + 1 AS siguiente_task FROM tbl_actividad WHERE idot = ?`,
-        [safeIdot]
-    );
-    const [rowsId] = await pool.execute(
-        `SELECT COALESCE(MAX(id), 0) + 1 AS siguiente_id FROM tbl_actividad  WHERE idot = ?`,
-        [safeIdot]
-    );
-    const ultid = rowsId[0].siguiente_id;
-    const ulttask = rowsTask[0].siguiente_task;
-    await pool.execute(
-    'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [ultid, ulttask, idot, taskname + ' (Planificada)', taskStartDate, taskDuration, 1, 'Principal']
-    );
-    await pool.execute(
-    'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [ultid + 1, ulttask,idot, taskname, taskStartDate, taskDuration, 0, 'Real']
-    );
-    const descripcion = req.body.descripcion; // si es que viene del formulario
-    res.redirect(`/respuesta?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
-  } catch (error) {
-    console.error('Error al guardar actividad:', error);
-    res.status(500).send('Error al guardar actividad');
-  }
 });
 
 /* TAREAS */
 
 app.post('/tareas', async (req, res) => {
     try {
-      // Realizamos la consulta a la base de datos
-      const idot = req.body.idot;  // <-- Obtener idot del body
-      const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ?", [idot]);
-      // Crear un array de tareas basadas en la respuesta de la base de datos
-      const tasks = {
-        tasks: rows.map((row, index) => {
-        // Asignamos un color basado en el tipo (row.type)
-        let color = "#32CD32"; // Valor predeterminado 
-        if (row.type === "Principal") {
-          color = "#0000FF";  // Verde para tareas planificadas  0000FF
-        } else if (row.type === "in-progress") {
-          color = "#FFD700";  // Amarillo para tareas en progreso
-        } else if (row.type === "completed") {
-          color = "#4CAF50";  // Verde oscuro para tareas completadas
-        } else if (row.type === "delayed") {
-          color = "#FF6347";  // Rojo para tareas retrasadas
+        const idot = req.body.idot;
+        if (!idot) {
+            return res.status(400).json({ message: 'IDOT es requerido' });
         }
-        return {  
-          id: index + 1, // Asignamos un id único basado en el índice
-          task: row.task || 1, // Ajusta esto según el nombre de la columna en tu base de datos
-          text: row.text || "Tarea sin descripción", // Ajusta según el nombre de la columna
-          start_date: row.start_date || "2025-02-12", // Ajusta según el nombre de la columna
-          duration: row.duration || 6, // Ajusta según el nombre de la columna
-          progress: row.progress || 0, // Ajusta según el nombre de la columna
-          type: row.type, // O ajusta según lo que corresponda en tu base de datos
-          color: color
-          //color: row.color || "#32CD32" // Ajusta según el nombre de la columna, si tienes uno
-        };  
-        }),
-        links: []
-      };
-      res.json(tasks); // Enviamos la respuesta al cliente
+
+        const [rows] = await pool.execute('SELECT * FROM tbl_actividad WHERE idot = ?', [idot]);
+
+        const tasks = {
+            tasks: rows.map((row, index) => {
+                let color = "#32CD32"; // default
+
+                switch(row.type) {
+                    case 'Principal': color = '#0000FF'; break;
+                    case 'in-progress': color = '#FFD700'; break;
+                    case 'completed': color = '#4CAF50'; break;
+                    case 'delayed': color = '#FF6347'; break;
+                }
+
+                return {
+                    id: index + 1,
+                    task: row.task || 1,
+                    text: row.text || "Tarea sin descripción",
+                    start_date: row.start_date || "2025-02-12",
+                    duration: row.duration || 6,
+                    progress: row.progress || 0,
+                    type: row.type,
+                    color
+                };
+            }),
+            links: []
+        };
+
+        res.json(tasks);
     } catch (error) {
-      console.error('Error en el servidor:', error);
-      res.status(500).json({ message: 'Error al procesar la solicitud' });
+        console.error('Error en el servidor:', error);
+        res.status(500).json({ message: 'Error al procesar la solicitud' });
     }
-  });
+});
 
 
 //  Complementar
@@ -961,27 +971,49 @@ app.get('/respmod', async (req, res) => {
 
 
 // Ruta POST para modificar actividad
-app.post('/modificar-actividad', async(req, res) => {
-  const { id, task, text, start_date, duration, idot, descripcion } = req.body;  
-  try {
-    // actualiza una actividad específica
-    await pool.execute(
-      `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? and task = ?`,
-      [text, start_date, duration, idot, task]
-    );
+// Modificar actividad
+app.post('/modificar-actividad', async (req, res) => {
+    const { idot, task, text, start_date, duration, descripcion } = req.body;
+    try {
+        await pool.execute(
+            `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? AND task = ?`,
+            [text, start_date, duration, idot, task]
+        );
 
-    req.session.mensaje = {
-      tipo: 'success',
-      texto: `Actualizado exitosamente - Actividad: ${task}`,
-    };
-  } catch (err) {
-    console.error('Error al eliminar actividad:', err);
-    req.session.mensaje = {
-      tipo: 'danger',
-      texto: 'No se puede modificar actividad',
-    };
-  }
-  res.redirect(`/respmod?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
+        req.session.mensaje = {
+            tipo: 'success',
+            texto: `Actualizado exitosamente - Actividad: ${task}`
+        };
+    } catch (err) {
+        console.error('Error al modificar actividad:', err);
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'No se puede modificar la actividad.'
+        };
+    }
+    res.redirect(`/respmod?idot=${idot}&descripcion=${encodeURIComponent(descripcion || '')}`);
+});
+
+// Eliminar actividad
+app.post('/reseli/delete/:task', async (req, res) => {
+    const task = req.params.task;
+    const { idot, descripcion } = req.body;
+
+    try {
+        await pool.execute('DELETE FROM tbl_actividad WHERE idot = ? AND task = ?', [idot, task]);
+
+        req.session.mensaje = {
+            tipo: 'success',
+            texto: `Eliminado exitosamente - Actividad: ${task}`
+        };
+    } catch (err) {
+        console.error('Error al eliminar actividad:', err);
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'No se puede eliminar porque tiene elementos asociados.'
+        };
+    }
+    res.redirect(`/reseli?idot=${idot}&descripcion=${encodeURIComponent(descripcion || '')}`);
 });
 
 /** reseli ******************************************************************/
@@ -2301,7 +2333,7 @@ app.post('/piezas/delete/:id', async (req, res) => {
 
 /***  ACABADOS ***************************************************************************************************/
 
-app.get('/Dacabados', async (req, res) => {
+app.get('/dacabados', async (req, res) => {
     const idot = req.query.idot;
     try {
         if (!req.session.loggedin) {
@@ -2320,7 +2352,7 @@ app.get('/Dacabados', async (req, res) => {
         // ✅ Manejo seguro del mensaje de sesión
         const mensaje = req.session.mensaje || null;
         delete req.session.mensaje; // Limpieza después de usar
-        res.render('Dacabados', {
+        res.render('dacabados', {
             idot,
             acabados,
             user: userUser,
@@ -2334,7 +2366,7 @@ app.get('/Dacabados', async (req, res) => {
     }
 });
 
-app.post('/Dacabados', async (req, res) => {
+app.post('/dacabados', async (req, res) => {
     try {
         const idpz = req.body.codigo;
         const id = req.body.id;
@@ -2368,7 +2400,7 @@ app.post('/Dacabados', async (req, res) => {
         // Obtener actualizados
         const idot = req.body.codigo;
         const [acabados] = await pool.execute(`SELECT * FROM tbl_acabados order by id`);
-        res.render('Dacabados', {
+        res.render('dacabados', {
             idot,
             mensaje,
             acabados
@@ -2389,7 +2421,7 @@ app.post('/Dacabados', async (req, res) => {
     }
 }); 
 
-app.post('/Dacabados/delete/:id', async (req, res) => {
+app.post('/dacabados/delete/:id', async (req, res) => {
     const idpz = req.params.id;
     const idot = req.query.idot;
   try {
@@ -2410,7 +2442,7 @@ app.post('/Dacabados/delete/:id', async (req, res) => {
     };
   }
 
-  res.redirect(`/Dacabados?idot=${idot}`);
+  res.redirect(`/dacabados?idot=${idot}`);
 });
 
 /***  USER *****************************************************************************************************/
