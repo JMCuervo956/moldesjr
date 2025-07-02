@@ -575,37 +575,37 @@ app.get('/otrabajo', async (req, res) => {
             const userUser = req.session.user;
             const userName = req.session.name;
             const fechaHoraBogota = getBogotaDateTime();
-            const [
-            [otrabajo],
-            [prov],
-            [dise],
-            [supe],
-            [sold],
-            [ccost]
-            ] = await Promise.all([
-            pool.execute(` 
-                SELECT 
-                    a.*, 
-                    b.funcionario as clienteN, 
-                    c.descripcion as descco,
-                    CASE
-                        WHEN ? < c.fecha_orden THEN 'Por Iniciar'
-                        WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
-                        WHEN ? > c.fecha_entrega THEN 'Atrasado'
-                        ELSE 'Sin Estado'
-                    END AS estado_actual
-                FROM 
-                    tbl_otrabajo a
-                LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-                LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
-            `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
-            pool.execute('select * from tbl_efuncional where perfil=1;'),
-            pool.execute('select * from tbl_efuncional where perfil=2;'),
-            pool.execute('select * from tbl_efuncional where perfil=3;'),
-            pool.execute('select * from tbl_efuncional where perfil=4;'),
-            pool.execute('SELECT * FROM tbl_ccosto')
-            ]);
 
+const [
+  [otrabajo],
+  [prov],
+  [dise],
+  [supe],
+  [sold],
+  [ccost]
+] = await Promise.all([
+  pool.execute(` 
+    SELECT 
+        a.*, 
+        b.funcionario as clienteN, 
+        c.descripcion as descco,
+        CASE
+            WHEN ? < c.fecha_orden THEN 'Por Iniciar'
+            WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
+            WHEN ? > c.fecha_entrega THEN 'Atrasado'
+            ELSE 'Sin Estado'
+        END AS estado_actual
+    FROM 
+        tbl_otrabajo a
+    LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+    LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
+  `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
+  pool.execute('select * from tbl_efuncional where perfil=1;'),
+  pool.execute('select * from tbl_efuncional where perfil=2;'),
+  pool.execute('select * from tbl_efuncional where perfil=3;'),
+  pool.execute('select * from tbl_efuncional where perfil=4;'),
+  pool.execute('SELECT * FROM tbl_ccosto')
+]);
 
             //  Recuperar mensaje de sesión  idots
             const mensaje = req.session.mensaje;
@@ -3533,12 +3533,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
 
-/*
-app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
-});
-*/
-/// CERRAR CONEXIONES :  connection.release(); //
+
 
 // FIN //
 
