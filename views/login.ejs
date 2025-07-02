@@ -3,115 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>- MJR - </title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>        
-
-        .logo {
-            width: 70px;
-            height: auto;
-            cursor: pointer;
-        }
-
-        .activities-title {
-            font-size: 16px;
-            margin: 0; /* Elimina espacio extra de h3 */
-        }
-
-
-        #activities {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center; /* Centra verticalmente */
-            justify-content: center;  /* Centra horizontalmente */
-            gap: 10px; /* Espacio entre logo y texto */
-            padding: 10px 20px;
-            background-color: #ffffff;
-            box-shadow: 0 2px 8px rgba(185, 5, 5, 0.1);
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .activities-list {
-            font-size: 14px;
-            padding-left: 0;
-            margin: 0;
-            list-style-type: none;
-        }
-
-        .exit-button {
-            margin-left: auto; /* Esto empuja el botón a la derecha */
-            padding: 6px 12px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .exit-button:hover {
-            background-color: #c0392b;
-        }
-
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden; /* Esto elimina el scroll vertical */
-    background-color: #f0f8ff; /* Azul muy claro */
-}
-        input.simple-border {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .btn-login {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-login:hover {
-            background-color: #2980b9;
-        }
-
-        .encabezado {
-        position: fixed;
-        top: 0;
-        width: 100%;
-        background-color: rgba(58, 58, 58, 0.1); /* Gris suave con transparencia */
-        z-index: 1000;
-        padding: 15px 20px;
-        box-shadow: 0 2px 5px rgba(211, 209, 209, 0.1);
-        }
-
-        .content, .encabezado, .register-form {
-            margin-top: 10px;
-            position: relative;
-            z-index: 1;
-       }
-    </style>        
+    <title>Inventarios</title>
     <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
 </head>
 <body>
-    <!-- Encabezado fijo -->
-  <header class="encabezado">
-    <%- include('partials/navigationf') %>
-    <script src="/js/main.js"></script>
-  </header>    
+    <script src="app.js"></script>
+    <%- include('partials/navigation') %>
     <div class="content">
-        <!-- Aquí se aplica el fondo -->
+        <div class="background-container">
+            <!-- Aquí se aplica el fondo -->
+        </div>
         <div class="register-form"> 
                 <form onsubmit="clearFields()" id="loginForm" action="/auth" method='POST'>
-                    <label for="user" >Usuario </label>           
+                    <label for="user" >Ingresar Nit Unidad Residencial</label>  
+                    <br>         
+                    <input type="number" class="simple-border" placeholder="Nit Unidad" name="unidad" value="860945682" autocomplete="off" required autofocus>
+                    <hr class="divider">
+                    <label for="user" >Usuario</label>           
                     <input type="text" class="simple-border" placeholder="Usuario" name="user" autocomplete="off" required>
 
                     <label for="pass" >Contraseña</label>           
@@ -120,7 +29,7 @@ html, body {
                     <br><br>
                     <div style="display: inline;">
                         <h5></h5>
-                        <input type="submit" class="btn-login" value="Continuar">
+                        <input type="submit" class="btn-login" value="Login">
                     </div>
                 </form>    
         </div>
@@ -144,7 +53,7 @@ html, body {
                     text: result.message,
                     icon: result.status,
                     showConfirmButton: false,
-                    timer: 1
+                    timer: 1500
                 }).then(() => {
                     window.location.href = '/menuprc'; // Redirigir al usuario si es necesario
                 });
