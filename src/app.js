@@ -1110,6 +1110,274 @@ app.get('/modalcc', async (req, res) => {
   }
 });
 
+/*** C COSTO ACTUALIZAR FECHAS */  
+
+app.get('/ccostofch', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/');
+
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
+
+    const [ccosto] = await conn.execute(` 
+      SELECT a.*, b.cliente as clienteN,
+        CASE
+          WHEN ? < a.fecha_orden THEN 'Por Iniciar'
+          WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
+          WHEN ? > a.fecha_entrega THEN 'Atrasado'
+          ELSE 'Sin Estado'
+        END AS estado_actual
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
+
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('ccostofch', {
+      ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  } finally {
+    conn.release();
+  }
+});
+
+ 
+// POST
+
+app.post('/ccostofch', async (req, res) => {
+  const conn = await pool.getConnection();
+  try {
+    const { idcc, fecha_inicio, fecha_fin, editando } = req.body;
+    const fechaInicioFinal = fecha_inicio === '' ? null : fecha_inicio;
+    const fechaFinFinal = fecha_fin === '' ? null : fecha_fin;
+    let mensaje;
+
+    if (editando === "true") {
+      const campos = [];
+      const valores = [];
+
+      if ('fecha_inicio' in req.body) {
+        campos.push('fecha_inicio = ?');
+        valores.push(fechaInicioFinal);
+      }
+      if ('fecha_fin' in req.body) {
+        campos.push('fecha_fin = ?');
+        valores.push(fechaFinFinal);
+      }
+
+      if (campos.length > 0) {
+        const sql = `UPDATE tbl_ccosto SET ${campos.join(', ')} WHERE idcc = ?`;
+        valores.push(idcc);
+        await conn.execute(sql, valores);
+
+        mensaje = { tipo: 'success', texto: 'Actualizado exitosamente.' };
+      } else {
+        mensaje = { tipo: 'info', texto: 'No se enviaron campos para actualizar.' };
+      }
+    }
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.render('ccostofch', {
+      mensaje, ccosto, unidadT, clienteT, paisesl
+    });
+
+  } catch (error) {
+    console.error('Error guardando fechas:', error);
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.status(500).render('ccostofch', {
+      mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
+      ccosto, unidadT, clienteT, paisesl
+    });
+  } finally {
+    conn.release(); // ✅ Cierra la conexión
+  }
+});
+
+/*consulta usuarios*/
+
+app.get('/users_consulta', async (req, res) => {
+    try {
+        if (!req.session.loggedin) {
+            return res.redirect('/');
+        }
+
+        const userUser = req.session.user;
+        const userName = req.session.name;
+
+        const [estados] = await pool.execute('SELECT * FROM tbl_estados');
+        const [roles] = await pool.execute('SELECT * FROM tbl_rol');
+        const [users] = await pool.execute(`SELECT * FROM users ORDER BY DATE_FORMAT(fecha_nac, '%m-%d')`);
+
+
+        // ✅ Manejo seguro del mensaje de sesión
+        const mensaje = req.session.mensaje || null;
+        delete req.session.mensaje; // Limpieza después de usar
+        res.render('users_consulta', {
+        users,
+        estados,
+        roles,
+        user: userUser,
+        name: userName,
+        mensaje,
+        formatFecha: function (fechaStr) {
+            if (!fechaStr) return '';
+            const fecha = new Date(fechaStr);
+            if (isNaN(fecha)) return '';
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+        },
+        formatDiaMes: function (fechaStr) {
+            if (!fechaStr) return '';
+            const fecha = new Date(fechaStr);
+            if (isNaN(fecha)) return '';
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            return `${dia}/${mes}`;
+        }
+        });
+    } catch (error) {
+        console.error('Error al obtener los datos:', error);
+        res.status(500).send('Error al obtener los datos');
+    }
+});
+
+/* BarraProgreso **********************************************************/
+
+app.get('/progresogral', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const [rows] = await pool.execute(`
+                SELECT a.*, b.cliente as client,c.unidad as nund
+                FROM tbl_ccosto a
+                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
+                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad 
+            `);
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+            res.render('progresogral', { user: userUser, name: userName, datosBD: rows });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error real:', error);
+        res.status(500).send('Error conectando a la base de datos.');
+    }
+});
+
+/* PROGRESO  BARRA LINEAL **********************************************************/
+
+app.get('/progresogralT', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [otrabajo] = await pool.execute(` 
+                SELECT * FROM tbl_ccosto order by idcc desc
+            `);
+
+            const [efuncionales] = await pool.execute('SELECT * FROM tbl_efuncional WHERE perfil IN (1, 2, 3, 4)');
+            const prov = efuncionales.filter(e => e.perfil === 1);
+            const dise = efuncionales.filter(e => e.perfil === 2);
+            const supe = efuncionales.filter(e => e.perfil === 3);
+            const sold = efuncionales.filter(e => e.perfil === 4);            
+            
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+            res.render('progresogralT', { otrabajo, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo otrabajo:', error);
+        res.status(500).send('Error al obtener otrabajo');
+    }
+});
+
+//  ccosto excel
+
+app.get('/ccostoexp', async (req, res) => {
+  try {
+    if (req.session.loggedin) {
+      const userUser = req.session.user;
+      const userName = req.session.name;
+
+      // Consulta con formato de fecha dd/mm/aaaa
+        const [[ccosto], [unidadT], [clienteT]] = await Promise.all([
+        pool.execute(`
+            SELECT 
+            a.*, 
+            DATE_FORMAT(a.fecha_orden, '%d/%m/%Y') AS fecha_orden_formateada,
+            DATE_FORMAT(a.fecha_entrega, '%d/%m/%Y') AS fecha_entrega_formateada,
+            b.cliente AS clienteN, c.nombre as nompais, d.nombre as nomciu
+            FROM tbl_ccosto a
+            JOIN tbl_cliente b ON a.cliente = b.nit 
+            JOIN tbl_paises c ON a.pais = c.iso_pais
+            JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad 
+        `),
+        pool.execute('SELECT * FROM tbl_unidad'),
+        pool.execute('SELECT * FROM tbl_cliente ORDER BY cliente')
+        ]);
+
+
+      const mensaje = req.session.mensaje;
+      delete req.session.mensaje;
+
+      res.render('ccostoexp', {
+        ccosto,
+        unidadT,
+        clienteT,
+        user: userUser,
+        name: userName,
+        mensaje
+      });
+    } else {
+      res.redirect('/');
+    }
+  } catch (error) {
+    console.error('Error obteniendo ccosto:', error);
+    res.status(500).send('Error al obtener ccosto');
+  }
+});
+
+
+
+
 
 
 // Puerto de escucha
