@@ -1329,6 +1329,125 @@ app.get('/progresogralT', async (req, res) => {
     }
 });
 
+/* TAREAS G*/
+
+app.post('/tareasg', async (req, res) => {
+  try {
+    // Consulta para obtener las tareas
+    const [rows] = await pool.execute("SELECT * FROM tbl_ccosto order by idcc desc");
+
+    // Consultas para obtener fechas mínima y máxima
+    const [[{ min_fecha_orden }]] = await pool.execute(
+      "SELECT MIN(fecha_orden) AS min_fecha_orden FROM tbl_ccosto"
+    );
+    const [[{ max_fecha_entrega }]] = await pool.execute(
+      "SELECT MAX(fecha_entrega) AS max_fecha_entrega FROM tbl_ccosto"
+    );
+
+    // Función para formatear fecha como YYYY/MM/DD
+    function formatDate(date) {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}/${month}/${day}`;
+    }
+
+    // Construcción del array de tareas
+    const tasks = rows.map(row => {
+      const start = new Date(row.fecha_orden);
+      const end = new Date(row.fecha_entrega);
+      let duration = 1;
+
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      }
+
+      let progress = 0;
+      if (row.estado === 1) progress = 1;
+      else if (row.estado === 2) progress = 0.5;
+      else if (row.estado === 3) progress = 0.25;
+
+      let color = "#008080";
+      switch (row.estado) {
+        case 4: color = "#A9A9A9"; break;
+        case 2: color = "#1E90FF"; break;
+        case 3: color = "#FF6347"; break;
+        case 1: color = "#90EE90"; break;
+      }
+
+      //  fechas           
+
+    // Función para extraer solo fecha (sin horas)
+    function getDateOnly(dateString) {
+    const date = new Date(dateString);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    // Ejemplo de un objeto row con las 4 fechas
+
+
+    // Normalizamos las fechas
+    const fechaOrden = getDateOnly(row.fecha_orden);
+    const fechaEntrega = getDateOnly(row.fecha_entrega);
+    let fechaFin = null;
+    if (row.fecha_fin !== null && row.fecha_fin !== undefined) {
+        fechaFin = getDateOnly(row.fecha_fin);
+    }
+
+    let fechaInicio = null;
+    if (row.fecha_inicio !== null && row.fecha_inicio !== undefined) {
+        fechaInicio = getDateOnly(row.fecha_inicio);
+    }
+
+    color = "#808080"; // color por defecto
+    const hoy = getDateOnly(new Date());
+    if (fechaFin !== null) {
+        if (fechaFin <= fechaEntrega) {
+            color = "#1E90FF"; // Azul - terminó antes
+        } else if (fechaFin.getTime() === fechaEntrega.getTime()) {
+            color = "#90EE90"; // Verde - terminó a tiempo
+        } else if (fechaFin > fechaEntrega) {
+            color = "#FF6347"; // Rojo - terminó después
+        }
+    } else {
+        if (fechaInicio > fechaOrden) {
+            color = "#FFD700"; // Dorado - inició tarde
+        } else if (hoy >= fechaOrden && hoy <= fechaEntrega) {
+            color = "#90EE90"; // Verde - en curso a tiempo
+        } else if (hoy > fechaEntrega) {
+            color = "#FF6347"; // Rojo - aún no finaliza y está vencida
+        }
+    }
+      return {
+        task: row.idcc,
+        text: row.descripcion || "Tarea sin descripción",
+        start_date: row.fecha_orden,
+        end_date: row.fecha_entrega,
+        fin_date: row.fecha_fin,
+        duration,
+        progress,
+        color
+      };
+    });
+
+    // Enviar la respuesta al cliente  start_date
+
+    res.json({
+      tasks,
+      links: [],
+      min_fecha_orden: formatDate(min_fecha_orden),
+      max_fecha_entrega: formatDate(max_fecha_entrega)
+    });
+
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    res.status(500).json({ message: 'Error al procesar la solicitud' });
+  }
+});
+
+
+
 //  ccosto excel
 
 app.get('/ccostoexp', async (req, res) => {
@@ -1375,9 +1494,887 @@ app.get('/ccostoexp', async (req, res) => {
   }
 });
 
+/***  USER *****************************************************************************************************/
+
+app.get('/users', async (req, res) => {
+    try {
+        if (!req.session.loggedin) {
+            return res.redirect('/');
+        }
+
+        const userUser = req.session.user;
+        const userName = req.session.name;
+
+        const [estados] = await pool.execute('SELECT * FROM tbl_estados');
+        const [roles] = await pool.execute('SELECT * FROM tbl_rol');
+        const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+
+        // ✅ Manejo seguro del mensaje de sesión
+        const mensaje = req.session.mensaje || null;
+        delete req.session.mensaje; // Limpieza después de usar
+
+        res.render('users', {
+            users,
+            estados,
+            roles,
+            user: userUser,
+            name: userName,
+            mensaje
+        });
+    } catch (error) {
+        console.error('Error al obtener los datos:', error);
+        res.status(500).send('Error al obtener los datos');
+    }
+});
+
+app.post('/users', async (req, res) => {
+  try {
+    const { user, name, email, rol, telefono, estado, fecha_nac, editando } = req.body;
+    let mensaje;
+
+    if (editando === "true") {
+      // Actualizar
+      const fechaHoraBogota = getBogotaDateTime();
+      await pool.execute(
+        `UPDATE users SET name = ?, email = ?, rol = ?, telefono = ?, estado = ?, fecha_nac = ?, fecha_act = ?  WHERE user = ?`,
+        [name, email, rol, telefono, estado, fecha_nac, fechaHoraBogota, user]
+      );
+
+      mensaje = {
+        tipo: 'success',
+        texto: 'Cambio actualizado exitosamente.'
+      };
+    } else {
+      // Verificar si ya existe
+      const [rows] = await pool.execute('SELECT COUNT(*) AS count FROM users WHERE user = ?', [user]);
+
+      if (rows[0].count > 0) {
+        mensaje = {
+          tipo: 'danger',
+          texto: 'Ya existe el código.'
+        };
+      } else {
+        // Insertar nuevo usuario
+        const passwordHash = await bcryptjs.hash(user, 8);
+        const fechaHoraBogota = getBogotaDateTime();
+
+        await pool.execute(
+          `INSERT INTO users (user, name, email, pass, rol, telefono, estado, fecha_nac, fecha_cre, fecha_act)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [user, name, email, passwordHash, rol, telefono, estado, fecha_nac, fechaHoraBogota, fechaHoraBogota]
+        );
+
+        mensaje = {
+          tipo: 'success',
+          texto: 'Guardado exitosamente.'
+        };
+      }
+    }
+
+    // Obtener lista actualizada
+    const [estados] = await pool.execute('SELECT * FROM tbl_estados');
+    const [roles] = await pool.execute('SELECT * FROM tbl_rol');
+    const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+    res.render('users', {
+      mensaje,
+      users,
+      estados,
+      roles
+    });
+
+  } catch (error) {
+    console.error('Error guardando: ', error);
+    const [roles] = await pool.execute('SELECT * FROM tbl_rol');
+    const [estados] = await pool.execute('SELECT * FROM tbl_estados');
+    const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+
+    res.status(500).render('users', {
+      mensaje: {
+        tipo: 'danger',
+        texto: 'Error al procesar la solicitud.'
+      },
+      users,
+      roles,
+      estados
+    });
+  }
+});
+
+// pass
+
+app.post('/users/delete/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.execute('DELETE FROM users WHERE user = ?', [id]);
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: 'Eliminado exitosamente.'
+    };
+  } catch (err) {
+    let texto = 'Error al eliminar.';
+    if (err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede eliminar, tiene elementos asociados.';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+
+  const mensaje = req.session.mensaje;
+  delete req.session.mensaje;
+
+  const [estados] = await pool.execute('SELECT * FROM tbl_estados');
+  const [roles] = await pool.execute('SELECT * FROM tbl_rol');
+  const [users] = await pool.execute('SELECT * FROM users ORDER BY user');
+
+  res.render('users', {
+    users,
+    estados,
+    roles,
+    user: req.session.user,
+    name: req.session.name,
+    mensaje
+  });
+});
+
+/* PAISES *************************************************************************************************/
+
+app.get('/paises', async (req, res) => {
+    try {
+      if (req.session.loggedin) {
+        const userUser = req.session.user;
+        const userName = req.session.name;
+  
+        const [paises] = await pool.execute('SELECT * FROM tbl_paises');
+        const mensaje = req.session.mensaje;
+        delete req.session.mensaje;
+  
+        res.render('paises', { paises, user: userUser, name: userName, mensaje });
+      } else {
+        res.redirect('/');
+      }
+    } catch (error) {
+      console.error('Error obteniendo países:', error);
+      res.status(500).send('Error al obtener los países');
+    }
+  });
+  
+app.post('/paises', async (req, res) => {
+    try {
+        const { iso_pais, nombre, iso_alpha2, iso_alpha3, editando } = req.body;
+
+        let mensaje;
+
+        if (editando === "true") {
+            // Actualizar el pais
+            await pool.execute(
+                `UPDATE tbl_paises SET nombre = ?, iso_alpha2 = ?, iso_alpha3 = ? WHERE iso_pais = ?`,
+                [nombre, iso_alpha2, iso_alpha3, iso_pais]
+            );
+
+            mensaje = {
+                tipo: 'success',
+                texto: 'Pais actualizado exitosamente.'
+            };
+        } else {
+            // Verificar si el pais ya existe
+            const [rows] = await pool.execute(
+                'SELECT COUNT(*) AS count FROM tbl_paises WHERE iso_pais = ?',
+                [iso_pais]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe un pais con este Codigo.'
+                };
+            } else {
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_paises (iso_pais, nombre, iso_alpha2, iso_alpha3) VALUES (?, ?, ?, ?)`,
+                    [iso_pais, nombre, iso_alpha2, iso_alpha3]
+                );
+
+                mensaje = {
+                    tipo: 'success',
+                    texto: 'Pais guardado exitosamente.'
+                };
+            }
+        }
+
+        // Obtener los proveedores actualizados
+        const [paises] = await pool.execute('SELECT * FROM tbl_paises');
+
+        // Renderizar la vista con el mensaje y la lista de proveedores
+        res.render('paises', {
+            mensaje,
+            paises
+        });
+        
+    } catch (error) {
+        console.error('Error guardando país:', error);
+        const [paises] = await pool.execute('SELECT * FROM tbl_paises');
+        res.status(500).render('paises', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            paises
+        });
+    }
+});
+
+app.get('/paises/delete/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      await pool.execute('DELETE FROM tbl_paises WHERE iso_pais = ?', [id]);
+      req.session.mensaje = { tipo: 'warning', texto: 'País eliminado exitosamente.' };
+    } catch (error) {
+      let texto = 'Error al eliminar país.';
+      if (error.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar el país porque tiene ciudades asociadas.';
+      }
+      req.session.mensaje = { tipo: 'danger', texto };
+    }
+    res.redirect('/paises');
+});
+
+/* CIUDADES *************************************************************************************************/
+
+app.get('/ciudades', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [[ciudades], [paises]] = await Promise.all([
+                pool.execute(`
+                    SELECT c.*, p.nombre AS pais_nombre
+                    FROM tbl_ciudad c
+                    JOIN tbl_paises p ON c.pais_codigo = p.iso_pais
+                `),
+                pool.execute('SELECT * FROM tbl_paises')
+            ]);
+
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+
+            res.render('ciudades', { ciudades, paises, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo ciudades:', error);
+        res.status(500).send('Error al obtener las ciudades');
+    }
+});
+  
+// Crear o actualizar ciudad
+app.post('/ciudades', async (req, res) => {
+    try {
+        const { iso_ciudad, nombre, pais_codigo, editando } = req.body;
+
+        let mensaje;
+        
+        if (editando === "true") {
+            // Actualizar Ciudad
+            await pool.execute(
+                `UPDATE tbl_ciudad SET nombre = ?, pais_codigo = ? WHERE iso_ciudad = ?`,
+                [nombre, pais_codigo, iso_ciudad]
+            );
+
+            mensaje = {
+                tipo: 'success',
+                texto: 'Ciudad actualizado exitosamente.'
+            };
+        } else {
+            // Verificar si Ciudad ya existe
+            const [rows] = await pool.execute(
+                'SELECT COUNT(*) AS count FROM tbl_ciudad WHERE iso_ciudad = ?',
+                [iso_ciudad]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe un pais con este Codigo.'
+                };
+            } else {
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_ciudad (iso_ciudad, nombre, pais_codigo) VALUES (?, ?, ?)`,
+                    [iso_ciudad, nombre, pais_codigo]
+                );
+
+                mensaje = {
+                    tipo: 'success',
+                    texto: 'Ciudad guardada exitosamente.'
+                };
+            }
+        }
+
+        const [[ciudades], [paises]] = await Promise.all([
+        pool.execute(`
+            SELECT c.*, p.nombre AS pais_nombre
+            FROM tbl_ciudad c
+            JOIN tbl_paises p ON c.pais_codigo = p.iso_pais
+        `),
+        pool.execute('SELECT * FROM tbl_paises')
+        ]);
+
+        // Renderizar la vista con el mensaje y la lista de proveedores
+        res.render('ciudades', {
+            mensaje,
+            ciudades,
+            paises
+        });
+
+    } catch (error) {
+        console.error('Error guardando ciudad:', error);
+        const [ciudades] = await pool.execute(`
+            SELECT c.*, p.nombre AS pais_nombre
+            FROM tbl_ciudad c
+            JOIN tbl_paises p ON c.pais_codigo = p.iso_pais
+        `);
+        const [paises] = await pool.execute('SELECT * FROM tbl_paises');
+        res.status(500).render('ciudades', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            ciudades,
+            paises
+        });
+    }
+});
+
+app.get('/ciudades/delete/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      await pool.execute('DELETE FROM tbl_ciudad WHERE iso_ciudad = ?', [id]);
+      req.session.mensaje = { tipo: 'success', texto: 'Ciudad eliminada exitosamente.' };
+    } catch (err) {
+      let texto = 'Error al eliminar Ciudad.';
+      if (err.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar Ciudad porque tiene elementos asociados.'; // Ajusta si hace falta
+      }
+      req.session.mensaje = { tipo: 'danger', texto };
+    }
+    res.redirect('/ciudades');
+  });
+
+/***     CLIENTES    */
+
+app.get('/clientes', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [[ciudades], [paisesl]] = await Promise.all([
+            pool.execute(`
+                SELECT c.*, p.nombre AS pais_nombre
+                FROM tbl_cliente c
+                JOIN tbl_paises p ON c.pais = p.iso_pais
+                ORDER BY pais, nit
+            `),
+            pool.execute('SELECT * FROM tbl_paises')
+            ]);
+
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+
+            res.render('clientes', { ciudades, paisesl, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo ciudades:', error);
+        res.status(500).send('Error al obtener las ciudades');
+    }
+});
+
+app.post('/clientes', async (req, res) => {
+    try {
+        const { nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto, editando } = req.body;
+        const id = nit;
+        let mensaje;
+        
+        if (editando === "true") {
+            // Actualizar Ciudad
+            await pool.execute(
+                `UPDATE tbl_cliente SET cliente= ?, telefono= ?, celular1= ?, celular2= ?, correo= ?, direccion= ?, pais= ?, ciudad= ?, contacto= ?  WHERE nit = ?`,
+                [cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto, nit]
+            );
+            mensaje = {
+                tipo: 'success',
+                texto: 'Cliente actualizado exitosamente.'
+            };
+        } else {
+            // Verificar si Ciudad ya existe
+            const [rows] = await pool.execute(
+                'SELECT COUNT(*) AS count FROM tbl_cliente WHERE nit = ?',
+                [nit]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe un CLIENTE con este Nit.'
+                };
+            } else {
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_cliente (nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto]
+                );
+                mensaje = {
+                    tipo: 'success',
+                    texto: `Cliente guardado exitosamente. Nit: ${id}` 
+                    //texto = `Ciudad guardada exitosamente - NIT: ${id}`;
+                };
+            }
+        }
+
+        // Obtener clientes
+
+        const [[ciudades], [paisesl], [ciudadl]] = await Promise.all([
+        pool.execute(`
+            SELECT c.*, p.nombre AS pais_nombre
+            FROM tbl_cliente c
+            JOIN tbl_paises p ON c.pais = p.iso_pais
+        `),
+        pool.execute('SELECT * FROM tbl_paises'),
+        pool.execute('SELECT * FROM tbl_ciudad')
+        ]);
+
+        // Renderizar la vista con el mensaje y la lista de proveedores
+        res.render('clientes', {
+            mensaje,
+            ciudades,
+            paisesl,
+            ciudadl
+        });
+
+    } catch (error) {
+
+        console.error('Error guardando ciudad:', error);
+
+        const [[ciudades], [paisesl], [ciudadl]] = await Promise.all([
+        pool.execute(`
+            SELECT c.*, p.nombre AS pais_nombre
+            FROM tbl_cliente c
+            JOIN tbl_paises p ON c.pais = p.iso_pais
+        `),
+        pool.execute('SELECT * FROM tbl_paises'),
+        pool.execute('SELECT * FROM tbl_ciudad')
+        ]);        
+        
+        res.status(500).render('clientes', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            ciudades,
+            paisesl,
+            ciudadl
+        });
+    }
+});
+
+app.get('/clientes/delete/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      await pool.execute('DELETE FROM tbl_cliente WHERE nit = ?', [id]);
+      let texto = `Cliente eliminado exitosamente - NIT: ${id}`;
+      req.session.mensaje = { tipo: 'success', texto, id };
+    } catch (err) {
+      const id = req.params.id;  
+      let texto = `Error al eliminar Cliente - NIT: ${id}`;
+      if (err.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar porque tiene elementos asociados.'; // Ajusta si hace falta
+      }
+      req.session.mensaje = { tipo: 'danger', texto, id };
+    }
+    res.redirect('/clientes');
+  });
+
+/* EQUIPO FUNCIONAL */
+
+app.get('/efuncional', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
+            pool.execute(` 
+                SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                        b.id as idp, b.perfil as perfilp, c.estado as destado
+                FROM tbl_efuncional a
+                JOIN tbl_perfil b ON a.perfil = b.id
+                JOIN tbl_estados c ON a.estado = c.id
+                ORDER BY a.perfil, a.estado;
+            `),
+            pool.execute('SELECT * FROM tbl_tipodoc'),
+            pool.execute('SELECT * FROM tbl_estados'),
+            pool.execute('SELECT * FROM tbl_perfil')
+            ]);
+            
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+
+            res.render('efuncional', { efuncional, tipodocl, estados, perfilf, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo funcional:', error);
+        res.status(500).send('Error al obtener las funcional');
+    }
+});
+  
+// Crear o actualizar ciudad
+app.post('/efuncional', async (req, res) => {
+    try {
+        const { tipo_id, documento, funcionario, perfil, fechaini, estado, fechaest, editando } = req.body;
+        let mensaje;
+        let texto;
+        
+        if (editando === "true") {
+            // Actualizar Ciudad
+            await pool.execute(
+                `UPDATE tbl_efuncional SET funcionario= ?, perfil= ?, estado= ? WHERE tipo_id = ? AND identificador = ?`,
+                [funcionario, perfil, estado, tipo_id, documento]
+            );
+            mensaje = {
+                tipo: 'success',
+                texto: 'Funcional actualizado exitosamente.'
+            };
+        } else {
+
+            // Verificar si Ciudad ya existe
+            const [rows] = await pool.execute(
+                'SELECT COUNT(*) AS count FROM tbl_efuncional WHERE tipo_id = ? AND identificador = ?',
+                [tipo_id, documento]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe un CLIENTE con este Nit.'
+                };
+            } else {
+
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_efuncional (tipo_id, identificador, funcionario, perfil, estado) VALUES (?, ?, ?, ?, ?)`,
+                    [tipo_id, documento, funcionario, perfil, estado]
+                );
+                mensaje = {
+                    tipo: 'success',
+                    texto: `Funcional guardado exitosamente. : ${funcionario}` 
+                };
+            }
+        }
+        // Obtener clientes
+
+        const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
+        pool.execute(` 
+            SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                    b.id as idp, b.perfil as perfilp, c.estado as destado
+            FROM tbl_efuncional a
+            JOIN tbl_perfil b ON a.perfil = b.id
+            JOIN tbl_estados c ON a.estado = c.id
+            ORDER BY a.perfil, a.estado;
+        `),
+        pool.execute('SELECT * FROM tbl_tipodoc'),
+        pool.execute('SELECT * FROM tbl_estados'),
+        pool.execute('SELECT * FROM tbl_perfil')
+        ]);
+        
+        // Renderizar la vista con el mensaje y la lista de proveedores
+        res.render('efuncional', {
+            mensaje,
+            efuncional,
+            tipodocl,
+            estados,
+            perfilf
+        });
+
+    } catch (error) {
+
+        console.error('Error guardando ciudad:', error);
+        const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
+        pool.execute(` 
+            SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                    b.id as idp, b.perfil as perfilp, c.estado as destado
+            FROM tbl_efuncional a
+            JOIN tbl_perfil b ON a.perfil = b.id
+            JOIN tbl_estados c ON a.estado = c.id
+            ORDER BY a.perfil, a.estado;
+        `),
+        pool.execute('SELECT * FROM tbl_tipodoc'),
+        pool.execute('SELECT * FROM tbl_estados'),
+        pool.execute('SELECT * FROM tbl_perfil')
+        ]);        
+        res.status(500).render('efuncional', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            efuncional,
+            tipodocl,
+            estados,
+            perfilf
+        });
+    }
+});
 
 
+app.get('/efuncional/delete/:id/:nombre', async (req, res) => {
+    const id = req.params.id;
+    const nombre = req.params.nombre;
+    try {
+      await pool.execute('DELETE FROM tbl_efuncional WHERE tipo_id = ? AND identificador = ?', [id, nombre]);
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: `Eliminado exitosamente - ID: ${id}, Documento: ${nombre}`
+      };
+    } catch (err) {
+      let texto = `Error al eliminar Funcional - ID: ${id}, Documento: ${nombre}`;
+      if (err.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar porque tiene elementos asociados.';
+      }
+      req.session.mensaje = { tipo: 'danger', texto };
+    }
+    res.redirect('/efuncional');
+  });
 
+  /***   CODIGOS *****************************************************************************************************/
+
+app.get('/codigos', async (req, res) => {
+    try {
+        if (!req.session.loggedin) {
+            return res.redirect('/');
+        }
+
+        const userUser = req.session.user;
+        const userName = req.session.name;
+
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_ccoestado ORDER BY codigo`);
+
+        // ✅ Manejo seguro del mensaje de sesión
+        const mensaje = req.session.mensaje || null;
+        delete req.session.mensaje; // Limpieza después de usar
+        res.render('codigos', {
+            codigos,
+            user: userUser,
+            name: userName,
+            mensaje
+        });
+    } catch (error) {
+        console.error('Error al obtener los datos:', error);
+        res.status(500).send('Error al obtener los datos');
+    }
+});
+
+app.post('/codigos', async (req, res) => {								// cambia	app.post('/codigos'
+    try {
+        const { codigo, descripcion, editando } = req.body;
+        let mensaje;
+       
+        if (editando === "true") {
+            // Actualizar 
+            await pool.execute(
+                `UPDATE tbl_ccoestado SET descripcion = ? WHERE codigo = ?`,	
+                [descripcion, codigo]
+            );
+
+            mensaje = {
+                tipo: 'success',
+                texto: 'Cambio Actualizado exitosamente.'
+            };
+        } else {
+            // Verificar si ya existe
+            const [rows] = await pool.execute('SELECT COUNT(*) AS count FROM tbl_ccoestado WHERE codigo = ?',
+                [codigo]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe Codigo.'
+                };
+            } else {
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_ccoestado (codigo, descripcion) VALUES (?, ?)`,
+                    [codigo, descripcion]
+                );
+
+                mensaje = {
+                    tipo: 'success',
+                    texto: 'Guardado exitosamente.'
+                };
+            }
+        }
+
+        // Obtener actualizados
+
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_ccoestado order by codigo`);
+        res.render('codigos', {
+            mensaje,
+            codigos
+        });
+
+    } catch (error) {
+
+        console.error('Error guardando: ', error);
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_ccoestado order by codigo`);
+
+	// Cambia tabla diferente
+        res.status(500).render('codigos', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            codigos
+        });
+    }
+});
+
+app.post('/codigos/delete/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.execute('DELETE FROM tbl_ccoestado WHERE codigo = ?', [id]);
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: 'Eliminado exitosamente.'
+    };
+  } catch (err) {
+    let texto = 'Error al eliminar.';
+    if (err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede eliminar, tiene elementos asociados.';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+
+  const mensaje = req.session.mensaje;
+  delete req.session.mensaje;
+
+  const [codigos] = await pool.execute('SELECT * FROM tbl_ccoestado ORDER BY codigo');
+
+  res.render('codigos', {
+    codigos,
+    user: req.session.user,
+    name: req.session.name,
+    mensaje
+  });
+});
+
+/***     INDICES    */
+
+app.get('/indices', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
+
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+            res.render('indices', { indices, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo ciudades:', error);
+        res.status(500).send('Error al obtener las ciudades');
+    }
+});
+
+
+app.post('/indices', async (req, res) => {
+    try {
+        const { nit, editando } = req.body;
+        const id = nit;
+        let mensaje;
+        let texto;
+        
+        // Verificar si ya existe
+        const [rows] = await pool.execute(
+            'SELECT COUNT(*) AS count FROM tbl_insp_indices WHERE tb_indice = ?',
+            [nit]
+        );
+
+        if (rows[0].count > 0) {
+            mensaje = {
+                tipo: 'danger',
+                texto: 'Ya existe'
+            };
+        } else {
+            // Insertar nuevo proveedor
+            await pool.execute(
+                `INSERT INTO tbl_insp_indices (tb_indice) VALUES (?)`,
+                [nit]
+            );
+
+            mensaje = {
+                tipo: 'success',
+                texto: `Guardada exitosamente. Indice: ${id}` 
+                //texto = `Ciudad guardada exitosamente - NIT: ${id}`;
+            };
+        }
+
+        const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
+        res.render('indices', { indices, mensaje });
+
+    } catch (error) {
+
+        console.error('Error guardando ciudad:', error);
+        const [indices] = await pool.execute(`SELECT * FROM tbl_insp_indices order by tb_indice`);
+        res.status(500).render('indices', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar la solicitud.'
+            },
+            indices
+        });
+    }
+});
+
+app.get('/indices/delete/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      await pool.execute('DELETE FROM tbl_insp_indices WHERE tb_indice = ?', [id]);
+      let texto = `Eliminado exitosamente - Indice: ${id}`;
+      req.session.mensaje = { tipo: 'success', texto, id };
+    } catch (err) {
+      const id = req.params.id;  
+      let texto = `Error al eliminar: ${id}`;
+      if (err.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar porque tiene elementos asociados.'; // Ajusta si hace falta
+      }
+      req.session.mensaje = { tipo: 'danger', texto, id };
+    }
+    res.redirect('/indices');
+  });
 
 
 // Puerto de escucha
