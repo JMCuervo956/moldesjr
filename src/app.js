@@ -2376,8 +2376,163 @@ app.get('/indices/delete/:id', async (req, res) => {
     res.redirect('/indices');
   });
 
+// Inspecciones
+
+app.get('/inspecciones', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/');
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
+
+    // Ejecutar consulta
+    const [inspecc] = await conn.execute(` 
+      SELECT 
+        b.id_bloque,
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.firma,
+        i.observacion
+      FROM bloques b
+      JOIN items i ON b.id_bloque = i.id_bloque
+      ORDER BY b.id_bloque, i.no;
+    `);
+
+    // Agrupar resultados por bloque
+    const bloquesAgrupados = [];
+    inspecc.forEach(row => {
+      let bloque = bloquesAgrupados.find(b => b.id_bloque === row.id_bloque);
+      if (!bloque) {
+        bloque = {
+          id_bloque: row.id_bloque,
+          titulo: row.titulo,
+          items: []
+        };
+        bloquesAgrupados.push(bloque);
+      }
+      bloque.items.push({
+        no: row.no,
+        aspecto: row.aspecto,
+        si: row.si,
+        no_: row.no_,
+        na: row.na,
+        firma: row.firma,
+        observacion: row.observacion
+      });
+    });
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('inspecciones', { inspecc: bloquesAgrupados, user: userUser, name: userName, mensaje });
+
+  } catch (error) {
+    console.error('Error obteniendo inspecciones:', error);
+    res.status(500).send('Error al obtener inspecciones');
+  } finally {
+    conn.release(); // Siempre libera la conexión
+  }
+});
+ 
+// POST CCOSTO
+
+app.post('/inspecciones', async (req, res) => {
+  const conn = await pool.getConnection();
+  try {
+    const {
+      idcc, descripcion, ocompra, cliente, fecha_orden,
+      fecha_entrega, cantidad, unidad, peso, pais,
+      ciudad, comentarios, editando
+    } = req.body;
+
+    let mensaje;
+
+    if (editando === "true") {
+      await conn.execute(
+        `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, comentarios=? WHERE idcc=?`,
+        [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
+      );
+
+      mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
+    } else {
+      const [rows] = await conn.execute(
+        'SELECT COUNT(*) AS count FROM tbl_ccosto WHERE idcc = ?',
+        [idcc]
+      );
+
+      if (rows[0].count > 0) {
+        mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
+      } else {
+        await conn.execute(
+          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios?.trim()]
+        );
+
+        mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
+      }
+    }
+
+    // Recargar datos para mostrar de nuevo el formulario
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.render('inspecciones', { mensaje, ccosto, unidadT, clienteT, paisesl });
+
+  } catch (error) {
+    console.error('Error guardando ccosto:', error);
+
+    const [ccosto] = await conn.execute(`
+      SELECT a.*, b.cliente as clienteN
+      FROM tbl_ccosto a
+      JOIN tbl_cliente b ON a.cliente = b.nit;
+    `);
+    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
+    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
+    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+
+    res.status(500).render('inspecciones', {
+      mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
+      ccosto, unidadT, clienteT, paisesl
+    });
+  } finally {
+    conn.release(); // 🔴 Muy importante
+  }
+});
+
+app.get('/inspecciones/delete/:idcc', async (req, res) => {
+    const idcc = req.params.idcc;
+    try {
+      await pool.execute('DELETE FROM tbl_ccosto WHERE idcc = ?', [idcc]);
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: `Eliminado exitosamente - ID: ${idcc}`
+      };
+    } catch (err) {
+      let texto = `Error al eliminar C. Costo - ID: ${idcc}`;
+      if (err.message.includes('foreign key constraint fails')) {
+        texto = 'No se puede eliminar porque tiene elementos asociados.';
+      }
+      req.session.mensaje = { tipo: 'danger', texto };
+    }
+    res.redirect('/inspecciones');
+  });
+
 
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
+
+

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tabla de Verificación</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 100%;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    td[colspan] {
+      font-weight: bold;
+      background-color: #e8e8e8;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Verificación - Lunes</h2>
+
+  <table id="tabla-verificacion">
+    <thead>
+      <tr><th colspan="7">Lunes</th></tr>
+      <tr>
+        <th>No.</th>
+        <th>Aspectos a verificar</th>
+        <th>Si</th>
+        <th>No</th>
+        <th>Na</th>
+        <th>Firma</th>
+        <th>Observación</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% inspecc.forEach(bloque => { %>
+        <tr>
+          <td colspan="7"><%= bloque.titulo %></td>
+        </tr>
+        <% bloque.items.forEach(item => { %>
+          <tr>
+            <td><%= item.no %></td>
+            <td><%= item.aspecto %></td>
+            <td style="text-align: center;"><%= item.si || '' %></td>
+            <td style="text-align: center;"><%= item.no_ || '' %></td>
+            <td style="text-align: center;"><%= item.na || '' %></td>
+            <td><%= item.firma || '' %></td>
+            <td><%= (item.observacion || '').replace(/\n/g, '<br>') %></td>
+          </tr>
+        <% }) %>
+      <% }) %>
+    </tbody>
+  </table>
+
+</body>
+</html>
