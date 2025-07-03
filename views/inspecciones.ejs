@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <title>Tabla de Verificación</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <%- include('partials/head') %>
   <style>
+
+    .encabezado {
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
@@ -30,9 +42,14 @@
   </style>
 </head>
 <body>
-
-  <h2>Verificación - Lunes</h2>
-
+  <header class="encabezado">
+      <%- include('partials/navigationf') %>
+  </header>  
+  <div class="d-flex justify-content-start align-items-center mb-0">
+    <a href="/opciones" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+  </div>
+  <br>
+  <h3>Verificación - Lunes</h3>
   <table id="tabla-verificacion">
     <thead>
       <tr><th colspan="7">Lunes</th></tr>
