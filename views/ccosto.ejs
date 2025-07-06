@@ -130,10 +130,22 @@
   <div class="detalle-scroll">
           <div class="d-flex justify-content-between align-items-center mb-0 px-4">
             <!-- Izquierda: Botones -->
-            <div class="ms-5">
-              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
-              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
-            </div>
+          <div class="d-flex flex-wrap gap-2 ms-3 mb-3">
+            <button 
+              class="btn btn-primary btn-sm" 
+              data-toggle="modal" 
+              data-target="#modalCiudad" 
+              onclick="limpiarFormularioCiudad()">
+              Adicionar
+            </button>
+
+            <a 
+              href="/menuprc" 
+              class="btn btn-success btn-sm btnind-hover-effect">
+              Regresar...
+            </a>
+          </div>
+
           
             <!-- Centro: Título centrado -->
             <div class="flex-grow-1 text-center">
@@ -189,9 +201,9 @@
                               </td>
 
                               <td class="text-center" style="width: 200px; font-size: 12px; vertical-align: middle;">
-                                <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <div class="d-flex justify-content-center align-items-center" style="gap: 6px; flex-wrap: wrap;">
                                   <button 
-                                    class="btn btn-warning btn-sm me-1 mb-1" 
+                                    class="btn btn-warning btn-sm" 
                                     style="font-size: 11px;" 
                                     onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
                                     data-toggle="modal" 
@@ -200,7 +212,7 @@
                                   </button>
 
                                   <button 
-                                    class="btn btn-danger btn-sm me-1 mb-1" 
+                                    class="btn btn-danger btn-sm" 
                                     style="font-size: 11px;" 
                                     onclick="confirmarEliminacion('<%= ccosto.idcc %>')">
                                     Eliminar
@@ -208,12 +220,13 @@
 
                                   <a 
                                     href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
-                                    class="btn btn-primary btn-sm mb-1" 
+                                    class="btn btn-primary btn-sm" 
                                     style="font-size: 11px;">
                                     Consultar
                                   </a>
                                 </div>
                               </td>
+
 
                             </tr>
                           <% }) %>
