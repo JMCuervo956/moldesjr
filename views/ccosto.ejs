@@ -188,24 +188,33 @@
                                 <%= ccosto.estado_actual %>
                               </td>
 
-                              <td class="text-center" style="width: 200px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                                <button 
-                                    class="btn btn-warning btn-sm" 
-                                    style="padding: 2px 4px; font-size: 11px; line-height: 1;" 
+                              <td class="text-center" style="width: 200px; font-size: 12px; vertical-align: middle;">
+                                <div class="d-flex flex-wrap justify-content-center gap-1">
+                                  <button 
+                                    class="btn btn-warning btn-sm me-1 mb-1" 
+                                    style="font-size: 11px;" 
                                     onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
                                     data-toggle="modal" 
                                     data-target="#modalCiudad">
                                     Modificar
-                                </button>
-                                <button type="barraprogreso" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;" onclick="confirmarEliminacion('<%= ccosto.idcc %>')">Eliminar</button>
+                                  </button>
 
-                                <a 
-                                href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
-                                class="btn btn-primary btn-sm" 
-                                style="padding: 2px 4px; font-size: 11px; line-height: 1;">
-                                Consultar
-                                </a>
+                                  <button 
+                                    class="btn btn-danger btn-sm me-1 mb-1" 
+                                    style="font-size: 11px;" 
+                                    onclick="confirmarEliminacion('<%= ccosto.idcc %>')">
+                                    Eliminar
+                                  </button>
+
+                                  <a 
+                                    href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
+                                    class="btn btn-primary btn-sm mb-1" 
+                                    style="font-size: 11px;">
+                                    Consultar
+                                  </a>
+                                </div>
                               </td>
+
                             </tr>
                           <% }) %>
                         <% } else { %>
