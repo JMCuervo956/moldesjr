@@ -121,9 +121,20 @@
   <div class="detalle-scroll">
           <div class="d-flex justify-content-between align-items-center mb-0 px-4">
             <!-- Izquierda: Botones -->
-            <div class="ms-5">
-              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
-              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            <div class="d-flex flex-wrap gap-3 ms-4 mb-3">
+              <button 
+                class="btn btn-primary btn-sm px-4 py-2" 
+                data-toggle="modal" 
+                data-target="#modalCiudad" 
+                onclick="limpiarFormularioCiudad()">
+                Adicionar
+              </button>
+
+              <a 
+                href="/menuprc" 
+                class="btn btn-success btn-sm btnind-hover-effect px-4 py-2">
+                Regresar...
+              </a>
             </div>
           
             <!-- Centro: Título centrado -->
@@ -174,29 +185,42 @@
                                     'black' %>">
                                 <%= otrabajo.estado_actual %>
                               </td>
-                              <td class="text-center" style="width: 300px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                                <button 
-                                    class="btn btn-warning btn-sm" 
-                                    style="padding: 2px 4px; font-size: 11px; line-height: 2;" 
+
+                              <td class="text-center align-middle" style="width: 320px; font-size: 12px; padding: 6px;">
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                  <button 
+                                    class="btn btn-warning btn-sm px-2 py-1" 
+                                    style="font-size: 11px;" 
                                     onclick='editarCiudad(<%- JSON.stringify(otrabajo) %>)' 
                                     data-toggle="modal" 
                                     data-target="#modalCiudad">
                                     Modificar
-                                </button>
-                                <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 2;" onclick="confirmarEliminacion('<%= otrabajo.idot %>')">Eliminar</button>
-                                <a 
-                                  href="/modalot?idot=<%= otrabajo.idot %>" 
-                                  class="btn btn-primary btn-sm" 
-                                  style="padding: 2px 4px; font-size: 11px; line-height: 2;">
-                                  Consultar
-                                </a>
-                                <a 
-                                  href="/complementar?idot=<%= otrabajo.idot %>" 
-                                  class="btn btn-primary ms-2" 
-                                  style="background-color: #6c757d; border-color: #6c757d; padding: 2px 4px; font-size: 11px; line-height: 2;">
-                                  comp
-                                </a>
+                                  </button>
+
+                                  <button 
+                                    type="button" 
+                                    class="btn btn-danger btn-sm px-2 py-1" 
+                                    style="font-size: 11px;" 
+                                    onclick="confirmarEliminacion('<%= otrabajo.idot %>')">
+                                    Eliminar
+                                  </button>
+
+                                  <a 
+                                    href="/modalot?idot=<%= otrabajo.idot %>" 
+                                    class="btn btn-primary btn-sm px-2 py-1" 
+                                    style="font-size: 11px;">
+                                    Consultar
+                                  </a>
+
+                                  <a 
+                                    href="/complementar?idot=<%= otrabajo.idot %>" 
+                                    class="btn btn-secondary btn-sm px-2 py-1" 
+                                    style="font-size: 11px;">
+                                    Comp
+                                  </a>
+                                </div>
                               </td>
+
                             </tr>
                           <% }) %>
                         <% } else { %>
