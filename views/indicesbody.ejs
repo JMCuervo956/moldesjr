@@ -158,7 +158,6 @@
         <div class="container-fluid mt-1">
               <div class="content2">
                 <div class="register-formpgt11">           
-
                 <div style="max-height: 550px; overflow-y: auto;">
                     <table class="table table-bordered">
                        <thead class="thead-small" style="position: sticky; top: 0; z-index: 10; background-color: #343a40; color: white;">
@@ -167,15 +166,66 @@
                                 <th rowspan="2" class="text-center">Índice</th>
                                 <th rowspan="2" class="text-center">Descripcion</th>
 
-                                <th colspan="3" class="text-center">Lun</th>
-                                <th colspan="3" class="text-center">Mar</th>
-                                <th colspan="3" class="text-center">Mié</th>
-                                <th colspan="3" class="text-center">Jue</th>
-                                <th colspan="3" class="text-center">Vie</th>
+                                <th colspan="3" class="text-center">
+                                  <button 
+                                      class="btn btn-primary btn-sm"
+                                      style="padding: 8px 14px; font-size: 16px; line-height: 1;" 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad"
+                                      data-dia="Lun"
+                                      onclick='editarCiudad(this, <%- JSON.stringify(otrabajo) %>)'>
+                                      Lun
+                                  </button>
+                                </th>
 
-                                <th rowspan="2" class="text-center">Acciones</th>
-                            </tr>
+                                <th colspan="3" class="text-center">
+                                  <button 
+                                      class="btn btn-primary btn-sm"
+                                      style="padding: 8px 14px; font-size: 16px; line-height: 1;" 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad"
+                                      data-dia="Mar"
+                                      onclick='editarCiudad(this, <%- JSON.stringify(otrabajo) %>)'>
+                                      Mar
+                                  </button>
+                                </th>
 
+                                <th colspan="3" class="text-center">
+                                  <button 
+                                      class="btn btn-primary btn-sm"
+                                      style="padding: 8px 14px; font-size: 16px; line-height: 1;" 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad"
+                                      data-dia="Mie"
+                                      onclick='editarCiudad(this, <%- JSON.stringify(otrabajo) %>)'>
+                                      Mié
+                                  </button>
+                                </th>
+
+                                <th colspan="3" class="text-center">
+                                  <button 
+                                      class="btn btn-primary btn-sm"
+                                      style="padding: 8px 14px; font-size: 16px; line-height: 1;" 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad"
+                                      data-dia="Jue"
+                                      onclick='editarCiudad(this, <%- JSON.stringify(otrabajo) %>)'>
+                                      Jue
+                                  </button>
+                                </th>
+
+                                <th colspan="3" class="text-center">
+                                  <button 
+                                      class="btn btn-primary btn-sm"
+                                      style="padding: 8px 14px; font-size: 16px; line-height: 1;" 
+                                      data-toggle="modal" 
+                                      data-target="#modalCiudad"
+                                      data-dia="Vie"
+                                      onclick='editarCiudad(this, <%- JSON.stringify(otrabajo) %>)'>
+                                      Vie
+                                  </button>
+                                </th>
+                             </tr>
                         <tr>
                             <th class="text-center" style="color: #4f4b66;">Si</th>
                             <th class="text-center" style="color: #4f4b66;">No</th>
@@ -220,7 +270,6 @@
                               <td style="width: 10px; font-size: 12px;"><%= otrabajo.m_no%></td>
                               <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.m_na %></td> <!-- Línea separadora -->
 
-
                               <td style="width: 10px; font-size: 12px;"><%= otrabajo.mi_si%></td>
                               <td style="width: 10px; font-size: 12px;"><%= otrabajo.mi_no%></td>
                               <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.mi_na %></td> <!-- Línea separadora -->
@@ -232,20 +281,6 @@
                               <td style="width: 10px; font-size: 12px;"><%= otrabajo.v_si%></td>
                               <td style="width: 10px; font-size: 12px;"><%= otrabajo.v_no%></td>
                               <td style="width: 10px; font-size: 12px; border-right: 2px solid #cbd4d0;"><%= otrabajo.v_na %></td> <!-- Línea separadora -->
-
-                              <td class="text-center" style="width: 300px; padding: 2px 4px; font-size: 8px; vertical-align: middle;">
-                                  <% if (otrabajo.indice.length > 1) { %>
-                                    <button 
-                                      class="btn btn-warning btn-sm" 
-                                      style="padding: 2px 4px; font-size: 10px; line-height: 1;" 
-                                      onclick='editarCiudad(<%- JSON.stringify(otrabajo) %>)' 
-                                      data-toggle="modal" 
-                                      data-target="#modalCiudad">
-                                      Modificar
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 10px; line-height: 1;" onclick="confirmarEliminacion('<%= otrabajo.indice %>')">Eliminar</button>
-                                  <% } %>
-                              </td>
                             </tr>
                           <% }) %>
                         <% } else { %>
@@ -260,28 +295,13 @@
               </div>
         </div>
 
-        <!-- Modal Confirmar Eliminación -->
-        <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-              </div>
-              <div class="modal-body">
-                ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
-                <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Modal Adicionar / Modificar -->
-        
+
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog modal-xl" role="document">
+
+            <input type="text" id="diaSeleccionado" name="diaSeleccionado" value="">
+
             <form action="/indicesbody" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
 
               <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
@@ -290,199 +310,180 @@
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
-             
+
               <div class="modal-body">
                 <input type="hidden" name="editando" id="editando" value="false">
                 <input type="hidden" id="idot-hidden" name="idot" value="">
 
-              <div class="d-flex align-items-center " style="width: 100%;">
-                <label for="torden" class="mb-0 " style="min-width: 60px;">Orden</label>
-                <select class="form-control form-control-sm input-con-sombra ms-2" name="torden" id="torden" required style="flex: 1;">
-                  <option value="">Seleccione Orden</option>
-                  <% otrb.forEach(p => { %>
-                    <option value="<%= p.idot %>"><%= p.idot %> - <%= p.descripcion %></option>
-                  <% }) %>
-                </select>
-              </div>
-                              
+                <div class="d-flex align-items-center" style="width: 100%;">
+                  <label for="torden" class="mb-0" style="min-width: 60px;">Orden</label>
+                  <select class="form-control form-control-sm input-con-sombra ms-2" name="torden" id="torden" required style="flex: 1;">
+                    <option value="">Seleccione Orden</option>
+                    <% otrb.forEach(p => { %>
+                      <option value="<%= p.idot %>"><%= p.idot %> - <%= p.descripcion %></option>
+                    <% }) %>
+                  </select>
+                </div>
 
-              <div class="d-flex align-items-center " style="width: 100%;">
-                <label for="dise" class="mb-0 " style="min-width: 60px;">Indice</label>
-                <select class="form-control form-control-sm input-con-sombra ms-2" name="dise" id="dise" required style="flex: 1;">
-                  <option value="">Seleccione Indice</option>
-                  <% dise.forEach(p => { %>
-                    <option value="<%= p.indice %>"><%= p.indice %> - <%= p.descripcion %></option>
+                <div class="d-flex align-items-center" style="width: 100%;">
+                  <label for="dise" class="mb-0" style="min-width: 60px;">Indice</label>
+                  <select class="form-control form-control-sm input-con-sombra ms-2" name="dise" id="dise" required style="flex: 1;">
+                    <option value="">Seleccione Indice</option>
+                    <% dise.forEach(p => { %>
+                      <option value="<%= p.indice %>"><%= p.indice %> - <%= p.descripcion %></option>
+                    <% }) %>
+                  </select>
+                </div>
 
-                  <% }) %>
-                </select>
-              </div>
-
-                <label for="dise" class="mb-0 " style="min-width: 60px;">Cumplimiento</label>
+                <label for="dise" class="mb-0" style="min-width: 60px;">Cumplimiento</label>
 
                 <div>
+                    <!-- Lunes -->
+                    <div class="d-flex align-items-start gap-3 dia-l">
+                        <label class="mb-0" style="min-width: 10ch;">Lunes</label>
 
-<!-- Lunes -->                
-<div class="d-flex align-items-start gap-3 ">
-  <!-- Título: Lunes -->
-  <label class="mb-0 " style="min-width: 10ch;">Lunes</label>
+                        <div class="d-flex flex-column align-items-center">
+                          <label for="l_si" class="mb-1">Si</label>
+                          <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_si" id="l_si">
+                            <option value="">-</option>
+                            <option value="S">X</option>
+                          </select>
+                        </div>
 
-  <!-- Si -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="l_si" class="mb-1">Si</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_si" id="l_si">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                        <div class="d-flex flex-column align-items-center">
+                          <label for="l_no" class="mb-1">No</label>
+                          <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_no" id="l_no">
+                            <option value="">-</option>
+                            <option value="S">X</option>
+                          </select>
+                        </div>
 
-  <!-- No -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="l_no" class="mb-1">No</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_no" id="l_no">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                        <div class="d-flex flex-column align-items-center">
+                          <label for="l_na" class="mb-1">Na</label>
+                          <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_na" id="l_na">
+                            <option value="">-</option>
+                            <option value="S">X</option>
+                          </select>
+                        </div>
+                  </div>
 
-  <!-- Na -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="l_na" class="mb-1">Na</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="l_na" id="l_na">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-</div>
-                  
+                  <!-- Martes -->
+                  <div class="d-flex align-items-start gap-3 dia-m">
+                    <label class="mb-0" style="min-width: 10ch;">Martes</label>
 
-<!-- Martes -->                
-<div class="d-flex align-items-start gap-3 ">
-  <label class="mb-0 " style="min-width: 10ch;">Martes</label>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="m_si" class="mb-1">Si</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_si" id="m_si">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- Si -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="m_si" class="mb-1">Si</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_si" id="m_si">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="m_no" class="mb-1">No</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_no" id="m_no">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- No -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="m_no" class="mb-1">No</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_no" id="m_no">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="m_na" class="mb-1">Na</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_na" id="m_na">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
+                  </div>
 
-  <!-- Na -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="m_na" class="mb-1">Na</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="m_na" id="m_na">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-</div>
+                  <!-- Miércoles -->
+                  <div class="d-flex align-items-start gap-3 dia-mi">
+                    <label class="mb-0" style="min-width: 60px;">Miércoles</label>
 
-<!-- Miercoles -->                
-<div class="d-flex align-items-start gap-3 ">
-  <label class="mb-0 " style="min-width: 60px;">Miercoles</label>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="mi_si" class="mb-1">Si</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_si" id="mi_si">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- Si -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="mi_si" class="mb-1">Si</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_si" id="mi_si">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="mi_no" class="mb-1">No</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_no" id="mi_no">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- No -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="mi_no" class="mb-1">No</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_no" id="mi_no">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="mi_na" class="mb-1">Na</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_na" id="mi_na">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
+                  </div>
 
-  <!-- Na -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="mi_na" class="mb-1">Na</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="mi_na" id="mi_na">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-</div>
+                  <!-- Jueves -->
+                  <div class="d-flex align-items-start gap-3 dia-j">
+                    <label class="mb-0" style="min-width: 10ch;">Jueves</label>
 
-<!-- jueves -->                
-<div class="d-flex align-items-start gap-3 ">
-  <label class="mb-0 " style="min-width:  10ch;">Jueves</label>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="j_si" class="mb-1">Si</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_si" id="j_si">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- Si -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="j_si" class="mb-1">Si</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_si" id="j_si">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="j_no" class="mb-1">No</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_no" id="j_no">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- No -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="j_no" class="mb-1">No</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_no" id="j_no">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="j_na" class="mb-1">Na</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_na" id="j_na">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
+                  </div>
 
-  <!-- Na -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="j_na" class="mb-1">Na</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="j_na" id="j_na">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-</div>
+                  <!-- Viernes -->
+                  <div class="d-flex align-items-start gap-3 dia-v">
+                    <label class="mb-0" style="min-width: 10ch;">Viernes</label>
 
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="v_si" class="mb-1">Si</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_si" id="v_si">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-<!-- viernes -->                
-<div class="d-flex align-items-start gap-3 ">
-  <label class="mb-0 " style="min-width:  10ch;">Viernes</label>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="v_no" class="mb-1">No</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_no" id="v_no">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
 
-  <!-- Si -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="v_si" class="mb-1">Si</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_si" id="v_si">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
+                    <div class="d-flex flex-column align-items-center">
+                      <label for="v_na" class="mb-1">Na</label>
+                      <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_na" id="v_na">
+                        <option value="">-</option>
+                        <option value="S">X</option>
+                      </select>
+                    </div>
+                  </div>
 
-  <!-- No -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="v_no" class="mb-1">No</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_no" id="v_no">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-
-  <!-- Na -->
-  <div class="d-flex flex-column align-items-center">
-    <label for="v_na" class="mb-1">Na</label>
-    <select class="form-control form-control-sm input-con-sombra" style="width: 70px;" name="v_na" id="v_na">
-      <option value="">-</option>
-      <option value="S">X</option>
-    </select>
-  </div>
-</div>
+                </div>
 
               </div>
 
@@ -495,8 +496,49 @@
           </div>
         </div>
 
+      
+
   </div>
-  <script>
+
+<script>
+  $('#modalCiudad').on('show.bs.modal', function () {
+    const dia = $('#diaSeleccionado').val().toLowerCase();
+
+    // Ocultar todos los días primero
+    $('.dia-l, .dia-m, .dia-mi, .dia-j, .dia-v').hide();
+
+    // Mostrar sólo el día seleccionado
+    switch (dia) {
+      case 'lun':
+      case 'l':
+        $('.dia-l').show();
+        break;
+      case 'mar':
+      case 'm':
+        $('.dia-m').show();
+        break;
+      case 'mie':
+      case 'mi':
+        $('.dia-mi').show();
+        break;
+      case 'jue':
+      case 'j':
+        $('.dia-j').show();
+        break;
+      case 'vie':
+      case 'v':
+        $('.dia-v').show();
+        break;
+      default:
+        // Si no hay día válido, puedes mostrar todos o ninguno:
+        // $('.dia-l, .dia-m, .dia-mi, .dia-j, .dia-v').show();
+        // o no mostrar ninguno
+        break;
+    }
+  });
+</script>
+
+<script>
   document.addEventListener('DOMContentLoaded', function () {
     const selects = ['l_si', 'l_no', 'l_na'];
 
@@ -651,10 +693,21 @@
   </script>
   
   <script>
-    function editarCiudad(otrabajo) {
-      document.getElementById('editando').value = "true";
+    function editarCiudad(button, otrabajo) {
+      const dia = $(button).data('dia');
+      console.log("Día desde botón:", dia);
 
-      // Habilitar campos para edición
+      $('#diaSeleccionado').val(dia);
+      $('#modalCiudadLabel').text('Modificar ciudad para ' + dia);
+      
+      document.getElementById('editando').value = "true";
+      if (dia === "Jue") {
+        // lógica para jueves
+      } else if (dia === "Vie") {
+        // lógica para viernes
+      }
+
+    // Habilitar campos para edición
       document.getElementById('descripcion').disabled = false;
 
       // Set valores
@@ -727,6 +780,22 @@
 
   </script>
 
+<script>
+  // Este bloque se ejecuta cuando se abre el modal
+  $('#modalCiudad').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget); // Botón que abrió el modal
+    const dia = button.data('dia'); // Lee el atributo data-dia del botón
+
+    // Opcional: mostrar en consola
+    console.log("Día recibido:", dia);
+
+    // Cambiar el título del modal con el día
+    $('#modalCiudadLabel').text('Modificar ciudad para ' + dia);
+
+    // Guardar el día en un input hidden si quieres enviarlo al servidor
+    $('#diaSeleccionado').val(dia);
+  });
+</script>
 
 <!-- Scripts requeridos -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

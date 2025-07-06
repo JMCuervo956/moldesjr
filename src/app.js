@@ -2529,6 +2529,31 @@ app.get('/inspecciones/delete/:idcc', async (req, res) => {
     res.redirect('/inspecciones');
   });
 
+/* INDICE DESCRIPCIONES /***************************************************************************/
+
+app.get('/indicesbody', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            const fechaHoraBogota = getBogotaDateTime();
+            const [otrabajo] = await pool.execute(`select a.*,b.descripcion from tbl_insp_body a inner join tbl_insp_opc b on a.indice=b.indice order by indice`);
+            const [otrb] = await pool.execute('select * from tbl_otrabajo;');
+            const [dise] = await pool.execute('select * from tbl_insp_opc;');
+
+            //  Recuperar mensaje de sesión  idots
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+
+            res.render('indicesbody', { otrabajo, otrb, dise, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo otrabajo:', error);
+        res.status(500).send('Error al obtener otrabajo');
+    }
+});
 
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {
