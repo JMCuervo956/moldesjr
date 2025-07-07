@@ -49,9 +49,17 @@ app.get('/origen/:folder/:filename', (req, res) => {
 });
 
 // Vista del menú principal
-app.get('/menuprc', (req, res) => {
+app.get('/menuprc', async (req, res) => {
   if (req.session.loggedin) {
     const { user, name, rol, unidad: userUser } = req.session;
+
+    const fechaHoraBogota = getBogotaDateTime();
+    await pool.execute(
+      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+        VALUES (?, ?, ?)`,
+      [user, 1, fechaHoraBogota]
+    );
+
     res.render('menuprc', { user, name, rol, userUser });
   } else {
     res.redirect('/');
@@ -108,6 +116,12 @@ app.get('/ccosto', async (req, res) => {
 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
+
+    await pool.execute(
+      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+        VALUES (?, ?, ?)`,
+      [userUser, 2, fechaHoraBogota]
+    );
 
     res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
   } catch (error) {
