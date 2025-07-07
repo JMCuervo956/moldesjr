@@ -8,57 +8,65 @@
   <%- include('partials/head') %>
 
     <style>
-        body {
-        font-family: 'Segoe UI', sans-serif;
-        background: #f2f4f8;
-        margin: 0;
-        padding: 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
+      .register-formAlt {
+        margin-top: 200px; /* o padding-top: 150px; según prefieras */
+      }
+        .encabezado {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          background-color: #fff;
+          z-index: 1000;
+          padding: 15px 20px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
+        /* Esta clase reserva espacio para el header fijo */
+        .contenido-principal {
+          margin-top: 10px; /* Ajusta este valor si tu header es más alto o más bajo */
+          padding: 0 20px; /* Opcional: para dar un poco de margen lateral */
+        }
 
         .modern-btn {
-  font-family: 'Segoe UI', 'Roboto', sans-serif;
-  font-weight: 500;
-  padding: 14px 24px;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(135deg, #4f46e5, #3b82f6); /* color por defecto */
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  width: 100%;
-  text-align: center;
-  letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
-}
+          font-family: 'Segoe UI', 'Roboto', sans-serif;
+          font-weight: 500;
+          padding: 14px 24px;
+          font-size: 16px;
+          border: none;
+          border-radius: 10px;
+          color: #fff;
+          background: linear-gradient(135deg, #4f46e5, #3b82f6); /* color por defecto */
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          cursor: pointer;
+          width: 100%;
+          text-align: center;
+          letter-spacing: 0.5px;
+          position: relative;
+          overflow: hidden;
+        }
 
-.modern-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
+        .modern-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
 
-.modern-btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
+        .modern-btn:active {
+          transform: scale(0.98);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
 
-.modern-btn::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255,255,255,0.1);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
+        .modern-btn::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(255,255,255,0.1);
+          opacity: 0;
+          transition: opacity 0.4s;
+        }
         /* Modal */
         .modal {
         position: fixed;
@@ -139,119 +147,93 @@
           gap: 10px;
         }
 
-.modern-btn {
-  width: 30%; /* Esto hace que se ajuste al ancho de la columna */
-}
+        .modern-btn {
+          width: 30%; /* Esto hace que se ajuste al ancho de la columna */
+        }
 
-.modern-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-}
+        .modern-btn:hover {
+          transform: scale(1.08);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
 
-    .encabezado {
-        position: fixed;
-        top: 0;
-        width: 100%;
-        background-color: #fff;
-        z-index: 1000;
-        padding: 15px 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
+        /* titulos */
+        .titulo-moderno {
+          font-family: 'Poppins', 'Segoe UI', sans-serif;
+          font-size: 1em;
+          font-weight: 400;
+          color: transparent;
+          background-image: linear-gradient(to right, #3498db, #9b59b6);
+          background-clip: text;
+          -webkit-background-clip: text;
+          text-align: center;
+          position: relative;
+          margin-bottom: 50px;
+          animation: fadeInText 1s ease-out;
+        }
 
-/* titulos */
-.titulo-moderno {
-  font-family: 'Poppins', 'Segoe UI', sans-serif;
-  font-size: 2em;
-  font-weight: 400;
-  color: transparent;
-  background-image: linear-gradient(to right, #3498db, #9b59b6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  text-align: center;
-  position: relative;
-  margin-bottom: 50px;
-  animation: fadeInText 1s ease-out;
-}
+        .titulo-moderno::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 3px;
+          background: linear-gradient(to right, #3498db, #9b59b6);
+          border-radius: 2px;
+          animation: underlineExpand 1s ease-out forwards;
+        }
 
-.titulo-moderno::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 3px;
-  background: linear-gradient(to right, #3498db, #9b59b6);
-  border-radius: 2px;
-  animation: underlineExpand 1s ease-out forwards;
-}
+        /* Animaciones */
+        @keyframes fadeInText {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-/* Animaciones */
-@keyframes fadeInText {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes underlineExpand {
-  from {
-    width: 0;
-    opacity: 0;
-  }
-  to {
-    width: 100%;
-    opacity: 1;
-  }
-}
+        @keyframes underlineExpand {
+          from {
+            width: 0;
+            opacity: 0;
+          }
+          to {
+            width: 100%;
+            opacity: 1;
+          }
+        }
 
     </style>
 </head>
+
 <body>
       <!-- Encabezado fijo -->
     <header class="encabezado">
         <%- include('partials/navigation') %>
     </header>
-
-    <div>
-      <h1 class="titulo-moderno">Informes / Consultas</h1>
-      </div>
-      <div class="contenedor-botones"> 
-        <!-- Contenido desplazable -->
-                <a href="/ccostocc" class="modern-btn btn-verde">Centros de Costo</a>
-                <a href="/ccostofch" class="modern-btn btn-azul">CCosto Actualizar Fechas</a>
-                <a href="/users_consulta" class="modern-btn btn-amarillo">Consulta Usuarios</a>
-                <a href="/inspecciones" class="modern-btn btn-cyan">Inspecciones</a>
-
-
-                <!--<a href="/general" class="modern-btn btn-naranja">General</a> -->
-                <a href="/progresogral" class="modern-btn btn-rojo">Progreso</a>
-                <a href="/progresogralT?idot=1792&descripcion=C Costo" class="modern-btn btn-azul">Ir a progreso</a>
-
-
-                <!--<button class="modern-btn btn-morado" data-form="form9">...</button>
-                <button class="modern-btn btn-gris" data-form="form1">...</button>
-                <button class="modern-btn btn-rojo" data-form="form5">...</button> -->
-                <a href="/ccostoexp" class="modern-btn btn-gris"> Exportar a Excel Centros de Costo</a>
-
-            </div>
-    </div>
-    <br>
-    <div class="d-flex justify-content-start align-items-center mb-0">
-        <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
-    </div>
-
-    <!-- Modal -->
-    <div class="modal" id="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="closeModal">&times;</span>
-        <h2 id="modalTitle">Formulario</h2>
-        <form id="modalForm"></form>
-      </div>
+    <div class="register-formAlt">
+          <div>
+              <h1 class="titulo-moderno">Consultas e Informes</h1>
+          </div>
+          <div class="contenedor-botones"> 
+            <!-- Contenido desplazable -->
+                    <a href="/ccostocc" class="modern-btn btn-verde">C.Costo</a>
+                    <a href="/ccostofch" class="modern-btn btn-azul">Fechas</a>
+                    <a href="/users_consulta" class="modern-btn btn-amarillo">Usuarios</a>
+                    <a href="/inspecciones" class="modern-btn btn-cyan">Inspecion</a>
+                    <!--<a href="/general" class="modern-btn btn-naranja">General</a> -->
+                    <a href="/progresogral" class="modern-btn btn-rojo">Progreso</a>
+                    <a href="/progresogralT?idot=1792&descripcion=C Costo" class="modern-btn btn-azul">Gantt</a>
+                    <a href="/ccostoexp" class="modern-btn btn-gris"> Exportar CCosto</a>
+          </div>
+          <br>
+          <div class="d-flex justify-content-start align-items-center mb-0">
+              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>
+          </div>
     </div>
   
 

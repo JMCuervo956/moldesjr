@@ -196,6 +196,18 @@ form{
     box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
 }
 
+.register-formAlt {
+    width: 100%; /* Cambia a 100% para que ocupe el ancho del contenedor */
+    max-width: 800px; /* Limita el ancho máximo para pantallas grandes */
+    margin: 15px auto; /* Centra el contenedor en la pantalla */
+    padding: 10px; /* Espaciado interno */
+    font-size: 20px; 
+    box-shadow: 0 19px 30px rgba(0, 0, 0, 0.5), 0 15px 12px rgba(0, 0, 0, 0.22); /* Sombras */
+    text-align: left;
+    border-radius: 8px; /* Añadir bordes redondeados para mejorar el diseño */
+    box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
+}
+
 .register-menu {
     width: 300px;
     margin: 15px;
