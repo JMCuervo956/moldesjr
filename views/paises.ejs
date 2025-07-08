@@ -6,6 +6,8 @@
   <title>MJR - Países</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
   <%- include('partials/head') %>
 
   <style>
@@ -50,11 +52,6 @@
       opacity: 0;
       }
 
-      .nombre-pais {
-        max-width: 160px;
-        white-space: normal;
-        word-wrap: break-word;
-      }      
 
       .table td, .table th {
         max-width: 180px;
@@ -63,6 +60,14 @@
 
       .table {
         table-layout: fixed;
+      }
+
+      .nombre-pais {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px; /* Ajusta según tu diseño */
+        display: inline-block;
       }
 
 </style>
@@ -76,7 +81,6 @@
   
 <!-- Contenido desplazable -->
 <div class="detalle-scroll">
-      <div class="container mt-0">
           <div class="d-flex flex-wrap gap-3 ms-4 mb-4">
             <button 
               class="btn btn-primary btn-sm px-4 py-2" 
@@ -92,7 +96,6 @@
               Regresar...
             </a>
           </div>
-      </div>
 
         <% if (typeof mensaje !== 'undefined') { %>
           <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
@@ -111,43 +114,64 @@
                     Paises
                     <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
                   </h4>
-                </div>         
-                <div style="overflow-x: auto;">
-                  <table class="table table-striped">
-                    <thead class="thead-dark">
-                      <tr>
-                        <th class="text-center">Codigo</th>
-                        <th class="text-center">País</th>
-                        <th class="text-center">Alpha-2</th>
-                        <th class="text-center">Alpha-3</th>
-                        <th  style="padding-left: 38px;">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <% if (paises.length > 0) { %>
-                        <% paises.forEach(pais => { %>
-                          <tr style="line-height: 0;">
-                            <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_pais %></td>
-                            <td class="text-center nombre-pais" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.nombre %></td>
-                            <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_alpha2 %></td>
-                            <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_alpha3 %></td>
-                            <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                              <button class="btn btn-warning btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;"
-                                onclick="editarPais(<%= JSON.stringify(pais) %>)"
-                                data-toggle="modal" data-target="#modalPais">Modificar</button>
-                              <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;"
-                                onclick="confirmarEliminacion('<%= pais.iso_pais %>', '<%= pais.nombre %>')">Eliminar</button>
-                            </td>
-                          </tr>
-                        <% }) %>
-                      <% } else { %>
-                        <tr>
-                          <td colspan="5" class="text-center">No hay países registrados.</td>
-                        </tr>
-                      <% } %>
-                    </tbody>
-                  </table>
-              </div>
+                </div> 
+
+<div style="overflow-x: auto; width: 100%;">
+  <table class="table table-striped tabla-angosta" style="min-width: 600px;">
+    <thead class="thead-dark">
+      <tr>
+        <th class="text-center">Codigo</th>
+        <th class="text-center">País</th>
+        <th class="text-center">Alpha-2</th>
+        <th class="text-center">Alpha-3</th>
+        <th style="padding-left: 38px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (paises.length > 0) { %>
+        <% paises.forEach(pais => { %>
+          <tr>
+            <td class="text-center" style="font-size: 12px;"><%= pais.iso_pais %></td>
+            <td class="text-center nombre-pais" style="font-size: 12px;"><%= pais.nombre %></td>
+            <td class="text-center" style="font-size: 12px;"><%= pais.iso_alpha2 %></td>
+            <td class="text-center" style="font-size: 12px;"><%= pais.iso_alpha3 %></td>
+            <td style="padding: 4px; font-size: 12px; vertical-align: middle;">
+                  <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+
+                    <!-- Botón Modificar -->
+                    <button 
+                      class="btn btn-warning btn-sm icon-btn" 
+                      onclick="editarPais(<%= JSON.stringify(pais) %>)" 
+
+                      data-toggle="modal" 
+                      data-target="#modalPais" 
+                      title="Modificar">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+
+                    <!-- Botón Eliminar -->
+
+                    <button 
+                      class="btn btn-danger btn-sm icon-btn" 
+                      onclick="confirmarEliminacion('<%= pais.iso_pais %>', '<%= pais.nombre %>')" 
+                      title="Eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>    
+                  </div>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="5" class="text-center">No hay países registrados.</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+
+
             </div>
           </div>
         </div>
