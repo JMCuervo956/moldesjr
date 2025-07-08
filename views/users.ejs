@@ -114,60 +114,59 @@
           </div>
         <% } %>
 
-  <div class="container-fluid mt-1">
-    <div class="content2">
-        <div class="register-formAncho">           
-            <div class="text-md-start text-center">
-              <h4>
-                Usuarios
-                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
-              </h4>
-            </div> 
+        <div class="container-fluid mt-1">
+          <div class="content2">
+              <div class="register-formAncho">           
+                  <div class="text-md-start text-center">
+                    <h4>
+                      Usuarios
+                      <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+                    </h4>
+                  </div> 
+                  <div style="overflow-x: auto;">
+                    <table class="table tabla-angosta">
+                      <thead class="thead-dark">
+                        <tr>
+                          <th style="text-align: center; width: 100px;">Código</th>
+                          <th style="width: 200px;">Descripción</th>
+                          <th style="text-align: center; width: 100px;">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% if (users.length > 0) { %>
+                          <% users.forEach(user => { %>
+                            <tr style="line-height: 2;">
+                              <td class="text-center" style="padding: 2px 4px; font-size: 16px; vertical-align: middle;"><%= user.user %></td>
+                              <td style="padding: 2px 4px; font-size: 16px; vertical-align: middle;"><%= user.name %></td>
+                              <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                                <button class="btn btn-warning btn-sm" 
+                                        style="padding: 2px 4px; font-size: 16px; line-height: 1;" 
+                                        onclick='editarCodigo(<%- JSON.stringify(user) %>)' 
+                                        data-toggle="modal" 
+                                        data-target="#modalCiudad">
+                                  Modificar
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-danger btn-sm" 
+                                        style="padding: 2px 4px; font-size: 16px; line-height: 1;" 
+                                        onclick="confirmarEliminacion('<%= user.user %>', '<%= user.name %>')">
+                                  Eliminar
+                                </button>
 
-            <div style="overflow-x: auto;">
-              <table class="table tabla-angosta">
-                <thead class="thead-dark">
-                  <tr>
-                    <th style="text-align: center; width: 100px;">Código</th>
-                    <th style="width: 200px;">Descripción</th>
-                    <th style="text-align: center; width: 100px;">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% if (users.length > 0) { %>
-                    <% users.forEach(user => { %>
-                      <tr style="line-height: 2;">
-                        <td class="text-center" style="padding: 2px 4px; font-size: 16px; vertical-align: middle;"><%= user.user %></td>
-                        <td style="padding: 2px 4px; font-size: 16px; vertical-align: middle;"><%= user.name %></td>
-                        <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                          <button class="btn btn-warning btn-sm" 
-                                  style="padding: 2px 4px; font-size: 16px; line-height: 1;" 
-                                  onclick='editarCodigo(<%- JSON.stringify(user) %>)' 
-                                  data-toggle="modal" 
-                                  data-target="#modalCiudad">
-                            Modificar
-                          </button>
-                          <button type="button" 
-                                  class="btn btn-danger btn-sm" 
-                                  style="padding: 2px 4px; font-size: 16px; line-height: 1;" 
-                                  onclick="confirmarEliminacion('<%= user.user %>', '<%= user.name %>')">
-                            Eliminar
-                          </button>
-
-                        </td>
-                      </tr>
-                    <% }) %>
-                  <% } else { %>
-                    <tr>
-                      <td colspan="4">No hay Estados registrados.</td>
-                    </tr>
-                  <% } %>
-                </tbody>
-              </table>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="4">No hay Estados registrados.</td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+              </div>
             </div>
         </div>
-      </div>
-  </div>
 
         <!-- Modal Confirmar Eliminación -->
         <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
