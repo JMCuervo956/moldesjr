@@ -49,6 +49,22 @@
       .alert.fade.hide {
       opacity: 0;
       }
+
+      .nombre-pais {
+        max-width: 160px;
+        white-space: normal;
+        word-wrap: break-word;
+      }      
+
+      .table td, .table th {
+        max-width: 180px;
+        word-wrap: break-word;
+      }
+
+      .table {
+        table-layout: fixed;
+      }
+
 </style>
 
 </head>
@@ -96,7 +112,7 @@
                     <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
                   </h4>
                 </div>         
-                <div class="container mt-0">
+                <div style="overflow-x: auto;">
                   <table class="table table-striped">
                     <thead class="thead-dark">
                       <tr>
@@ -112,14 +128,13 @@
                         <% paises.forEach(pais => { %>
                           <tr style="line-height: 0;">
                             <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_pais %></td>
-                            <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.nombre %></td>
+                            <td class="text-center nombre-pais" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.nombre %></td>
                             <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_alpha2 %></td>
                             <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;"><%= pais.iso_alpha3 %></td>
                             <td style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
                               <button class="btn btn-warning btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;"
                                 onclick="editarPais(<%= JSON.stringify(pais) %>)"
                                 data-toggle="modal" data-target="#modalPais">Modificar</button>
-                              
                               <button type="button" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;"
                                 onclick="confirmarEliminacion('<%= pais.iso_pais %>', '<%= pais.nombre %>')">Eliminar</button>
                             </td>
