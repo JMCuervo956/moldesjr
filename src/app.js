@@ -2592,6 +2592,38 @@ app.get('/indicesbody', async (req, res) => {
     }
 });
 
+app.get('/valida', (req, res)=>{
+        const userUser = req.session.unidad;
+        res.render('valida', { userUser });
+    })
+
+app.post('/valreg', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        // Llamada al procedimiento almacenado
+        await connection.execute('CALL SP_Validar()'); // Reemplaza 'SP_Validar' con tu nombre real de SP
+
+        // Recuperamos los datos de la tabla tbl_valida
+        const [rows] = await connection.execute('SELECT * FROM tbl_valida order by id_activo_numerico desc');
+
+        await connection.commit();
+
+        // Enviar el resultado de la tabla junto con el mensaje de éxito
+        res.json({
+            status: 'success',
+            title: 'Registro Exitoso',
+            message: '¡Registrado correctamente!',
+            data: rows // Enviamos los datos de la tabla
+        });
+    } catch (error) {
+        console.error('Error saving data:', error);
+        await connection.rollback();
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);

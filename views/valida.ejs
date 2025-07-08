@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejecutar Procedimiento Almacenado</title>
+    <style>
+        #resultado {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script>
+        async function ejecutarSP() {
+            const resultadoDiv = document.getElementById('resultado');
+            const tablaDiv = document.getElementById('tabla'); // El div donde se mostrará la tabla
+            resultadoDiv.textContent = 'Cargando...'; // Muestra un mensaje mientras se espera la respuesta.
+
+            try {
+                const response = await fetch('/valreg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    resultadoDiv.textContent = `${data.title}: ${data.message}`;
+                    resultadoDiv.classList.remove('error');
+                    resultadoDiv.classList.add('success');
+
+                    // Ahora mostramos los datos de la tabla
+                    if (data.data.length > 0) {
+                        let tablaHTML = '<table><thead><tr>';
+
+                        // Generamos las cabeceras de la tabla
+                        Object.keys(data.data[0]).forEach(columna => {
+                            tablaHTML += `<th>${columna}</th>`;
+                        });
+
+                        tablaHTML += '</tr></thead><tbody>';
+
+                        // Generamos las filas de la tabla
+                        data.data.forEach(fila => {
+                            tablaHTML += '<tr>';
+                            Object.values(fila).forEach(valor => {
+                                tablaHTML += `<td>${valor}</td>`;
+                            });
+                            tablaHTML += '</tr>';
+                        });
+
+                        tablaHTML += '</tbody></table>';
+                        tablaDiv.innerHTML = tablaHTML;
+                    } else {
+                        tablaDiv.innerHTML = 'No hay datos para mostrar en la tabla.';
+                    }
+                } else {
+                    resultadoDiv.textContent = 'Hubo un error al ejecutar el procedimiento almacenado.';
+                    resultadoDiv.classList.remove('success');
+                    resultadoDiv.classList.add('error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultadoDiv.textContent = 'Error de conexión al servidor.';
+                resultadoDiv.classList.remove('success');
+                resultadoDiv.classList.add('error');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Ejecutar Procedimiento Almacenado</h1>
+    <button onclick="ejecutarSP()">Ejecutar SP</button>
+
+    <div id="resultado"></div> <!-- Este es el área donde se mostrará el mensaje -->
+    <div id="tabla"></div> <!-- Este es el área donde se mostrará la tabla con los datos -->
+</body>
+</html>
