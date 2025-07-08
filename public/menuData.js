@@ -21,8 +21,6 @@ export const menuData = [
         icon: "fas fa-users icon-users",
         subItems: [
           { title: "Inspeccion", link: "/indicesbody", icon: "fas fa-users-cog icon-users-cog" },
-          { title: "Indices", link: "/indices", icon: "fas fa-users-cog icon-users-cog" },
-          { title: "Descripciones", link: "/indicesdes", icon: "fas fa-history icon-history" }
         ]
       },      
 

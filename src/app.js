@@ -98,21 +98,22 @@ app.get('/ccosto', async (req, res) => {
     const userName = req.session.name;
     const fechaHoraBogota = getBogotaDateTime();
 
-    const [ccosto] = await conn.execute(` 
-      SELECT a.*, b.cliente as clienteN,
-        CASE
-            WHEN ? < a.fecha_orden THEN 'Por Iniciar'
-            WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
-            WHEN ? > a.fecha_entrega THEN 'Atrasado'
-            ELSE 'Sin Estado'
-        END AS estado_actual
-      FROM tbl_ccosto a
-      JOIN tbl_cliente b ON a.cliente = b.nit;
-    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]);
-
-    const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
-    const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente order by cliente');
-    const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+    const [[ccosto], unidadT, clienteT, paisesl] = await Promise.all([
+      conn.execute(` 
+        SELECT a.*, b.cliente as clienteN,
+          CASE
+              WHEN ? < a.fecha_orden THEN 'Por Iniciar'
+              WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
+              WHEN ? > a.fecha_entrega THEN 'Atrasado'
+              ELSE 'Sin Estado'
+          END AS estado_actual
+        FROM tbl_ccosto a
+        JOIN tbl_cliente b ON a.cliente = b.nit;
+      `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
+      conn.execute('SELECT * FROM tbl_unidad'),
+      conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),
+      conn.execute('SELECT * FROM tbl_paises')
+    ]);
 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
@@ -319,6 +320,13 @@ app.get('/otrabajo', async (req, res) => {
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
 
+    await pool.execute(
+      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+        VALUES (?, ?, ?)`,
+      [userUser, 3, fechaHoraBogota]
+    );
+
+    
     res.render('otrabajo', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
@@ -1491,6 +1499,13 @@ app.get('/ccostoexp', async (req, res) => {
       const mensaje = req.session.mensaje;
       delete req.session.mensaje;
 
+      const fechaHoraBogota = getBogotaDateTime();
+      await pool.execute(
+        `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+          VALUES (?, ?, ?)`,
+        [userUser, 3, fechaHoraBogota]
+      );
+
       res.render('ccostoexp', {
         ccosto,
         unidadT,
@@ -1526,6 +1541,14 @@ app.get('/users', async (req, res) => {
         // ✅ Manejo seguro del mensaje de sesión
         const mensaje = req.session.mensaje || null;
         delete req.session.mensaje; // Limpieza después de usar
+
+        const fechaHoraBogota = getBogotaDateTime();
+        
+        await pool.execute(
+          `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+            VALUES (?, ?, ?)`,
+          [userUser, 6, fechaHoraBogota]
+        );
 
         res.render('users', {
             users,
