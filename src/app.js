@@ -2413,6 +2413,144 @@ app.get('/indices/delete/:id', async (req, res) => {
     res.redirect('/indices');
   });
 
+// inspeccion
+
+function getBogotaDateObject() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const bogotaOffsetHours = -5;
+  return new Date(utc + bogotaOffsetHours * 3600000);
+}
+
+function getWeekDates() {
+  // Obtiene el lunes de la semana actual en Bogotá y luego lunes a viernes
+  const today = getBogotaDateObject();
+  const day = today.getDay(); // domingo=0, lunes=1, ...
+  const diffToMonday = day === 0 ? -6 : 1 - day; // Ajuste para lunes (domingo -6 días, otros días offset)
+  const monday = new Date(today);
+  monday.setHours(0, 0, 0, 0); // poner inicio de día para evitar problemas con horas
+  monday.setDate(today.getDate() + diffToMonday);
+
+  const abreviaciones = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const dates = [];
+
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const fechaStr = `${yyyy}-${mm}-${dd}`;
+
+    const nombreCorto = abreviaciones[d.getDay()];
+
+    dates.push({ fecha: fechaStr, nombre: nombreCorto });
+  }
+  return dates;
+}
+
+import { DateTime } from 'luxon';
+
+app.get('/inspeccion', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/');
+  const conn = await pool.getConnection();
+
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+
+    // Obtener todos los datos sin filtrar por semana
+    const [inspecc] = await conn.execute(`
+      SELECT 
+        b.id_bloque,
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.fecha_inspeccion,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.observacion,
+        i.firma
+      FROM bloques b
+      JOIN items i ON b.id_bloque = i.id_bloque
+      ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
+    `);
+
+    // Extraer fechas únicas reales desde los resultados SQL
+    const fechasUnicas = [...new Set(inspecc.map(row =>
+      new Date(row.fecha_inspeccion).toISOString().slice(0, 10)
+    ))].sort(); // ordena por fecha ascendente
+
+    // Crear array de días en formato { fecha, nombre }
+    const abreviaciones = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+
+    const dias = fechasUnicas.map(fecha => {
+      const diaBogota = DateTime.fromISO(fecha, { zone: 'America/Bogota' });
+      const nombre = diaBogota.setLocale('es').toFormat('ccc'); // 'Vie', 'Lun', etc.
+      return {
+        fecha,
+        nombre
+      };
+    });
+    
+
+    // Agrupar por bloques
+    const bloquesAgrupados = [];
+
+    inspecc.forEach(row => {
+      let bloque = bloquesAgrupados.find(b => b.id_bloque === row.id_bloque);
+      if (!bloque) {
+        bloque = {
+          id_bloque: row.id_bloque,
+          titulo: row.titulo,
+          items: []
+        };
+        bloquesAgrupados.push(bloque);
+      }
+
+      let item = bloque.items.find(i => i.no === row.no);
+      if (!item) {
+        item = {
+          no: row.no,
+          aspecto: row.aspecto,
+          valores: {}
+        };
+        bloque.items.push(item);
+      }
+
+      const fechaStr = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
+      item.valores[fechaStr] = {
+        si: (row.si || '').toUpperCase(),
+        no_: (row.no_ || '').toUpperCase(),
+        na: (row.na || '').toUpperCase(),
+        observacion: row.observacion || '',
+        firma: row.firma || ''
+      };
+    });
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('inspeccion', {
+      inspecc: bloquesAgrupados,
+      dias,
+      user: userUser,
+      name: userName,
+      mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo inspeccion:', error);
+    res.status(500).send('Error al obtener inspeccion');
+  } finally {
+    conn.release();
+  }
+});
+
+
 // Inspecciones
 
 app.get('/inspecciones', async (req, res) => {
