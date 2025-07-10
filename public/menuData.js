@@ -20,7 +20,7 @@ export const menuData = [
         title: "Inspeccion",
         icon: "fas fa-users icon-users",
         subItems: [
-          { title: "Inspeccion", link: "/indicesbody", icon: "fas fa-users-cog icon-users-cog" },
+          { title: "Seguimiento", link: "/inspeccion", icon: "fas fa-users-cog icon-users-cog" },
         ]
       },      
 

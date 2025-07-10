@@ -129,54 +129,53 @@
     </script>
 
 <script>
-function exportarExcel() {
-  const tabla = document.getElementById('tablaAcabados');
-  const filas = Array.from(tabla.rows);
-  const data = [];
-  
-  filas.forEach((fila, filaIndex) => {
-    const celdas = Array.from(fila.cells);
-    const filaDatos = [];
-    celdas.forEach((celda, colIndex) => {
-      let texto = celda.innerText.trim();
+      function exportarExcel() {
+        const tabla = document.getElementById('tablaAcabados');
+        const filas = Array.from(tabla.rows);
+        const data = [];
+        
+        filas.forEach((fila, filaIndex) => {
+          const celdas = Array.from(fila.cells);
+          const filaDatos = [];
+          celdas.forEach((celda, colIndex) => {
+            let texto = celda.innerText.trim();
 
-      // Para las fechas, convertirlas a Date y aplicar formato Excel
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
-        // Parsear dd/mm/yyyy a objeto Date
-        const partes = texto.split('/');
-        const dia = parseInt(partes[0], 10);
-        const mes = parseInt(partes[1], 10) - 1; // mes base 0
-        const anio = parseInt(partes[2], 10);
-        const fecha = new Date(anio, mes, dia);
-        filaDatos.push({ t: 'd', v: fecha });
-      } else {
-        filaDatos.push(texto);
+            // Para las fechas, convertirlas a Date y aplicar formato Excel
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+              // Parsear dd/mm/yyyy a objeto Date
+              const partes = texto.split('/');
+              const dia = parseInt(partes[0], 10);
+              const mes = parseInt(partes[1], 10) - 1; // mes base 0
+              const anio = parseInt(partes[2], 10);
+              const fecha = new Date(anio, mes, dia);
+              filaDatos.push({ t: 'd', v: fecha });
+            } else {
+              filaDatos.push(texto);
+            }
+          });
+          data.push(filaDatos);
+        });
+
+        // Crear la hoja desde el arreglo
+        const hoja = XLSX.utils.aoa_to_sheet(data);
+
+        // Aplicar formato de celda solo a las columnas de fecha
+        // Aquí, por ejemplo, columnas 3 y 4 (fecha_orden y fecha_entrega, 0-indexed)
+        const columnasFecha = [3, 4];
+        columnasFecha.forEach(col => {
+          for (let row = 1; row <= filas.length; row++) { // fila 1 = encabezado
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+            const cell = hoja[cellAddress];
+            if (cell && cell.t === 'd') {
+              cell.z = 'dd/mm/yyyy';
+            }
+          }
+        });
+
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, "Centros de Costo");
+        XLSX.writeFile(libro, "ccosto.xlsx");
       }
-    });
-    data.push(filaDatos);
-  });
-
-  // Crear la hoja desde el arreglo
-  const hoja = XLSX.utils.aoa_to_sheet(data);
-
-  // Aplicar formato de celda solo a las columnas de fecha
-  // Aquí, por ejemplo, columnas 3 y 4 (fecha_orden y fecha_entrega, 0-indexed)
-  const columnasFecha = [3, 4];
-  columnasFecha.forEach(col => {
-    for (let row = 1; row <= filas.length; row++) { // fila 1 = encabezado
-      const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-      const cell = hoja[cellAddress];
-      if (cell && cell.t === 'd') {
-        cell.z = 'dd/mm/yyyy';
-      }
-    }
-  });
-
-  const libro = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(libro, hoja, "Centros de Costo");
-  XLSX.writeFile(libro, "ccosto.xlsx");
-}
-
 </script>
 
 

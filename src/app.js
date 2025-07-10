@@ -2523,9 +2523,9 @@ app.get('/inspeccion', async (req, res) => {
 
       const fechaStr = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
       item.valores[fechaStr] = {
-        si: (row.si || '').toUpperCase(),
-        no_: (row.no_ || '').toUpperCase(),
-        na: (row.na || '').toUpperCase(),
+        si: (row.si || '').trim().toUpperCase(),
+        no_: (row.no_ || '').trim().toUpperCase(),
+        na: (row.na || '').trim().toUpperCase(),
         observacion: row.observacion || '',
         firma: row.firma || ''
       };
@@ -2548,6 +2548,22 @@ app.get('/inspeccion', async (req, res) => {
   } finally {
     conn.release();
   }
+});
+
+// Endpoint para actualizar
+app.post('/api/items/update', (req, res) => {
+  const { fecha_inspeccion, no, si, no_, na, observacion } = req.body;
+  const item = items.find(i => i.fecha_inspeccion === fecha_inspeccion && i.no === no);
+  if (!item) return res.status(404).json({ error: 'Item no encontrado' });
+
+  item.si = si;
+  item.no_ = no_;
+  item.na = na;
+  item.observacion = observacion;
+
+  // Aquí harías la actualización real en la base de datos
+
+  res.json({ success: true });
 });
 
 
@@ -2761,6 +2777,136 @@ app.post('/valreg', async (req, res) => {
         connection.release();
     }
 });
+
+
+//const { DateTime } = require('luxon'); // si ya usas Luxon
+
+app.get('/detalle-dia', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/');
+  const conn = await pool.getConnection();
+
+
+
+  try {
+    const { fecha } = req.query;
+
+    if (!fecha) {
+      return res.status(400).send('Falta la fecha en la URL');
+    }
+
+    // Consulta los datos filtrados por la fecha
+    const [items] = await conn.execute(`
+      SELECT 
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.observacion
+      FROM bloques b
+      JOIN items i ON b.id_bloque = i.id_bloque
+      WHERE DATE(i.fecha_inspeccion) = ?
+      ORDER BY b.id_bloque, i.no
+    `, [fecha]);
+
+    // Agrupar los datos como lo haces en la principal
+    const inspeccion = [];
+    items.forEach(row => {
+      let bloque = inspeccion.find(b => b.titulo === row.titulo);
+      if (!bloque) {
+        bloque = {
+          titulo: row.titulo,
+          items: []
+        };
+        inspeccion.push(bloque);
+      }
+
+      bloque.items.push({
+        no: row.no,
+        aspecto: row.aspecto,
+        si: (row.si || '').toUpperCase(),
+        no_: (row.no_ || '').toUpperCase(),
+        na: (row.na || '').toUpperCase(),
+        observacion: row.observacion || ''
+      });
+    });
+
+    // Formatear nombre del día
+    const diaFormateado = DateTime.fromISO(fecha, { zone: 'America/Bogota' }).setLocale('es').toFormat('cccc dd/MM/yyyy');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    const diaFormateadoRaw = fecha;
+    res.render('detalle-dia', {
+      diaFormateado,
+      diaFormateadoRaw,
+      inspeccion,
+      user: req.session.user,
+      name: req.session.name,
+      mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo detalle del día:', error);
+    res.status(500).send('Error al obtener detalle del día');
+  } finally {
+    conn.release();
+  }
+});
+
+app.post('/detalle-dia', async (req, res) => {
+  const { fecha, datos } = req.body;
+
+  if (!fecha || !datos) {
+    return res.status(400).send('Datos incompletos');
+  }
+
+  const conn = await pool.getConnection();
+
+  try {
+    const cambios = [];
+
+    // Recorremos bloques y items
+    for (const bloqueIndex in datos) {
+      const items = datos[bloqueIndex];
+
+      for (const itemIndex in items) {
+        const item = items[itemIndex];
+
+        const { no, opcion, observacion } = item;
+
+        // Aquí puedes usar UPDATE o INSERT según tu lógica
+        await conn.execute(`
+          UPDATE items 
+          SET si = ?, no_ = ?, na = ?, observacion = ?
+          WHERE no = ? AND DATE(fecha_inspeccion) = ?
+        `, [
+          opcion === 'SI' ? 'x' : '',
+          opcion === 'NO' ? 'x' : '',
+          opcion === 'NA' ? 'x' : '',
+          observacion,
+          no,
+          fecha
+        ]);
+
+        cambios.push(no);
+      }
+    }
+
+    console.log('Actualizados:', cambios.length);
+    req.session.mensaje = 'Cambios guardados correctamente';
+    res.redirect(`/detalle-dia?fecha=${fecha}`);
+  } catch (err) {
+    console.error('Error actualizando:', err);
+    res.status(500).send('Error al guardar los cambios');
+  } finally {
+    conn.release();
+  }
+});
+
+
 
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {
