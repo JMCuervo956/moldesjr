@@ -2866,6 +2866,14 @@ app.get('/detalle-dia', async (req, res) => {
   }
 });
 
+// Ejecuta promesas por lotes
+async function runInBatches(tasks, batchSize = 20) {
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
+    await Promise.all(batch.map(task => task()));
+  }
+}
+
 app.post('/detalle-dia', async (req, res) => {
   const { fecha, datos, tip_func, doc_id } = req.body;
 
@@ -2880,9 +2888,8 @@ app.post('/detalle-dia', async (req, res) => {
 
   try {
     const cambios = [];
-    const updates = [];
+    const updateTasks = [];
 
-    // Recorrer todos los bloques y sus items
     for (const bloqueIndex in datos) {
       const items = datos[bloqueIndex];
 
@@ -2890,8 +2897,10 @@ app.post('/detalle-dia', async (req, res) => {
         const item = items[itemIndex];
         const { no, opcion, observacion } = item;
 
-        // Preparar cada consulta UPDATE sin ejecutarla aún
-        updates.push(
+        cambios.push(no);
+
+        // En lugar de ejecutar ahora, creamos una función que se ejecutará luego por lotes
+        updateTasks.push(() =>
           conn.execute(
             `
             UPDATE items 
@@ -2908,16 +2917,14 @@ app.post('/detalle-dia', async (req, res) => {
             ]
           )
         );
-
-        cambios.push(no);
       }
     }
 
-    // Ejecutar todas las consultas en paralelo
-    await Promise.all(updates);
-    await conn.commit();
+    // Ejecutar los updates por lotes de máximo 20
+    await runInBatches(updateTasks, 20);
 
-    console.timeEnd('actualizacion-items'); // 🕒 muestra duración
+    await conn.commit();
+    console.timeEnd('actualizacion-items');
 
     req.session.mensaje = 'Cambios guardados correctamente';
     res.redirect(
@@ -2926,13 +2933,14 @@ app.post('/detalle-dia', async (req, res) => {
       )}&doc_id=${encodeURIComponent(doc_id)}`
     );
   } catch (err) {
-    await conn.rollback(); // Deshacer cambios si algo falla
+    await conn.rollback();
     console.error('Error actualizando:', err);
     res.status(500).send('Error al guardar los cambios');
   } finally {
     conn.release();
   }
 });
+
 
 /* equipo inspeccion */
 
