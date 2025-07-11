@@ -2868,45 +2868,65 @@ app.get('/detalle-dia', async (req, res) => {
 
 app.post('/detalle-dia', async (req, res) => {
   const { fecha, datos, tip_func, doc_id } = req.body;
+
   if (!fecha || !datos) {
     return res.status(400).send('Datos incompletos');
   }
 
   const conn = await pool.getConnection();
+  await conn.beginTransaction();
+
+  console.time('actualizacion-items');
 
   try {
     const cambios = [];
+    const updates = [];
 
-    // Recorremos bloques y items
+    // Recorrer todos los bloques y sus items
     for (const bloqueIndex in datos) {
       const items = datos[bloqueIndex];
 
       for (const itemIndex in items) {
         const item = items[itemIndex];
-
         const { no, opcion, observacion } = item;
 
-        // Aquí puedes usar UPDATE o INSERT según tu lógica
-        await conn.execute(`
-          UPDATE items 
-          SET si = ?, no_ = ?, na = ?, observacion = ?
-          WHERE no = ? AND DATE(fecha_inspeccion) = ?
-        `, [
-          opcion === 'SI' ? 'x' : '',
-          opcion === 'NO' ? 'x' : '',
-          opcion === 'NA' ? 'x' : '',
-          observacion,
-          no,
-          fecha
-        ]);
+        // Preparar cada consulta UPDATE sin ejecutarla aún
+        updates.push(
+          conn.execute(
+            `
+            UPDATE items 
+            SET si = ?, no_ = ?, na = ?, observacion = ?
+            WHERE no = ? AND DATE(fecha_inspeccion) = ?
+            `,
+            [
+              opcion === 'SI' ? 'x' : '',
+              opcion === 'NO' ? 'x' : '',
+              opcion === 'NA' ? 'x' : '',
+              observacion,
+              no,
+              fecha
+            ]
+          )
+        );
 
         cambios.push(no);
       }
     }
-    req.session.mensaje = 'Cambios guardados correctamente';
-    res.redirect(`/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
 
+    // Ejecutar todas las consultas en paralelo
+    await Promise.all(updates);
+    await conn.commit();
+
+    console.timeEnd('actualizacion-items'); // 🕒 muestra duración
+
+    req.session.mensaje = 'Cambios guardados correctamente';
+    res.redirect(
+      `/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(
+        tip_func
+      )}&doc_id=${encodeURIComponent(doc_id)}`
+    );
   } catch (err) {
+    await conn.rollback(); // Deshacer cambios si algo falla
     console.error('Error actualizando:', err);
     res.status(500).send('Error al guardar los cambios');
   } finally {
