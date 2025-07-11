@@ -2461,7 +2461,6 @@ app.get('/inspeccion', async (req, res) => {
     const userUser = req.session.user;
     const userName = req.session.name;
     
-    console.log(0);
     // Obtener todos los datos sin filtrar por semana
     const [inspecc] = await conn.execute(`
       SELECT 
@@ -2480,9 +2479,6 @@ app.get('/inspeccion', async (req, res) => {
       where func_id = ? and func_doc = ? 
       ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
     `, [tip_func, doc_id] );  
-    console.log(1);
-    console.log(func_id);
-    console.log(func_doc);
 
     // Extraer fechas únicas reales desde los resultados SQL
     const fechasUnicas = [...new Set(inspecc.map(row =>
@@ -2514,7 +2510,6 @@ app.get('/inspeccion', async (req, res) => {
         };
         bloquesAgrupados.push(bloque);
       }
-    console.log(2);
 
       let item = bloque.items.find(i => i.no === row.no);
       if (!item) {
