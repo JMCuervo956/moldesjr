@@ -2919,7 +2919,7 @@ app.get('/inspasig', async (req, res) => {
                 FROM tbl_efuncional a
                 JOIN tbl_perfil b ON a.perfil = b.id
                 JOIN tbl_estados c ON a.estado = c.id
-                where a.perfil=4
+                where a.perfil=14
                 ORDER BY a.perfil, a.estado;
             `),
             pool.execute('SELECT * FROM tbl_tipodoc'),
