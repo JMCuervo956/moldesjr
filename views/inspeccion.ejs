@@ -211,7 +211,7 @@ td.sticky-col-2 {
   <div class="detalle-scroll">
     <div class="container-fluid mt-1">
       <div class="d-flex justify-content-start align-items-center mb-3">
-        <a href="/opciones" class="btn btn-success btn-sm ms-2">Regresar</a>
+        <a href="/inspasig" class="btn btn-success btn-sm ms-2">Regresar</a>
       </div>
 
       <div class="content2">
@@ -225,10 +225,13 @@ td.sticky-col-2 {
                 <th rowspan="2" class="col-aspecto sticky-col-2">Aspectos a Verificar</th>
                 <% dias.forEach((dia, i) => { %>
                       <th colspan="3" class="text-center">
+
                       <button 
                         type="button"
                         class="btn btn-sm btn-dia text-white btn-ir-a-detalle"
                         data-fecha="<%= dia.fecha %>"
+                        data-tip-func="<%= tip_func %>"
+                        data-doc-id="<%= doc_id %>"                        
                         style="line-height: 1.2;"
                       >
                         <div style="font-size: 1.1rem; font-weight: bold;">
@@ -236,7 +239,8 @@ td.sticky-col-2 {
                         </div>
                         <div style="font-size: 0.7rem;"><%= dia.fecha %></div>
                       </button>
-                      </th>
+
+                    </th>
                   <% }) %>
               </tr>
               <tr>
@@ -284,14 +288,17 @@ td.sticky-col-2 {
     </div>
   </div>
 
-
 <script>
   document.querySelectorAll('.btn-ir-a-detalle').forEach(boton => {
     boton.addEventListener('click', function () {
       const fecha = this.getAttribute('data-fecha');
-      if (fecha) {
-        console.log(fecha)
-        window.location.href = `/detalle-dia?fecha=${encodeURIComponent(fecha)}`;
+      const tip_func = this.dataset.tipFunc;
+      const doc_id = this.dataset.docId;
+      if (fecha && tip_func && doc_id) {
+        const url = `/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`;
+        window.location.href = url;
+      } else {
+        alert('Faltan datos para continuar.');
       }
     });
   });

@@ -2451,15 +2451,16 @@ function getWeekDates() {
 }
 
 import { DateTime } from 'luxon';
+import { Console } from 'console';
 
 app.get('/inspeccion', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/');
+  const { tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
-
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-
+    
     // Obtener todos los datos sin filtrar por semana
     const [inspecc] = await conn.execute(`
       SELECT 
@@ -2475,8 +2476,9 @@ app.get('/inspeccion', async (req, res) => {
         i.firma
       FROM bloques b
       JOIN items i ON b.id_bloque = i.id_bloque
+      where func_id = ? and func_doc = ? 
       ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
-    `);
+    `, [tip_func, doc_id] );  
 
     // Extraer fechas únicas reales desde los resultados SQL
     const fechasUnicas = [...new Set(inspecc.map(row =>
@@ -2485,7 +2487,6 @@ app.get('/inspeccion', async (req, res) => {
 
     // Crear array de días en formato { fecha, nombre }
     const abreviaciones = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
 
     const dias = fechasUnicas.map(fecha => {
       const diaBogota = DateTime.fromISO(fecha, { zone: 'America/Bogota' });
@@ -2496,7 +2497,6 @@ app.get('/inspeccion', async (req, res) => {
       };
     });
     
-
     // Agrupar por bloques
     const bloquesAgrupados = [];
 
@@ -2537,6 +2537,8 @@ app.get('/inspeccion', async (req, res) => {
     res.render('inspeccion', {
       inspecc: bloquesAgrupados,
       dias,
+      tip_func,
+      doc_id,
       user: userUser,
       name: userName,
       mensaje
@@ -2783,13 +2785,9 @@ app.post('/valreg', async (req, res) => {
 
 app.get('/detalle-dia', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/');
+  const { fecha, tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
-
-
-
   try {
-    const { fecha } = req.query;
-
     if (!fecha) {
       return res.status(400).send('Falta la fecha en la URL');
     }
@@ -2842,6 +2840,8 @@ app.get('/detalle-dia', async (req, res) => {
     res.render('detalle-dia', {
       diaFormateado,
       diaFormateadoRaw,
+      tip_func,
+      doc_id,
       inspeccion,
       user: req.session.user,
       name: req.session.name,
@@ -2852,13 +2852,12 @@ app.get('/detalle-dia', async (req, res) => {
     console.error('Error obteniendo detalle del día:', error);
     res.status(500).send('Error al obtener detalle del día');
   } finally {
-    conn.release();
+    if (conn) conn.release(); 
   }
 });
 
 app.post('/detalle-dia', async (req, res) => {
-  const { fecha, datos } = req.body;
-
+  const { fecha, datos, tip_func, doc_id } = req.body;
   if (!fecha || !datos) {
     return res.status(400).send('Datos incompletos');
   }
@@ -2894,10 +2893,9 @@ app.post('/detalle-dia', async (req, res) => {
         cambios.push(no);
       }
     }
-
-    console.log('Actualizados:', cambios.length);
     req.session.mensaje = 'Cambios guardados correctamente';
-    res.redirect(`/detalle-dia?fecha=${fecha}`);
+    res.redirect(`/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
+
   } catch (err) {
     console.error('Error actualizando:', err);
     res.status(500).send('Error al guardar los cambios');
@@ -2906,6 +2904,41 @@ app.post('/detalle-dia', async (req, res) => {
   }
 });
 
+/* equipo inspeccion */
+
+app.get('/inspasig', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
+            pool.execute(` 
+                SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                        b.id as idp, b.perfil as perfilp, c.estado as destado
+                FROM tbl_efuncional a
+                JOIN tbl_perfil b ON a.perfil = b.id
+                JOIN tbl_estados c ON a.estado = c.id
+                where a.perfil=4
+                ORDER BY a.perfil, a.estado;
+            `),
+            pool.execute('SELECT * FROM tbl_tipodoc'),
+            pool.execute('SELECT * FROM tbl_estados'),
+            pool.execute('SELECT * FROM tbl_perfil')
+            ]);
+            
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+            res.render('inspasig', { efuncional, tipodocl, estados, perfilf, user: userUser, name: userName, mensaje });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo funcional:', error);
+        res.status(500).send('Error al obtener las funcional');
+    }
+});
 
 
 // Puerto de escucha

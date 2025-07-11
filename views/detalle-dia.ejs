@@ -91,11 +91,15 @@
 <div class="content2">
     <div class="register-formAnchoCM">
     <h5 class="mb-3">Detalle de Inspección - <%= diaFormateado %></h5>
-    <a href="/inspeccion" class="btn btn-secondary btn-sm mb-3">Volver</a>
-
+    <a 
+      href="/inspeccion?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+      class="btn btn-secondary btn-sm mb-3">
+      Volver
+    </a>
         <form action="/detalle-dia" method="POST">
         <input type="hidden" name="fecha" value="<%= diaFormateadoRaw %>">
-
+        <input type="hidden" name="tip_func" value="<%= tip_func %>">
+        <input type="hidden" name="doc_id" value="<%= doc_id %>">          
         <% inspeccion.forEach((bloque, bloqueIndex) => { %>
             <h5 class="bloque-titulo px-2 py-2"><strong><%= bloque.titulo %></strong></h5>
 
@@ -143,17 +147,18 @@
                 <% }) %>
             </tbody>
             </table>
-
-
-
-
-            
         <% }) %>
 
         <div class="d-flex justify-content-end mt-3">
             <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
-            <a href="/detalle-dia?fecha=<%= diaFormateadoRaw %>" class="btn btn-secondary">Cancelar Cambios</a>
+            <a 
+              href="/detalle-dia?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+              class="btn btn-secondary"
+            >
+              Cancelar Cambios
+            </a>
         </div>
+
         </form>
     </div>
 </div>
