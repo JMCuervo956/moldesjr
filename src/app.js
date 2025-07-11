@@ -50,21 +50,27 @@ app.get('/origen/:folder/:filename', (req, res) => {
 
 // Vista del menú principal
 app.get('/menuprc', async (req, res) => {
-  if (req.session.loggedin) {
-    const { user, name, rol, unidad: userUser } = req.session;
+  if (!req.session.loggedin) {
+    return res.redirect('/');
+  }
 
+  try {
+    const { user, name, rol, unidad: userUser } = req.session;
     const fechaHoraBogota = getBogotaDateTime();
+
     await pool.execute(
-      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-        VALUES (?, ?, ?)`,
+      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)`,
       [user, 1, fechaHoraBogota]
     );
 
     res.render('menuprc', { user, name, rol, userUser });
-  } else {
-    res.redirect('/');
+
+  } catch (error) {
+    console.error('Error en /menuprc:', error.message);
+    res.status(500).send('Error interno al cargar menú principal.');
   }
 });
+
 
 // Rutas externas (login modularizado)
 app.use('/', authRoutes);
@@ -2748,10 +2754,14 @@ app.get('/indicesbody', async (req, res) => {
     }
 });
 
-app.get('/valida', (req, res)=>{
-        const userUser = req.session.unidad;
-        res.render('valida', { userUser });
-    })
+app.get('/valida', (req, res) => {
+  if (!req.session || !req.session.unidad) {
+    return res.redirect('/');
+  }
+
+  const userUser = req.session.unidad;
+  res.render('valida', { userUser });
+});
 
 app.post('/valreg', async (req, res) => {
     const connection = await pool.getConnection();
