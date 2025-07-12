@@ -9,8 +9,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
-  <%- include('partials/head') %>
-
   <style>
     .encabezado {
       position: fixed;
@@ -24,11 +22,10 @@
     }
 
     .detalle-scroll {
-      margin-top: 120px;
-      padding: 20px;
+      overflow-y: auto;
+      padding: 0px;
       background-color: #f7f7f7;
-      overflow-x: auto;
-    }
+    }    
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -203,17 +200,23 @@ td.sticky-col-2 {
   </style>
 </head>
 <body>
-
-  <header class="encabezado">
-    <%- include('partials/navigationf') %>
-  </header>
+  <div id="activities" style="
+    border: 2px solid #BA1A1A;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f0f8ff;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/inspasig" class="btn btn-success btn-sm ms-2">Regresar</a>
+    <h4 class="acti-title" style="color: blue; margin: 0;">Inspección</h4>
+  </div>
 
   <div class="detalle-scroll">
     <div class="container-fluid mt-1">
-      <div class="d-flex justify-content-start align-items-center mb-3">
-        <a href="/inspasig" class="btn btn-success btn-sm ms-2">Regresar</a>
-      </div>
-
       <div class="content2">
         <div class="register-formAnchoCM">  
           <h5 class="text-center">Verificación Semanal</h5>

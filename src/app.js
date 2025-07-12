@@ -1357,6 +1357,49 @@ app.get('/progresogralT', async (req, res) => {
     }
 });
 
+/*  tareas */
+
+app.post('/tareas', async (req, res) => {
+    try {
+      // Realizamos la consulta a la base de datos
+      const idot = req.body.idot;  // <-- Obtener idot del body
+      const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ?", [idot]);
+      // Crear un array de tareas basadas en la respuesta de la base de datos
+      const tasks = {
+        tasks: rows.map((row, index) => {
+        // Asignamos un color basado en el tipo (row.type)
+        let color = "#32CD32"; // Valor predeterminado 
+        if (row.type === "Principal") {
+          color = "#0000FF";  // Verde para tareas planificadas  0000FF
+        } else if (row.type === "in-progress") {
+          color = "#FFD700";  // Amarillo para tareas en progreso
+        } else if (row.type === "completed") {
+          color = "#4CAF50";  // Verde oscuro para tareas completadas
+        } else if (row.type === "delayed") {
+          color = "#FF6347";  // Rojo para tareas retrasadas
+        }
+        return {  
+          id: index + 1, // Asignamos un id único basado en el índice
+          task: row.task || 1, // Ajusta esto según el nombre de la columna en tu base de datos
+          text: row.text || "Tarea sin descripción", // Ajusta según el nombre de la columna
+          start_date: row.start_date || "2025-02-12", // Ajusta según el nombre de la columna
+          duration: row.duration || 6, // Ajusta según el nombre de la columna
+          progress: row.progress || 0, // Ajusta según el nombre de la columna
+          type: row.type, // O ajusta según lo que corresponda en tu base de datos
+          color: color
+          //color: row.color || "#32CD32" // Ajusta según el nombre de la columna, si tienes uno
+        };  
+        }),
+        links: []
+      };
+      res.json(tasks); // Enviamos la respuesta al cliente
+    } catch (error) {
+      console.error('Error en el servidor:', error);
+      res.status(500).json({ message: 'Error al procesar la solicitud' });
+    }
+  });
+
+
 /* TAREAS G*/
 
 app.post('/tareasg', async (req, res) => {
@@ -2978,6 +3021,71 @@ app.get('/inspasig', async (req, res) => {
     }
 });
 
+app.get('/respmod', async (req, res) => {
+  const idot = req.query.idot;
+  const descripcion = req.query.descripcion;
+
+  const [acti] = await pool.execute(
+    `SELECT id, task, text, duration, start_date FROM tbl_actividad WHERE type = 'Principal' AND idot = ?`,
+    [idot]
+  );
+  const mensaje = req.session.mensaje;
+  res.render('respmod', { idot, descripcion, acti, mensaje });
+});
+
+app.post('/modificar-actividad', async(req, res) => {
+  const { id, task, text, start_date, duration, idot, descripcion } = req.body;  
+  try {
+    // actualiza una actividad específica
+    await pool.execute(
+      `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? and task = ?`,
+      [text, start_date, duration, idot, task]
+    );
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Actualizado exitosamente - Actividad: ${task}`,
+    };
+  } catch (err) {
+    console.error('Error al eliminar actividad:', err);
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: 'No se puede modificar actividad',
+    };
+  }
+  res.redirect(`/respmod?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
+});
+
+app.get('/reseli', async (req, res) => {
+  const idot = req.query.idot;
+  const descripcion = req.query.descripcion;
+  const [acti] = await pool.execute(`SELECT task, text FROM tbl_actividad WHERE type = 'Principal' AND idot = ?`,
+    [idot]
+    );
+  res.render('reseli', { idot, descripcion, acti });
+});
+
+app.post('/reseli/delete/:task', async (req, res) => {
+  const task = req.params.task;
+  const { idot, descripcion } = req.body;
+
+  try {
+    // Elimina una actividad específica
+    await pool.execute('DELETE FROM tbl_actividad WHERE idot = ? AND task = ?', [idot, task]);
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Eliminado exitosamente - Actividad: ${task}`,
+    };
+  } catch (err) {
+    console.error('Error al eliminar actividad:', err);
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: 'No se puede eliminar porque tiene elementos asociados.',
+    };
+  }
+  res.redirect(`/reseli?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
+});
 
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {

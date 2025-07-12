@@ -16,8 +16,6 @@
     <!-- Bootstrap JS (requiere Popper.js también) -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-
-
     
     <style>
         body {
@@ -265,22 +263,26 @@
             color: #f5a623;
         }
 
-        
+        #gantt_container {
+            height: 340px;  /* Ajusta según tu necesidad */
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        #gantt_here {
+            height: 100%;
+            min-width: 1000px; /* Opcional: para evitar corte horizontal */
+        }
+
 </style>        
 
 </head>
 <body>
     
         <div id="customTooltip" class="gantt_tooltip"></div>
-        
-        <!-- 1 logo -->
-        <div id="activities">
-            <a href="https://moldesjr.com/" target="_blank">
-                <img src="/static/images/logo.png" alt="Logo" class="logo">
-            </a>
-            <h3 class="activities-title">MJR - Moldes para concreto</h3>
-        </div>
-       
+        <BR>        
         <!-- 2 Regreso -->
         <div class="d-flex justify-content-between align-items-center mb-0 px-4">
             <!-- tamaño texto - titulo de orden */ -->
@@ -302,9 +304,7 @@
             </h3>
         </div>
 
-        <div id="gantt_here"></div>
-
-        <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
+                <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
         <div style="text-align: center; margin-top: 20px;" id="addTaskButtonContainer">
             <button 
                 class="btn btn-primary btn-sm" 
@@ -326,6 +326,10 @@
             </button>
         </div>
 
+<div id="gantt_container">
+
+        <div id="gantt_here"></div>
+</div>
         <!-- 5 Modal para agregar una nueva ACTIVIDAD  ESTE -->
         <div id="addTaskModal">
             <div class="modal-content">
@@ -380,9 +384,9 @@
             var userIdAct = 1;  // Cambia esto a 0 para simular el caso donde el usuario no tiene permisos para modificar.
        
             gantt.config.xml_date = "%Y-%m-%d %H:%i";
-            gantt.config.drag_move = true;
-            gantt.config.drag_resize = true;
-            gantt.config.drag_links = true;
+            gantt.config.drag_move = false;
+            gantt.config.drag_resize = false;
+            gantt.config.drag_links = false;
 
             /* tamaño texto Actividad*/
             let lastTaskShown = null;
@@ -405,14 +409,14 @@
                         return task.task;
                     }
                 },
-                { name: "text", label: "<span style='font-size: 14px;'><b>Actividad</b></span>", align: "left", width: 350 },
+                { name: "text", label: "<span style='font-size: 14px;'><b>Actividad</b></span>", align: "left", width: 250 },
                 { name: "start_date", label: "<b>Inicio</b>", align: "left", width: 100,
                         template: function(task) {
                         return `<span style="color: #0000ff; font-weight: bold;">${gantt.date.date_to_str("%d-%m-%Y")(task.start_date)}</span>`;
                     }
                  },
                 { name: "duration", label: "<b>D</b>", align: "center", width: 30 },
-                { name: "progress", label: "<b>P</b>", align: "center", width: 40 }
+                
             ];
 
             gantt.locale = {
@@ -561,8 +565,8 @@
                 },
             ];
 
-            gantt.config.start_date = new Date("2025-01-01");
-            gantt.config.end_date = new Date("2026-12-15"); // fecha Maxima LIMITE
+//            gantt.config.start_date = new Date("2025-01-01");
+//            gantt.config.end_date = new Date("2026-12-15"); // fecha Maxima LIMITE
         
             // Función para cargar las tareas desde el servidor
             let maxTaskId = 0;

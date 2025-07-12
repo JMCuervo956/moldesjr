@@ -20,11 +20,9 @@
     }
 
     .detalle-scroll {
-      margin-top: 60px;
-      padding: 10px;
+      overflow-y: auto;
+      padding: 0px;
       background-color: #f7f7f7;
-      overflow-x: auto;
-      transform: scale(0.80);
     }
 
     body {
@@ -73,9 +71,24 @@
   </style>
 </head>
 <body>
-  <header class="encabezado">
-    <%- include('partials/navigationf') %>
-  </header>
+  <div id="activities" style="
+    border: 2px solid #BA1A1A;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f0f8ff;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a 
+      href="/inspeccion?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+      class="btn btn-secondary btn-sm mb-3">
+      Volver
+    </a>
+    <h5 class="acti-title" style="color: blue; margin: 0;">Detalle de Inspección - <%= diaFormateado %></h5>
+  </div>
 
     <% if (mensaje) { %>
       <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -90,12 +103,6 @@
 
 <div class="content2">
     <div class="register-formAnchoCM">
-    <h5 class="mb-3">Detalle de Inspección - <%= diaFormateado %></h5>
-    <a 
-      href="/inspeccion?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
-      class="btn btn-secondary btn-sm mb-3">
-      Volver
-    </a>
         <form action="/detalle-dia" method="POST">
         <input type="hidden" name="fecha" value="<%= diaFormateadoRaw %>">
         <input type="hidden" name="tip_func" value="<%= tip_func %>">
