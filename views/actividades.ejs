@@ -21,12 +21,10 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
-      /* Altura reservada para el encabezado */
       .detalle-scroll {
-        margin-top: 120px; /* Ajusta según el alto real del header */
-        height: calc(100% - 120px);
+        flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 40px;
         background-color: #f7f7f7;
       }
 
@@ -113,20 +111,20 @@
 
 </head>
 <body>
-  <!-- Encabezado fijo -->
-  <header class="encabezado">
-      <%- include('partials/navigationf') %>
-  </header>  
-  <!-- Contenido desplazable -->
-  <div class="detalle-scroll">
-  <!-- Contenedor flexible y con márgenes adecuados -->
-  <div class="d-flex flex-column align-items-center align-items-md-start px-3 pt-2">
-    <!-- Botón Regresar -->
-    <div class="mb-2">
-      <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar...</a>
-    </div>
+  <div id="activities" style="
+    border: 2px solid #BA1A1A;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f0f8ff;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/menuprc"  class="btn btn-success btn-sm btnind-hover-effect">Regresar...</a>
   </div>
-
+  <div class="detalle-scroll">
     <div class="container-fluid mt-1">
       <div class="content2">
         <div class="register-formAncho">

@@ -7,10 +7,7 @@
   <link rel="stylesheet" href="/css/style.css">
   <%- include('partials/head') %>
 
-    <style>
-      .register-formAlt {
-        margin-top: 200px; /* o padding-top: 150px; según prefieras */
-      }
+  <style>
         .encabezado {
           position: fixed;
           top: 0;
@@ -211,11 +208,21 @@
 </head>
 
 <body>
-      <!-- Encabezado fijo -->
-    <header class="encabezado">
-        <%- include('partials/navigation') %>
-    </header>
-    <div class="register-formAlt">
+  <div id="activities" style="
+    border: 2px solid #BA1A1A;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f0f8ff;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/menuprc"  class="btn btn-success btn-sm btnind-hover-effect">Regresar...</a>
+  </div>
+  <br>
+  <div class="register-formAlt">
           <div>
               <h1 class="titulo-moderno">Consultas e Informes</h1>
           </div>
@@ -234,15 +241,7 @@
                     <a href="/detalle-dia" class="modern-btn btn-gris"> Reg</a>
 
           </div>
-          <br>
-          <div class="d-flex justify-content-start align-items-center mb-0">
-              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>
-          </div>
-    </div>
-  
-
-    <!-- JS -->
-    <script type="module" src="/js/modales.js"></script>
-
+  </div>
+  <script type="module" src="/js/modales.js"></script>
 </body>
 </html>
