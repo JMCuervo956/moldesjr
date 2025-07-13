@@ -27,7 +27,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+//console.log('NODE_ENV:', process.env.NODE_ENV);
+
 // Session
+app.set('trust proxy', 1);
 app.use(session);
 
 // Ruta principal (login)
@@ -53,7 +56,6 @@ app.get('/menuprc', async (req, res) => {
   if (!req.session.loggedin) {
     return res.redirect('/');
   }
-
   try {
     const { user, name, rol, unidad: userUser } = req.session;
     const fechaHoraBogota = getBogotaDateTime();
@@ -62,9 +64,7 @@ app.get('/menuprc', async (req, res) => {
       `INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)`,
       [user, 1, fechaHoraBogota]
     );
-
     res.render('menuprc', { user, name, rol, userUser });
-
   } catch (error) {
     console.error('Error en /menuprc:', error.message);
     res.status(500).send('Error interno al cargar menú principal.');
@@ -207,7 +207,7 @@ app.post('/ccosto', async (req, res) => {
       ccosto, unidadT, clienteT, paisesl
     });
   } finally {
-    conn.release(); // 🔴 Muy importante
+    conn.release(); 
   }
 });
 
@@ -988,8 +988,13 @@ app.get('/actividades', async (req, res) => {
     res.render('actividades', { otrabajo, prov, dise, supe, sold, user: userUser, name: userName, mensaje });
 
   } catch (error) {
-    console.error('Error obteniendo otrabajo:', error);
-    res.status(500).send('Error al obtener orden de trabajo');
+    console.error('Error obteniendo actividades:', error);
+
+    if (error.code === 'ECONNRESET') {
+      res.status(503).send('Servicio de base de datos no disponible. Intenta nuevamente en unos segundos.');
+    } else {
+      res.status(500).send('Error interno al obtener datos.');
+    }
   }
 });
 
