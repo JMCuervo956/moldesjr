@@ -9,7 +9,7 @@ export default session({
   cookie: {
     httpOnly: true,
     secure: isProduction,   // true en producción, false en desarrollo
-    maxAge: 15 * 60 * 1000
+    maxAge: 15 * 60 * 1000 // 5 * 1000
   }
 });
 

@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import session from './middlewares/session.js';
 import authRoutes from './routes/auth.js';
+import { requireSession } from './middlewares/requireSession.js';
 import { pool } from './db.js';
 import { PORT } from './config.js';
 
@@ -35,7 +36,7 @@ app.use(session);
 
 // Ruta principal (login)
 app.get('/', (req, res) => {
-  res.render('login');
+  res.render('login', { query: req.query });
 });
 
 // Descarga de archivos
@@ -52,14 +53,11 @@ app.get('/origen/:folder/:filename', (req, res) => {
 });
 
 // Vista del menú principal
-app.get('/menuprc', async (req, res) => {
-  if (!req.session.loggedin) {
-    return res.redirect('/');
-  }
-  try {
-    const { user, name, rol, unidad: userUser } = req.session;
-    const fechaHoraBogota = getBogotaDateTime();
+app.get('/menuprc', requireSession, async (req, res) => {
+  const { user, name, rol, unidad: userUser } = req.session;
 
+  try {
+    const fechaHoraBogota = getBogotaDateTime();
     await pool.execute(
       `INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)`,
       [user, 1, fechaHoraBogota]
@@ -70,6 +68,7 @@ app.get('/menuprc', async (req, res) => {
     res.status(500).send('Error interno al cargar menú principal.');
   }
 });
+
 
 
 // Rutas externas (login modularizado)
@@ -96,7 +95,7 @@ function getBogotaDateTime() {
 /* CCOSTO */  /*************************************************************************************/
 
 app.get('/ccosto', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -232,6 +231,7 @@ app.get('/ccosto/delete/:idcc', async (req, res) => {
  /* BarraProgreso **********************************************************/
 
 app.get('/barraprogreso', async (req, res) => {
+    if (!req.session.loggedin) return res.redirect('/?expired=1');
     try {
         if (req.session.loggedin) {
             const userUser = req.session.user;
@@ -287,7 +287,7 @@ app.get('/barraprogreso', async (req, res) => {
 /* ORDEN DE TRABAJO /***************************************************************************/
 
 app.get('/otrabajo', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -344,7 +344,7 @@ app.get('/otrabajo', async (req, res) => {
 
 
 app.post('/otrabajo', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -503,7 +503,7 @@ app.get('/otrabajo/delete/:idot', async (req, res) => {
 
 app.get('/modalot', async (req, res) => {
     try {
-        if (!req.session.loggedin) return res.redirect('/');
+        if (!req.session.loggedin) return res.redirect('/?expired=1');
         
         const id = req.query.idot;
         const [rows] = await pool.execute(`
@@ -731,7 +731,7 @@ app.get('/piezas', async (req, res) => {
     const idot = req.query.idot;
     try {
         if (!req.session.loggedin) {
-            return res.redirect('/');
+            return res.redirect('/?expired=1');
         }
 
         const userUser = req.session.user;
@@ -846,7 +846,7 @@ app.get('/dacabados', async (req, res) => {
     const idot = req.query.idot;
     try {
         if (!req.session.loggedin) {
-            return res.redirect('/');
+            return res.redirect('/?expired=1');
         }
 
         const userUser = req.session.user;
@@ -958,7 +958,7 @@ app.post('/dacabados/delete/:id', async (req, res) => {
 
 app.get('/actividades', async (req, res) => {
   try {
-    if (!req.session.loggedin) return res.redirect('/');
+    if (!req.session.loggedin) return res.redirect('/?expired=1');
 
     const userUser = req.session.user;
     const userName = req.session.name;
@@ -1073,7 +1073,7 @@ app.get('/opciones', (req, res) => {
 /*** C COSTO CONSULTAR ********/ 
 
 app.get('/ccostocc', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -1104,7 +1104,7 @@ app.get('/ccostocc', async (req, res) => {
 /* modalcc */
 
 app.get('/modalcc', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -1146,7 +1146,7 @@ app.get('/modalcc', async (req, res) => {
 /*** C COSTO ACTUALIZAR FECHAS */  
 
 app.get('/ccostofch', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
 
   const conn = await pool.getConnection();
   try {
@@ -1259,7 +1259,7 @@ app.post('/ccostofch', async (req, res) => {
 app.get('/users_consulta', async (req, res) => {
     try {
         if (!req.session.loggedin) {
-            return res.redirect('/');
+            return res.redirect('/?expired=1');
         }
 
         const userUser = req.session.user;
@@ -1582,7 +1582,7 @@ app.get('/ccostoexp', async (req, res) => {
 app.get('/users', async (req, res) => {
     try {
         if (!req.session.loggedin) {
-            return res.redirect('/');
+            return res.redirect('/?expired=1');
         }
 
         const userUser = req.session.user;
@@ -2254,7 +2254,7 @@ app.get('/efuncional/delete/:id/:nombre', async (req, res) => {
 app.get('/codigos', async (req, res) => {
     try {
         if (!req.session.loggedin) {
-            return res.redirect('/');
+            return res.redirect('/?expired=1');
         }
 
         const userUser = req.session.user;
@@ -2508,7 +2508,7 @@ import { DateTime } from 'luxon';
 import { Console } from 'console';
 
 app.get('/inspeccion', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
   const { tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
   try {
@@ -2626,7 +2626,7 @@ app.post('/api/items/update', (req, res) => {
 // Inspecciones
 
 app.get('/inspecciones', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
   const conn = await pool.getConnection();
   try {
     const userUser = req.session.user;
@@ -2804,7 +2804,7 @@ app.get('/indicesbody', async (req, res) => {
 
 app.get('/valida', (req, res) => {
   if (!req.session || !req.session.unidad) {
-    return res.redirect('/');
+    return res.redirect('/?expired=1');
   }
 
   const userUser = req.session.unidad;
@@ -2842,7 +2842,7 @@ app.post('/valreg', async (req, res) => {
 //const { DateTime } = require('luxon'); // si ya usas Luxon
 
 app.get('/detalle-dia', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/');
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
   const { fecha, tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
   try {

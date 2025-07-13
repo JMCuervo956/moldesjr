@@ -6,11 +6,23 @@
     <link rel="stylesheet" href="/css/style.css">
     <title>Inventarios</title>
     <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
+
+    <style>
+        .detalle-scroll {
+          margin-top: 0px; /* Ajusta según el alto real del header */
+          height: calc(100% - 120px);
+          overflow-y: auto;
+          padding: 20px;
+          background-color: #f7f7f7;
+        }
+    </style>
 </head>
+
 <body>
     <script src="app.js"></script>
     <%- include('partials/navigation') %>
-    <div class="content">
+<div class="detalle-scroll">    
+    <div class="    ">
         <div class="background-container">
             <!-- Aquí se aplica el fondo -->
         </div>
@@ -31,7 +43,9 @@
                 </form>    
         </div>
     </div>   
+</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async function(event) {
             event.preventDefault(); // Evitar que el formulario se envíe de forma tradicional
@@ -64,8 +78,20 @@
             }
         });
     </script>
-    <%- include('partials/footer') %>  
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+   
+
+    <script>
+        <% if (query.expired) { %>
+            Swal.fire({
+            title: 'Sesión expirada',
+            text: 'Por favor, inicia sesión nuevamente.',
+            icon: 'warning',
+            confirmButtonText: 'Entendido'
+            });
+        <% } %>
+    </script>
+
+
+
 </body>
 </html>
