@@ -1541,9 +1541,9 @@ app.get('/ccostoexp', async (req, res) => {
             DATE_FORMAT(a.fecha_entrega, '%d/%m/%Y') AS fecha_entrega_formateada,
             b.cliente AS clienteN, c.nombre as nompais, d.nombre as nomciu
             FROM tbl_ccosto a
-            JOIN tbl_cliente b ON a.cliente = b.nit 
-            JOIN tbl_paises c ON a.pais = c.iso_pais
-            JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad 
+            LEFT JOIN tbl_cliente b ON a.cliente = b.nit 
+            LEFT JOIN tbl_paises c ON a.pais = c.iso_pais
+            LEFT JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad 
         `),
         pool.execute('SELECT * FROM tbl_unidad'),
         pool.execute('SELECT * FROM tbl_cliente ORDER BY cliente')
@@ -2803,10 +2803,6 @@ app.get('/indicesbody', async (req, res) => {
 });
 
 app.get('/valida', (req, res) => {
-  if (!req.session || !req.session.unidad) {
-    return res.redirect('/?expired=1');
-  }
-
   const userUser = req.session.unidad;
   res.render('valida', { userUser });
 });

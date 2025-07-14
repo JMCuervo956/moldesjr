@@ -21,12 +21,10 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
-      /* Altura reservada para el encabezado */
       .detalle-scroll {
-        margin-top: 120px; /* Ajusta según el alto real del header */
-        height: calc(100% - 120px);
+        flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 40px;
         background-color: #f7f7f7;
       }
 
@@ -111,20 +109,25 @@
 
 </head>
 <body>
-  <!-- Encabezado fijo -->
-  <header class="encabezado">
-      <%- include('partials/navigationf') %>
-  </header>  
-  <!-- Contenido desplazable -->
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/opciones" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>
   <div class="detalle-scroll">
           <div class="d-flex justify-content-between align-items-center mb-0 px-4">
-            <!-- Izquierda: Botones -->
-            <div class="ms-5">
-              <a href="/opciones" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
-            </div>
-          
-            <!-- Derecha vacía para balancear -->
-            <div style="width: 200px;"></div>
+          <div style="width: 200px;"></div>
           </div>
           
           <% if (typeof mensaje !== 'undefined') { %>

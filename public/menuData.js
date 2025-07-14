@@ -43,7 +43,6 @@ export const menuData = [
       { title: "Clientes", link: "/clientes", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Equipo Funcional", link: "/efuncional", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Estados Centro de Costo", link: "/codigos", icon: "fas fa-users-cog icon-users-cog" },
-      { title: "Indices", link: "/indices", icon: "fas fa-users-cog icon-users-cog" },
     ]
   }
 ];

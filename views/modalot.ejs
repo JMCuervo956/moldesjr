@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Consulta Ordenes de Trabajo</title>
+  <link rel="stylesheet" href="/css/style.css">
+  
+
   <style>
     body {
       margin: 0;
@@ -178,8 +181,21 @@
   </style>
 </head>
 <body>
-  <img src="/static/images/im1.png" alt="Logo" class="imagen-fondo">
-
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>
   <script type="module">
     import { Modalot } from '/modalot.js';
     const datos = <%- JSON.stringify(datos) %>;
@@ -239,7 +255,6 @@
       modalot.open();
     });
   </script>
-
   <a href="/otrabajo" class="boton-regresar-fijo">Regresar...</a>
 </body>
 </html>

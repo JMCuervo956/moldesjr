@@ -19,12 +19,10 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
-      /* Altura reservada para el encabezado */
       .detalle-scroll {
-        margin-top: 120px; /* Ajusta según el alto real del header */
-        height: calc(100% - 120px);
+        flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 40px;
         background-color: #f7f7f7;
       }
 
@@ -52,19 +50,33 @@
 
 </head>
 <body>
-  <!-- Encabezado fijo -->
-  <header class="encabezado">
-      <%- include('partials/navigation') %>
-  </header>  
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <button 
+      class="texto-link" 
+      data-toggle="modal" 
+      data-target="#modalCiudad" 
+      onclick="limpiarFormularioCiudad()" 
+      style="margin-left: 20px;">
+      Adicionar
+    </button>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>
 
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
-        <div class="container mt-0">
-            <div class="d-flex justify-content-between align-items-center mb-0">
-                <button class="btn btn-primary btn-sm " data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar Ciudad</button>
-                <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect">Regresar</a>
-            </div>
-        </div>
         <% if (typeof mensaje !== 'undefined') { %>
           <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
             <%= mensaje.texto %>
@@ -143,16 +155,6 @@
                   <label for="nombre">Nombre de la Ciudad</label>
                   <input type="text" class="form-control" name="nombre" id="nombre_ciudad" required>
                 </div>
-                <div class="form-group">
-                  <label for="pais_codigo">País</label>
-                  <select class="form-control" name="pais_codigo" id="pais_codigo" required>
-                    <option value="">Seleccione un país</option>
-                    <% paises.forEach(p => { %>
-                      <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
-                    <% }) %>
-                  </select>
-                </div>
-
                 <div class="form-group">
                   <label for="pais_codigo">País</label>
                   <select class="form-control" name="pais_codigo" id="pais_codigo" required>

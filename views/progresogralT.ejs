@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mostrar Verticalmente</title>
+    <link rel="stylesheet" href="/css/style.css">
+
     <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css" type="text/css">
     <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js" type="text/javascript"></script>
     
@@ -300,21 +302,25 @@
 </head>
 
 <body>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/opciones" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>      
     <div id="customTooltip" class="gantt_tooltip"></div>
-    
-    <!-- 1 logo -->
-    <div id="activities">
-        <a href="https://moldesjr.com/" target="_blank">
-            <img src="/static/images/logo.png" alt="Logo" class="logo">
-        </a>
-        <h3 class="activities-title">MJR - Moldes para concreto</h3>
-    </div>
-   
-    <!-- 2 Regreso -->
+
     <div class="d-flex justify-content-between align-items-center" style="margin: 4px 0; padding: 4px 0;">
-        <div class="ms-1">
-            <a href="/opciones" class="btn btn-success btn-sm" style="padding: 2px 8px; font-size: 0.85rem;">Regresar</a>
-        </div>
         <div style="width: 100%; padding-left: 20px; text-align: left;">
             <h3 class="mb-2 fw-semibold" style="font-size: 1.5rem; color: #2c3e50;">
                 Centros de Costo

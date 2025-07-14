@@ -92,9 +92,22 @@
 </style>
 </head>
 <body>
-  <div class="ms-0">
-    <a href="/opciones" class="btn btn-warning btn-sm btn-regresar">Regresar...</a>
-  </div>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/opciones" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>  
   <div id="contenedor-ordenes"></div>
   <!-- Inyección de datos desde backend -->
   <script> const datosBD = <%- JSON.stringify(datosBD) %>; </script>
