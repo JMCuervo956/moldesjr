@@ -9,8 +9,11 @@ import fs from 'fs';
 import session from './middlewares/session.js';
 import authRoutes from './routes/auth.js';
 import { requireSession } from './middlewares/requireSession.js';
-import { pool } from './db.js';
 import { PORT } from './config.js';
+import crypto from 'crypto';
+
+import { pool } from './db.js';
+import bcryptjs from 'bcryptjs';
 
 // Inicializa dotenv
 dotenv.config();
@@ -38,6 +41,105 @@ app.use(session);
 app.get('/', (req, res) => {
   res.render('login', { query: req.query });
 });
+
+
+// Ruta para mostrar permisos del usuario
+app.get('/permisos/:userCode?', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+
+  const userCode = req.params.userCode || null;
+  try {
+    const [usuarios] = await pool.query('SELECT * FROM users');
+    const [modulos] = await pool.query('SELECT * FROM tbl_menu');
+    let permisos = [];
+
+    if (userCode) {
+      [permisos] = await pool.query(
+        'SELECT * FROM users_add WHERE user_code = ?',
+        [userCode]
+      );
+    }
+    res.render('permisos.ejs', {
+      usuarios,
+      permisos,
+      userCode,
+      modulos 
+    });
+
+  } catch (err) {
+    console.error('Error cargando permisos:', err);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+// Actualizar permiso existente
+app.post('/permisos/actualizar', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+  const {
+    user_code,
+    module,
+    can_view,
+    can_create,
+    can_edit,
+    can_delete
+  } = req.body;
+  try {
+    await pool.query(
+      `UPDATE users_add
+       SET can_view = ?, can_create = ?, can_edit = ?, can_delete = ?, fecha_act = CURDATE()
+       WHERE user_code  = ? AND module = ? `,
+      [
+        can_view ? 1 : 0,
+        can_create ? 1 : 0,
+        can_edit ? 1 : 0,
+        can_delete ? 1 : 0,
+        user_code,
+        module
+      ]
+    );
+
+    res.redirect(`/permisos/${user_code}`);
+  } catch (err) {
+    console.error('Error actualizando permiso:', err);
+    res.status(500).send('Error al actualizar permiso');
+  }
+});
+
+// Agregar nuevo permiso
+app.post('/permisos/agregar', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+  const {
+    user_code,
+    module,
+    opcion,
+    can_view,
+    can_create,
+    can_edit,
+    can_delete
+  } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO users_add (user_code , module, opcion, can_view, can_create, can_edit, can_delete, fecha_cre)
+       VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())`,
+      [
+        user_code,
+        module,
+        opcion || '',
+        can_view ? 1 : 0,
+        can_create ? 1 : 0,
+        can_edit ? 1 : 0,
+        can_delete ? 1 : 0
+      ]
+    );
+
+    res.redirect(`/permisos/${user_code}`);
+  } catch (err) {
+    console.error('Error agregando permiso:', err);
+    res.status(500).send('Error al agregar permiso');
+  }
+});
+
 
 // Descarga de archivos
 app.get('/origen/:folder/:filename', (req, res) => {
@@ -3092,5 +3194,3 @@ app.post('/reseli/delete/:task', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
-
-

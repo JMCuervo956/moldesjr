@@ -360,10 +360,11 @@
         var userIdAct = 1;  // Cambia esto a 0 para simular el caso donde el usuario no tiene permisos para modificar.
 
         gantt.config.xml_date = "%Y-%m-%d %H:%i";
-        gantt.config.drag_move = true;
-        gantt.config.drag_resize = true;
-        gantt.config.drag_links = true;
+        gantt.config.drag_move = false;
+        gantt.config.drag_resize = false;
+        gantt.config.drag_links = false;
         gantt.config.show_progress = true; // Habilita barra de progreso
+        gantt.config.show_progress.drag_move = false;
 
         gantt.templates.tooltip_text = function(start, end, task) {
             let adjustedEndDate = new Date(task.end_date);
@@ -549,7 +550,6 @@
                 });
 
                 const data = await response.json();
-                console.log("Datos recibidos:", data);
                 if (data && data.tasks && data.tasks.length > 0) {
                     maxTaskId = Math.max(...data.tasks.map(task => task.id));
                     maxTaskCode = Math.max(...data.tasks.map(task => task.task));

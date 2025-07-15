@@ -578,7 +578,6 @@
             
             async function loadTasks() {
                 try {
-                    console.log('idot recibido:', idot);  // ← ya no será undefined
                     const response = await fetch('/tareas', {
                     method: 'POST',
                     headers: {
