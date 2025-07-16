@@ -211,7 +211,12 @@ td.sticky-col-2 {
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <a href="/inspasig" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <a href="/inspecotr" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    
+    <a href="/inspecotr?tip_func=1&doc_id=12193432" class="regresar-link">Regresar</a>
+
+    <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %>" 
+    
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -235,6 +240,7 @@ td.sticky-col-2 {
       <div class="content2">
         <div class="register-formAnchoCM">  
           <h5 class="text-center">Verificación Semanal</h5>
+          <input type="text" name="doc_id" id="doc_id" value="false">
 
           <table id="tabla-verificacion">
             <thead>

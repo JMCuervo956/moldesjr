@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MJR - Centros de Costo</title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,164 +10,132 @@
   <%- include('partials/head') %>
 
   <style>
-      .encabezado {
-          position: fixed;
-          top: 0;
-          width: 100%;
-          background-color: #fff;
-          z-index: 1000;
-          padding: 15px 20px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .detalle-scroll {
-          flex: 1;
-          overflow-y: auto;
-          padding: 40px;
-          background-color: #f7f7f7;
-        }      
-
-        /* Evitar scrolls innecesarios en el body */
-        body {
-          overflow-x: hidden;
-          overflow-y: auto;
-          margin: 0;
-          padding: 0;
-        }
-
-        /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
-        .alert.fade {
-        opacity: 1;
-        transition: opacity 0.5s ease-out;
-        }
-
-        .alert.fade.show {
-        opacity: 1;
-        }
-
-        .alert.fade.hide {
-        opacity: 0;
-        }
-
-    /* Espacios casi eliminados entre campos */
-    #modalCiudad .form-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-
-    .uniform-btn {
-      min-width: 90px;
-      min-height: 32px;
-      font-size: 11px;
-      padding: 4px 6px;
-      line-height: 1.4;
-      text-align: center;
-      white-space: nowrap;
-    }
-    
-    @media (max-width: 576px) {
-      .uniform-btn {
-        flex: 1 1 100%; /* Cada botón toma toda la fila en pantallas muy pequeñas */
-        text-align: center;
-      }      
-
-      #modalCiudad .form-row {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-
-      #modalCiudad .form-row label {
+    .encabezado {
+        position: fixed;
+        top: 0;
         width: 100%;
-        margin-bottom: 4px;
-        font-size: 14px;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
-      #modalCiudad .form-row input,
-      #modalCiudad .form-row select {
-        width: 100%;
-        font-size: 14px;
+      /* Altura reservada para el encabezado */
+      .detalle-scroll {
+        margin-top: 120px; /* Ajusta según el alto real del header */
+        height: calc(100% - 120px);
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
       }
 
-      #modalCiudad .modal-dialog {
-        max-width: 100%;
-        margin: 10px;
+      /* Evitar scrolls innecesarios en el body */
+      body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
       }
-    }
 
+      /* Asegúrate de que la clase 'fade' tenga una transición de opacidad */
+      .alert.fade {
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      }
 
+      .alert.fade.show {
+      opacity: 1;
+      }
 
-    #modalCiudad .modal-body {
-      padding: 10px 15px;
-    }
+      .alert.fade.hide {
+      opacity: 0;
+      }
 
-    #modalCiudad .modal-title {
-      font-size: 16px;
-    }
+  /* Espacios casi eliminados entre campos */
+  #modalCiudad .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
 
-    #modalCiudad .btn {
-      font-size: 12px;
-      padding: 4px 10px;
-    }
+  #modalCiudad .form-row label {
+    width: 120px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
 
-    .input-con-sombra {
-      border: 1px solid #ccc;
-      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-      transition: box-shadow 0.3s ease;
-    }
+  #modalCiudad .form-row input,
+  #modalCiudad .form-row select {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: auto;
+  }
 
-    .input-con-sombra:focus {
-      box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
-      outline: none;
-    }
+  #modalCiudad .modal-body {
+    padding: 10px 15px;
+  }
 
-    .table {
-      width: 100%;
-    }
+  #modalCiudad .modal-title {
+    font-size: 16px;
+  }
 
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: hwb(210 84% 9%) !important;
-    }
+  #modalCiudad .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
 
-    .igualar-altura {
-      height: 28px !important; /* Ajusta según lo necesites (entre 34–38 suele funcionar con `form-control-sm`) */
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-    }
-    
-  </style>
+  #modalCiudad .modal-dialog {
+    max-width: 650px;
+  }
+
+  .input-con-sombra {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .input-con-sombra:focus {
+    box-shadow: 2px 2px 8px rgba(0, 123, 255, 0.4);
+    outline: none;
+  }
+
+  .table {
+    width: 100%;
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: hwb(210 84% 9%) !important;
+  }
+    </style>
 
 </head>
 <body>
-<body>
-  <div id="activities" style="
-    border: 2px solid #f0f8ff;
-    padding: 4px;
-    border-radius: 6px;
-    background-color: #aa2323;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Espacio entre botón y título */
-  ">
-    <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
-    <button 
-      class="texto-link" 
-      data-toggle="modal" 
-      data-target="#modalCiudad" 
-      onclick="limpiarFormularioCiudad()" 
-      style="margin-left: 20px;">
-      Adicionar
-    </button>
-    <div style="margin-left: auto; padding-right: 20px;">
-      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
-    </div>
-  </div>
+  <!-- Encabezado fijo -->
+  <header class="encabezado">
+      <%- include('partials/navigationF') %>
+  </header>  
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
-         
+          <div class="d-flex justify-content-between align-items-center mb-0 px-4">
+            <!-- Izquierda: Botones -->
+            <div class="ms-5">
+              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
+              <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+            </div>
+          
+            <!-- Centro: Título centrado -->
+            <div class="flex-grow-1 text-center">
+              <h3 class="mb-2 fw-semibold d-inline-block position-relative"
+                  style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                Centros de Costo
+                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+              </h3>
+            </div>
+
+            <!-- Derecha vacía para balancear -->
+            <div style="width: 200px;"></div>
+          </div>
+          
           <% if (typeof mensaje !== 'undefined') { %>
             <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
               <%= mensaje.texto %>
@@ -182,34 +149,26 @@
               <div class="content2">
                 <div class="register-formAnchoCM">           
 
-                <div class="text-md-start text-center">
-                  <h4>
-                    Centros de Costo
-                    <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
-                  </h4>
-                </div>
-                <br>  
-                
                   <div style="overflow-x: auto;">
                     <table class="table-striped">
 
                       <thead class="thead-dark">
                         <tr>
-                          <th class="text-center">Id</th>
+                          <th class="text-center">C Costo</th>
                           <th class="text-center">Descripción</th>
                           <th class="text-center">Cliente</th>
                           <th class="text-center">Progreso</th>
-                          <th class="text-center">Acciones</th>
+                          <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         <% if (ccosto.length > 0) { %>
                           <% ccosto.forEach(ccosto => { %>
                             <tr style="line-height: 1.3;">
-                              <td style="width: 50px; font-size: 14px;"><%= ccosto.idcc %></td>
-                              <td style="width: 400px; font-size: 12px;"><%= ccosto.descripcion %></td>
-                              <td style="width: 400px; font-size: 12px;"><%= ccosto.clienteN %></td>
-                              <td style="width: 100px; font-size: 15px; font-weight: bold; color:
+                              <td style="width: 100px; font-size: 14px;"><%= ccosto.idcc %></td>
+                              <td style="width: 300px; font-size: 12px;"><%= ccosto.descripcion %></td>
+                              <td style="width: 300px; font-size: 12px;"><%= ccosto.clienteN %></td>
+                              <td style="width: 200px; font-size: 15px; font-weight: bold; color:
                                 <%= ccosto.estado_actual === 'Atrasado' ? 'red' :
                                     ccosto.estado_actual === 'Sin Estado' ? 'teal' :
                                     ccosto.estado_actual === 'En Progreso' ? 'green' :
@@ -217,31 +176,30 @@
                                 <%= ccosto.estado_actual %>
                               </td>
 
-                              <td class="text-center align-middle" style="width: 200px; font-size: 12px;">
-                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
-
-                                  <button 
-                                    class="btn btn-warning btn-sm icon-btn" 
+                              <td class="text-center" style="width: 200px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
+                                <button 
+                                    class="btn btn-warning btn-sm" 
+                                    style="padding: 2px 4px; font-size: 11px; line-height: 1;" 
                                     onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
                                     data-toggle="modal" 
-                                    data-target="#modalCiudad" 
-                                    title="Modificar">
-                                    <i class="bi bi-pencil-square"></i>
-                                  </button>
+                                    data-target="#modalCiudad">
+                                    Modificar
+                                </button>
+                                <button type="barraprogreso" class="btn btn-danger btn-sm" style="padding: 2px 4px; font-size: 11px; line-height: 1;" onclick="confirmarEliminacion('<%= ccosto.idcc %>')">Eliminar</button>
 
-                                  <button 
-                                    class="btn btn-danger btn-sm icon-btn" 
-                                    onclick="confirmarEliminacion('<%= ccosto.idcc %>')" 
-                                    title="Eliminar">
-                                    <i class="bi bi-trash"></i>
-                                  </button>
-                                  <a 
-                                    href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
-                                    class="btn btn-primary btn-sm icon-btn" 
-                                    title="Consultar">
-                                    <i class="bi bi-search"></i>
-                                  </a>
-                                </div>
+                                <a 
+                                href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
+                                class="btn btn-primary btn-sm" 
+                                style="padding: 2px 4px; font-size: 11px; line-height: 1;">
+                                Consultar
+                              </a>
+                              <a 
+                                href="/ccosto?idcc=<%= ccosto.idcc %>" 
+                                class="btn btn-secondary btn-sm" 
+                                style="padding: 2px 4px; font-size: 11px; line-height: 1;">
+                                 ... 
+                              </a>
+                              
                               </td>
                             </tr>
                           <% }) %>
@@ -280,162 +238,120 @@
         <!-- Modal Adicionar / Modificar Ciudad -->
         
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
-          <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-dialog" role="document">
             <form action="/ccosto" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
 
               <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
                 <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
-                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;">
+                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;>
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
+
              
               <div class="modal-body">
                 <input type="hidden" name="editando" id="editando" value="false">
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">
-                    <label for="idcc_visible">Centro de Costo</label>
-                  </div>
-                  <div class="col-2">
-                    <input 
-                      type="text" 
-                      id="idcc_visible" 
-                      name="idcc_visible" 
-                      class="form-control form-control-sm input-con-sombra input-numerico igualar-altura"
-                      pattern="[0-9]{1,9}"
-                      maxlength="9" 
-                      required
-                      title="Ingrese hasta 9 dígitos numéricos">                    
-                  </div>
-                </div>                    
+                <div class="form-row">
+                  <label for="idcc_visible">Centro de Costo</label>
+                  <!-- documento visible -->
+                  <input 
+                    type="text" 
+                    id="idcc_visible" 
+                    name="idcc_visible" 
+                    class="form-control form-control-sm input-con-sombra input-numerico"
+                    pattern="[0-9]{1,9}"
+                    maxlength="9" 
+                    required
+                    title="Ingrese hasta 9 dígitos numéricos">
+                </div>
 
                 <!-- Estos son los que se envían -->
                 <input type="hidden" id="idcc" name="idcc">
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="descripcion">Descripcion</label>
-                  </div>
-                  <div class="col-10">
-                    <input type="text" 
-                    class="form-control form-control-sm input-con-sombra igualar-altura" 
-                    name="descripcion" 
-                    id="descripcion"
-                    maxlength="60" 
-                    required>
-                  </div>  
+                <div class="form-row">
+                  <label for="descripcion">Descripcion</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="descripcion" 
+                  id="descripcion"
+                  maxlength="60" 
+                  required>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                     <label for="ocompra">Orden de Compra</label>
-                  </div>
-                  <div class="col-2">
                     <input 
                       type="text" 
                       id="ocompra" 
                       name="ocompra" 
-                      class="form-control form-control-sm input-con-sombra input-numerico igualar-altura"
+                      class="form-control form-control-sm input-con-sombra input-numerico"
                       pattern="[0-9]{1,9}"
                       maxlength="9" 
                       required
                       title="Ingrese hasta 9 dígitos numéricos">
-                  </div>    
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                   <label for="cliente">Cliente</label>
-                  </div>
-                  <div class="col-8">
-                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="cliente" id="cliente" required>
-                        <option value="">Seleccione Cliente</option>
-                        <% clienteT.forEach(p => { %>
-                          <option value="<%= p.nit %>"><%= p.cliente %></option>
-                        <% }) %>
-                      </select>
-                  </div>      
+                  <select class="form-control form-control-sm input-con-sombra" name="cliente" id="cliente" required>
+                    <option value="">Seleccione Cliente</option>
+                    <% clienteT.forEach(p => { %>
+                      <option value="<%= p.nit %>"><%= p.cliente %></option>
+                    <% }) %>
+                  </select>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                   <label for="pais_codigo">País</label>
-                  </div>
-                  <div class="col-4">
-                    <select class="form-control form-control-sm igualar-altura" name="pais" id="pais" required>
-                      <option value="">Seleccione un país</option>
-                      <% paisesl.forEach(p => { %>
-                        <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
-                      <% }) %>
-                    </select>
-                  </div>    
+                  <select class="form-control form-control-sm" name="pais" id="pais" required>
+                    <option value="">Seleccione un país</option>
+                    <% paisesl.forEach(p => { %>
+                      <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
+                    <% }) %>
+                  </select>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="ciudad_codigo">Ciudad</label>
-                  </div>
-                  <div class="col-4">
-                    <select class="form-control form-control-sm igualar-altura" name="ciudad" id="ciudad" required>
-                      <option value="">Seleccione Ciudad</option>
-                    </select>
-                  </div> 
+                <div class="form-row">
+                  <label for="ciudad_codigo">Ciudad</label>
+                  <select class="form-control form-control-sm" name="ciudad" id="ciudad" required>
+                    <option value="">Seleccione Ciudad</option>
+                  </select>
                 </div>
                 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+
+                <div class="form-row">
                     <label for="fecha_orden">Fecha Orden</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_orden" id="fecha_orden" maxlength="60" required>
-                  </div>  
+                    <input type="date" class="form-control form-control-sm input-con-sombra" name="fecha_orden" id="fecha_orden" maxlength="60" required>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                     <label for="fecha_entrega">Fecha Entrega</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_entrega" id="fecha_entrega" maxlength="60" required>
-                  </div>    
+                    <input type="date" class="form-control form-control-sm input-con-sombra" name="fecha_entrega" id="fecha_entrega" maxlength="60" required>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                     <label for="cantidad">Cantidad</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="text" class="form-control form-control-sm input-con-sombra igualar-altura" name="cantidad" id="cantidad" maxlength="60" required>
-                  </div>
+                    <input type="text" class="form-control form-control-sm input-con-sombra" name="cantidad" id="cantidad" maxlength="60" required>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
+                <div class="form-row">
                     <label for="peso">Peso</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="text" class="form-control form-control-sm input-con-sombra igualar-altura" name="peso" id="peso" maxlength="60" required>
-                  </div>
+                    <input type="text" class="form-control form-control-sm input-con-sombra" name="peso" id="peso" maxlength="60" required>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="unidad">Unidad</label>
-                  </div>
-                  <div class="col-2">
-                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="unidad" id="unidad" required>
-                        <option value="">Seleccione unidad</option>
-                        <% unidadT.forEach(p => { %>
-                          <option value="<%= p.id_unidad %>"><%= p.unidad %></option>
-                        <% }) %>
-                      </select>
-                  </div> 
+                <div class="form-row">
+                  <label for="unidad">Unidad</label>
+                  <select class="form-control form-control-sm input-con-sombra" name="unidad" id="unidad" required>
+                    <option value="">Seleccione unidad</option>
+                    <% unidadT.forEach(p => { %>
+                      <option value="<%= p.id_unidad %>"><%= p.unidad %></option>
+                    <% }) %>
+                  </select>
                 </div> 
                 
-                <div class="form-group">
+                <div class="form-row">
                   <label for="comentarios">Comentarios</label>
-                  <textarea class="form-control form-control-sm input-con-sombra " name="comentarios" id="comentarios" rows="4" style="resize: vertical;" placeholder="Ej: - OPC1\n- OPC2\n- OPC3"></textarea>
+                  <textarea class="form-control form-control-sm input-con-sombra" name="comentarios" id="comentarios" rows="4" style="resize: vertical;" placeholder="Ej: - OPC1\n- OPC2\n- OPC3"></textarea>
                 </div>
 
               </div>

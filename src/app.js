@@ -205,7 +205,7 @@ app.get('/ccosto', async (req, res) => {
     const userName = req.session.name;
     const fechaHoraBogota = getBogotaDateTime();
 
-    const [[ccosto], unidadT, clienteT, paisesl] = await Promise.all([
+    const [[ccosto], [unidadT], [clienteT], [paisesl]] = await Promise.all([
       conn.execute(` 
         SELECT a.*, b.cliente as clienteN,
           CASE
@@ -230,7 +230,9 @@ app.get('/ccosto', async (req, res) => {
         VALUES (?, ?, ?)`,
       [userUser, 2, fechaHoraBogota]
     );
-
+    console.log(unidadT);
+    console.log(clienteT);
+    console.log(paisesl);
     res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
   } catch (error) {
     console.error('Error obteniendo ccosto:', error);
@@ -1936,6 +1938,17 @@ app.get('/paises/delete/:id', async (req, res) => {
     res.redirect('/paises');
 });
 
+app.get('/ciudades/:paisId', async (req, res) => {
+  const { paisId } = req.params;
+  try {
+    const [ciudades] = await pool.execute('SELECT iso_ciudad, nombre FROM tbl_ciudad WHERE pais_codigo = ?', [paisId]);
+    res.json(ciudades);
+  } catch (err) {
+    console.error('Error al obtener ciudades:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 /* CIUDADES *************************************************************************************************/
 
 app.get('/ciudades', async (req, res) => {
@@ -2611,7 +2624,11 @@ import { Console } from 'console';
 
 app.get('/inspeccion', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
+  console.log('inspeccionnnnnnnnnnnnnnnn');
+  console.log(req.query);
+  console.log(req.body);
   const { tip_func, doc_id } = req.query;
+ 
   const conn = await pool.getConnection();
   try {
     const userUser = req.session.user;
@@ -2632,9 +2649,9 @@ app.get('/inspeccion', async (req, res) => {
         i.firma
       FROM bloques b
       JOIN items i ON b.id_bloque = i.id_bloque
-      where func_id = ? and func_doc = ? 
+      where func_doc = ? 
       ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
-    `, [tip_func, doc_id] );  
+    `, [doc_id] );  
 
     // Extraer fechas únicas reales desde los resultados SQL
     const fechasUnicas = [...new Set(inspecc.map(row =>
@@ -3190,7 +3207,297 @@ app.post('/reseli/delete/:task', async (req, res) => {
   res.redirect(`/reseli?idot=${idot}&descripcion=${encodeURIComponent(descripcion)}`);
 });
 
+
+// informe 1
+
+app.get('/informe', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+
+  const userCode = req.params.userCode || null;
+  try {
+    const [usuarios] = await pool.query('SELECT * FROM users');
+    const [rows] = await pool.query
+      (` 
+SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
+FROM items a left join tbl_efuncional b
+on b.identificador=a.func_doc
+WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+      `);
+    res.render('informe', {rows});
+
+  } catch (err) {
+    console.error('Error cargando ', err);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+// xlsx
+
+import ExcelJS from 'exceljs';
+
+app.get('/informe.xlsx', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Informe');
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
+      // Si cambia el funcionario o centro de costo
+      if (funcionarioKey !== lastFuncionario) {
+        worksheet.addRow([`Funcionario: ${row.funcionario} (${row.func_doc})`]).font = { bold: true };
+        worksheet.addRow([`Centro de Costo: ${row.ocompra}`]);
+        worksheet.addRow([]); // espacio
+
+        lastFuncionario = funcionarioKey;
+        lastFecha = ''; // resetear la fecha
+      }
+
+      // Si cambia la fecha de inspección
+      if (fechaKey !== lastFecha) {
+        const fechaRow = worksheet.addRow([`Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`]);
+        fechaRow.font = { bold: true };
+        worksheet.addRow([]);
+
+        const headerRow = worksheet.addRow(['No', 'Aspecto', 'No', 'Observación']);
+        headerRow.eachCell(cell => {
+          cell.font = { bold: true };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      // Agregar fila de datos
+      const dataRow = worksheet.addRow([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+
+      dataRow.eachCell(cell => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    }
+
+    // Ajustar columnas
+    worksheet.columns = [
+      { width: 10, alignment: { wrapText: false, vertical: 'top' } },  // No
+      { width: 80, alignment: { wrapText: true, vertical: 'top' } },   // Aspecto
+      { width: 12, alignment: { wrapText: true, vertical: 'top', horizontal: 'center' } },   // No_
+      { width: 50, alignment: { wrapText: true, vertical: 'top' } }    // Observación
+    ];
+
+    // Descargar archivo
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error('Error al generar Excel:', err);
+    res.status(500).send('Error generando archivo');
+  }
+});
+
+// pdf
+
+import PdfPrinter from 'pdfmake';
+
+app.get('/informe.pdf', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+
+    const fonts = {
+      Roboto: {
+        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+      }
+    };
+
+    const printer = new PdfPrinter(fonts);
+    const content = [];
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+    let currentTableBody = null;
+
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+      // Nuevo grupo de funcionario y centro de costo
+      if (funcionarioKey !== lastFuncionario) {
+        content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+        content.push({ text: `Centro de Costo: ${row.ocompra}` });
+        content.push({ text: '\n' });
+        lastFuncionario = funcionarioKey;
+        lastFecha = ''; // Reinicia fecha al cambiar de grupo
+      }
+
+      // Nueva fecha de inspección
+      if (fechaKey !== lastFecha) {
+        content.push({
+          text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+          style: 'fecha'
+        });
+
+        currentTableBody = [
+          [
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Aspecto', style: 'tableHeader' },
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Observación', style: 'tableHeader' }
+          ]
+        ];
+
+        content.push({
+          table: {
+            headerRows: 1,
+            widths: ['auto', '*', 'auto', '*'],
+            body: currentTableBody
+          },
+          layout: 'lightHorizontalLines'
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      // Fila de datos
+      currentTableBody.push([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+    }
+
+    const docDefinition = {
+      content,
+      styles: {
+        header: {
+          bold: true,
+          fontSize: 12,
+          margin: [0, 10, 0, 5]
+        },
+        fecha: {
+          bold: true,
+          fontSize: 11,
+          margin: [0, 10, 0, 5]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 11,
+          color: 'black'
+        }
+      },
+      defaultStyle: {
+        fontSize: 10
+      },
+      pageSize: 'A4',
+      pageOrientation: 'portrait',
+      pageMargins: [40, 60, 40, 40]
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+    
+  } catch (err) {
+    console.error('Error generando PDF:', err);
+    res.status(500).send('Error al generar PDF');
+  }
+});
+
+/* ORDEN DE TRABAJO inspeccion /***************************************************************************/
+
+app.get('/inspecotr', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+  console.log(req.query);
+  const { tip_func, doc_id } = req.query;
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    const fechaHoraBogota = getBogotaDateTime();
+    const [
+      [otrabajo],
+      [prov],
+      [dise],
+      [supe],
+      [sold],
+      [ccost]
+    ] = await Promise.all([
+      conn.execute(`
+        select a.idot, a.descripcion, b.identificador FROM tbl_otrabajo a 
+        inner join tbl_dss b on a.idot=b.idot
+        where b.identificador = ?
+        order by a.idot;
+      `, [doc_id]),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
+      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
+      conn.execute('SELECT * FROM tbl_ccosto')
+    ]); 
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+    
+    res.render('inspecotr', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+  } catch (error) {
+    console.error('Error obteniendo otrabajo:', error);
+    res.status(500).send('Error al obtener otrabajo');
+  } finally {
+    conn.release();
+  }
+});
+
+app.get('/vive', (req, res) => {
+  res.render('vive'); // Sin la extensión .ejs
+});
+
 // Puerto de escucha
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
+
+
+

@@ -23,6 +23,8 @@ export const menuData = [
           { title: "Seguimiento", link: "/inspasig", icon: "fas fa-users-cog icon-users-cog" },
           { title: "Cerrar", link: "/inspeccion", icon: "fas fa-users-cog icon-users-cog" },
           { title: "Generar", link: "/inspeccion", icon: "fas fa-users-cog icon-users-cog" },
+          { title: "Informe Excel", link: "/informe.xlsx", icon: "fas fa-file-excel" },
+          { title: "Informe PDF", link: "/informe.pdf", icon: "fas fa-file-pdf" },
         ]
       },      
 
