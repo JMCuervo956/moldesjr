@@ -17,10 +17,16 @@ import bcryptjs from 'bcryptjs';
 
 // Inicializa dotenv
 dotenv.config();
+import http from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const server = http.createServer(app);
+const io = new Server(server); // ← definición correcta para ESM
+
 
 // Configuración básica
 app.set('view engine', 'ejs');
@@ -3494,10 +3500,25 @@ app.get('/vive', (req, res) => {
   res.render('vive'); // Sin la extensión .ejs
 });
 
+/************************* */
+
+app.get('/camara', (req, res) => res.render('camara'));
+app.get('/visor', (req, res) => res.render('visor'));
+
+// Señalización WebRTC con Socket.IO
+io.on('connection', socket => {
+  console.log('Cliente conectado');
+  socket.on('offer', data => socket.broadcast.emit('offer', data));
+  socket.on('answer', data => socket.broadcast.emit('answer', data));
+  socket.on('candidate', data => socket.broadcast.emit('candidate', data));
+});
+
+
 // Puerto de escucha
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
+
 
 
 
