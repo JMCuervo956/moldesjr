@@ -654,6 +654,91 @@ app.get('/complementar', (req, res) => {
     res.render('complementar', { idot })
 });
 
+app.get('/inspeccioncfg', (req, res) => {
+    const idot = req.query.idot;
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+    res.render('inspeccioncfg', {
+      mensaje,
+      idot
+    });
+});
+
+app.get('/inspeccioncfg/mover', async (req, res) => {
+  try {
+    console.log('actualizar cfg');
+//      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Historia Actualizada exitosamente`
+    };
+  } catch (err) {
+    let texto = `Error al Actualizar Equipo`;
+
+    if (err.message && err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede Actualizar porque tiene elementos asociados (restricción de clave foránea).';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+
+  // 🔁 Redireccionas a /inspeccioncfg
+  res.redirect('/inspeccioncfg');
+});
+
+app.get('/inspeccioncfg/eliminar', async (req, res) => {
+  try {
+    console.log('eliminar cfg');
+//      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Semana Eliminada exitosamente`
+    };
+  } catch (err) {
+    let texto = `Error al eliminar Equipo`;
+
+    if (err.message && err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede eliminar porque tiene elementos asociados (restricción de clave foránea).';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+  // 🔁 Redireccionas a /inspeccioncfg
+  res.redirect('/inspeccioncfg');
+});
+
+app.get('/inspeccioncfg/generar', async (req, res) => {
+  try {
+    console.log('genera cfg');
+//      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: `Semana Generada exitosamente`
+    };
+  } catch (err) {
+    let texto = `Error al Generar Inspeccion`;
+
+    if (err.message && err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede Genearar porque tiene elementos asociados (restricción de clave foránea).';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+
+  // 🔁 Redireccionas a /inspeccioncfg
+  res.redirect('/inspeccioncfg');
+});
+
+
 //  Gestionar -  AQUI
 
 app.get('/gestionar', async (req, res) => {
@@ -2623,12 +2708,8 @@ import { DateTime } from 'luxon';
 import { Console } from 'console';
 
 app.get('/inspeccion', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/?expired=1');
-  console.log('inspeccionnnnnnnnnnnnnnnn');
   console.log(req.query);
-  console.log(req.body);
   const { tip_func, doc_id } = req.query;
- 
   const conn = await pool.getConnection();
   try {
     const userUser = req.session.user;
@@ -2649,9 +2730,9 @@ app.get('/inspeccion', async (req, res) => {
         i.firma
       FROM bloques b
       JOIN items i ON b.id_bloque = i.id_bloque
-      where func_doc = ? 
+      where func_doc = ? and ocompra = ?
       ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
-    `, [doc_id] );  
+    `, [doc_id, tip_func] );  
 
     // Extraer fechas únicas reales desde los resultados SQL
     const fechasUnicas = [...new Set(inspecc.map(row =>
@@ -2977,9 +3058,9 @@ app.get('/detalle-dia', async (req, res) => {
         i.observacion
       FROM bloques b
       JOIN items i ON b.id_bloque = i.id_bloque
-      WHERE DATE(i.fecha_inspeccion) = ?
+      WHERE DATE(i.fecha_inspeccion) = ? and func_doc = ? and ocompra = ?
       ORDER BY b.id_bloque, i.no
-    `, [fecha]);
+    `, [fecha, doc_id, tip_func]);
 
     // Agrupar los datos como lo haces en la principal
     const inspeccion = [];
@@ -3112,7 +3193,6 @@ app.get('/inspasig', async (req, res) => {
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
-
             const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
             pool.execute(` 
                 SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
@@ -3127,7 +3207,7 @@ app.get('/inspasig', async (req, res) => {
             pool.execute('SELECT * FROM tbl_estados'),
             pool.execute('SELECT * FROM tbl_perfil')
             ]);
-            
+
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
@@ -3450,10 +3530,10 @@ app.get('/informe.pdf', async (req, res) => {
 
 app.get('/inspecotr', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
-  console.log(req.query);
   const { tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
   try {
+
     const userUser = req.session.user;
     const userName = req.session.name;
     const fechaHoraBogota = getBogotaDateTime();
@@ -3466,10 +3546,17 @@ app.get('/inspecotr', async (req, res) => {
       [ccost]
     ] = await Promise.all([
       conn.execute(`
-        select a.idot, a.descripcion, b.identificador FROM tbl_otrabajo a 
-        inner join tbl_dss b on a.idot=b.idot
-        where b.identificador = ?
-        order by a.idot;
+        SELECT 
+          a.idot, 
+          a.descripcion, 
+          b.identificador, 
+          a.proveedor, 
+          c.funcionario  
+        FROM tbl_otrabajo AS a
+        INNER JOIN tbl_dss AS b ON a.idot = b.idot
+        INNER JOIN tbl_efuncional AS c ON c.identificador = b.identificador
+        WHERE c.identificador = 1070330696
+        ORDER BY a.idot;
       `, [doc_id]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -3477,11 +3564,11 @@ app.get('/inspecotr', async (req, res) => {
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
       conn.execute('SELECT * FROM tbl_ccosto')
     ]); 
-
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
-    
+    console.log(otrabajo);
     res.render('inspecotr', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
     res.status(500).send('Error al obtener otrabajo');

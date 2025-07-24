@@ -61,6 +61,34 @@
         }
       }
 
+        /* titulos */
+        .titulo-moderno {
+          font-family: 'Poppins', 'Segoe UI', sans-serif;
+          font-size: 1em;
+          font-weight: 400;
+          color: transparent;
+          background-image: linear-gradient(to right, #3498db, #9b59b6);
+          background-clip: text;
+          -webkit-background-clip: text;
+          text-align: center;
+          position: relative;
+          margin-bottom: 50px;
+          animation: fadeInText 1s ease-out;
+        }
+
+        .titulo-moderno::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 3px;
+          background: linear-gradient(to right, #3498db, #9b59b6);
+          border-radius: 2px;
+          animation: underlineExpand 1s ease-out forwards;
+        }
+
 </style>       
 
 </head>
@@ -182,7 +210,7 @@
                     <select class="form-control form-control-sm input-con-sombra" name="proveedor" id="proveedor" required>
                       <option value="">Seleccione</option>
                       <% prov.forEach(p => { %>
-                        <option value="<%= p.identificador %>"><%= p.identificador + ' - ' + p.funcionario + ' - ' + p.desp   %></option>
+                        <option value="<%= p.identificador %>"><%= p.desp + ' - ' + p.funcionario  %></option>
                       <% }) %>
                     </select>
                 </div>

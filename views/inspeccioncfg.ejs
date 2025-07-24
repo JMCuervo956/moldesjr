@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cfg</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <%- include('partials/head') %>
+<style>
+        .encabezado {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #fff;
+            z-index: 1000;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .detalle-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 40px;
+        background-color: #f7f7f7;
+        }
+
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Efecto de fila al pasar el mouse */
+        table tbody tr:hover {
+            background-color: #f1f9ff;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-gestionar {
+            background-color: #007bff;   /* azul por defecto */
+            color: white;                /* texto blanco */
+            border: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-gestionar:hover {
+            background-color: #28a745;   /* verde al pasar el mouse */
+            color: white;                /* texto sigue blanco */
+            transform: scale(1.05);
+        }
+
+</style>       
+
+</head>
+<body>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>    
+
+    <!-- Contenido desplazable -->
+    <div class="detalle-scroll">
+            <% if (typeof mensaje !== 'undefined') { %>
+                <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+                    <%= mensaje.texto %>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar" style="background-color: rgb(243, 131, 131); color: white; border: none; padding: 4px 8px; border-radius: 4px;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            <% } %>
+            <div class="container mt-2">
+                <div class="content">
+                        <div class="register-formAncho">           
+                            <div class="text-md-start text-center">
+                                <h4>
+                                Control Inspeccion<%= idot %>
+                                    <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+                                </h4>
+                            </div>
+                            <div class="container mt-4">
+                                <table>
+                                    <thead style="background-color: #180366; color: rgb(200, 194, 224);">
+                                    <tr>
+                                        <th>
+                                        <i class="bi bi-box-seam mr-1"></i>
+                                        Opción
+                                        </th>
+                                        <th>
+                                        <i class="bi bi-tools mr-1"></i>
+                                        Acción
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Mover al histórico</td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary btn-sm icon-btn" onclick="confirmarMover(<%= idot %>)" title="Eliminar">
+                                                Mover&nbsp&nbsp
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                    <tr>
+                                        <td>Eliminar semana actual</td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm icon-btn" onclick="confirmarEliminacion(<%= idot %>)" title="Eliminar">
+                                            Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>Generar nueva semana</td>
+                                        <td>
+                                            <button type="button" class="btn btn-success btn-sm icon-btn" onclick="confirmarGenerar(<%= idot %>)" title="Eliminar">
+                                            Generar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                </table>
+
+                            </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarMover" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarMoverLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Actualizar Historico</h5>
+            </div>
+            <div class="modal-body">
+            ¿Estás seguro que deseas Actualizar Historico <strong id="nombreAEliminar"></strong>?
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarMover').modal('hide');">Cancelar</button>
+            <a id="confirmarMoverLink" class="btn btn-primary">Historico</a>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">Confirmar Eliminación</h5>
+            </div>
+            <div class="modal-body">
+            ¿Estás seguro que deseas eliminar <strong id="nombreAEliminar"></strong>?
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarEliminar').modal('hide');">Cancelar</button>
+            <a id="confirmarEliminarLink" class="btn btn-danger">Eliminar</a>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarGenerar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarGenerarLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Confirmar Generar</h5>
+            </div>
+            <div class="modal-body">
+            ¿Estás seguro que deseas generar <strong id="nombreAEliminar"></strong>?
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#modalConfirmarGenerar').modal('hide');">Cancelar</button>
+            <a id="confirmarGenerarLink" class="btn btn-success">Generar</a>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function gestionarEquipo(idot) {
+            window.location.href = `/gestionar?idot=${idot}`;
+        }
+    </script>
+
+    <script>
+        function gestionarPiezas(idot) {
+            window.location.href = `/piezas?idot=${idot}`;
+        }
+    </script>
+
+    <script>
+        function gestionarAcabados(idot) {
+            window.location.href = `/dacabados?idot=${idot}`;
+        }
+    </script>
+
+    <script>
+        function confirmarMover(idot) {
+            document.getElementById('nombreAEliminar').textContent = idot;
+            document.getElementById('confirmarMoverLink').href = `/inspeccioncfg/mover`;
+            $('#modalConfirmarMover').modal('show');
+        }
+
+        function confirmarEliminacion(idot) {
+            document.getElementById('nombreAEliminar').textContent = idot;
+            document.getElementById('confirmarEliminarLink').href = `/inspeccioncfg/eliminar`;
+            $('#modalConfirmarEliminar').modal('show');
+        }
+
+        function confirmarGenerar(idot) {
+            document.getElementById('nombreAEliminar').textContent = idot;
+            document.getElementById('confirmarGenerarLink').href = `/inspeccioncfg/generar`;
+            $('#modalConfirmarGenerar').modal('show');
+        }
+
+    </script>
+
+<!-- Scripts de Bootstrap y jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function limpiarFormularioAcabado() {
+            document.getElementById('formAcabado').reset();
+        }
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+        $('#alertaMensaje').alert('close');
+        }, 1000);
+    });
+    </script>
+
+
+
+</body>
+</html>

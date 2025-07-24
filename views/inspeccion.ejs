@@ -93,17 +93,17 @@
     }
 
     .btn-dia {
-      background: linear-gradient(135deg, #e6e4df, #5e5d5a);
-      color: #333 !important;
-  min-width: 160px; /* Aumenta desde el valor anterior (ej. 100px) */
-  white-space: normal;
-  text-align: center;
-  font-size: 13px;
-  padding: 6px 10px;
-}
+      background: linear-gradient(135deg, white  , yellow);
+      color: #2b0306 !important;
+      min-width: 160px; /* Aumenta desde el valor anterior (ej. 100px) */
+      white-space: normal;
+      text-align: center;
+      font-size: 13px;
+      padding: 6px 10px;
+    }
 
     .btn-dia:hover {
-      background: linear-gradient(135deg, #5e5d5a, #e6e4df);
+      background: linear-gradient(135deg, white, white);
       transform: scale(1.03);
     }
 
@@ -211,12 +211,9 @@ td.sticky-col-2 {
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <a href="/inspecotr" class="regresar-link" style="margin-left: 20px;">Regresar</a>
-    
-    <a href="/inspecotr?tip_func=1&doc_id=12193432" class="regresar-link">Regresar</a>
+    <a href="/inspecotr?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div id="datos-doc" style="margin-left: 20px; color: white;"></div>
 
-    <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %>" 
-    
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -240,8 +237,6 @@ td.sticky-col-2 {
       <div class="content2">
         <div class="register-formAnchoCM">  
           <h5 class="text-center">Verificación Semanal</h5>
-          <input type="text" name="doc_id" id="doc_id" value="false">
-
           <table id="tabla-verificacion">
             <thead>
               <tr>
@@ -328,8 +323,60 @@ td.sticky-col-2 {
   });
 </script>  
 
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const botones = document.querySelectorAll('.btn-ir-a-detalle');
+
+    const ahoraEnBogota = new Date(
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Bogota',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date())
+    );
+    ahoraEnBogota.setHours(0, 0, 0, 0);
+
+    botones.forEach(boton => {
+      const fechaStr = boton.dataset.fecha;
+      const fechaBoton = new Date(fechaStr);
+      fechaBoton.setHours(0, 0, 0, 0);
+
+      if (ahoraEnBogota > fechaBoton) {
+        // Buscar el div que contiene la fecha dentro del botón
+        const divs = boton.querySelectorAll('div');
+        const divFecha = Array.from(divs).find(div => div.textContent.trim() === fechaStr);
+
+        if (divFecha) {
+          divFecha.style.color = 'red'; // 'red' o 'yellow'
+          divFecha.style.fontWeight = 'bold';
+        }
+
+        // También puedes desactivar el botón si quieres
+        boton.style.pointerEvents = 'none';
+        boton.title = 'Fecha vencida';
+      }
+    });
+  });
+</script>
+
+<script>
+  // Extraer los parámetros de la URL
+  const params = new URLSearchParams(window.location.search);
+  const docId = params.get("doc_id");
+  const func = params.get("func");
+
+  // Mostrar los datos en el div
+  const datosDiv = document.getElementById("datos-doc");
+  if (docId && func) {
+    datosDiv.textContent = `${docId} | ${decodeURIComponent(func)}`;
+  }
+</script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <%- include('partials/footer') %>
+  <%- include('partials/foot') %>
+  
 </body>
 </html>

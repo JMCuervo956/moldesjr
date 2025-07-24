@@ -20,14 +20,10 @@ export const menuData = [
         title: "Inspeccion",
         icon: "fas fa-users icon-users",
         subItems: [
-          { title: "Seguimiento", link: "/inspasig", icon: "fas fa-users-cog icon-users-cog" },
-          { title: "Cerrar", link: "/inspeccion", icon: "fas fa-users-cog icon-users-cog" },
-          { title: "Generar", link: "/inspeccion", icon: "fas fa-users-cog icon-users-cog" },
-          { title: "Informe Excel", link: "/informe.xlsx", icon: "fas fa-file-excel" },
-          { title: "Informe PDF", link: "/informe.pdf", icon: "fas fa-file-pdf" },
+          { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
+          { title: "Cerrar e Historial", link: "/inspeccioncfg", icon: "fas fa-puzzle-piece" },
         ]
       },      
-
     ]
   },
   {
@@ -39,7 +35,7 @@ export const menuData = [
     title: "Configuracion",
     icon: "fas fa-cogs icon-cogs",
     subItems: [
-      { title: "Usuarios", link: "/users", icon: "fas fa-users-cog icon-users-cog" },
+      { title: "Usuarios", link: "/users", icon: "fas fa-user-cog" },
       { title: "Paises", link: "/paises", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Ciudades", link: "/ciudades", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Clientes", link: "/clientes", icon: "fas fa-users-cog icon-users-cog" },

@@ -152,6 +152,7 @@ html, body {
     gap: 20px; /* Espacio entre botón y título */
   ">
     <a href="/inspasig" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div id="datos-doc" style="margin-left: 20px; color: white;"></div>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -176,7 +177,6 @@ html, body {
                       <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
                     </h4>
                   </div>
-
                   <div style="overflow-x: auto;">
                     <table class="table-striped">
                       <thead class="thead-dark">
@@ -192,12 +192,13 @@ html, body {
                             <tr style="line-height: 1.3;">
                               <td style="width: 100px; font-size: 14px;"><%= otrabajo.idot %></td>
                               <td style="width: 600px; font-size: 15px;"><%= otrabajo.descripcion %></td>
+                              <td style="width: 600px; font-size: 15px;"><%= otrabajo.proveedor %></td>
 
                               <td class="text-center align-middle" style="width: 300px;">
-                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
 
+                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
                                   <a 
-                                    href="/inspeccion?tip_func=<%= encodeURIComponent(otrabajo.idot) %>&doc_id=<%= encodeURIComponent(otrabajo.identificador) %>" 
+                                    href="/inspeccion?tip_func=<%= encodeURIComponent(otrabajo.idot) %>&doc_id=<%= encodeURIComponent(otrabajo.identificador) %>&func=<%= encodeURIComponent(otrabajo.funcionario) %>"
                                     class="btn btn-secondary btn-sm icon-btn" 
                                     title="Complementar">
                                     <i class="bi bi-box-arrow-up-right"></i>
@@ -307,6 +308,19 @@ html, body {
     };
 
   </script>
+
+<script>
+  // Extraer los parámetros de la URL
+  const params = new URLSearchParams(window.location.search);
+  const docId = params.get("doc_id");
+  const func = params.get("func");
+
+  // Mostrar los datos en el div
+  const datosDiv = document.getElementById("datos-doc");
+  if (docId && func) {
+    datosDiv.textContent = `${docId} | ${decodeURIComponent(func)}`;
+  }
+</script>
 
 <!-- Scripts requeridos -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

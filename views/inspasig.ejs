@@ -19,13 +19,6 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
-      /* Altura reservada para el encabezado */
-      .detalle-scroll {
-        overflow-y: auto;
-        padding: 0px;
-        background-color: #f7f7f7;
-      }
-
       /* Evitar scrolls innecesarios en el body */
       body {
         overflow: hidden;
@@ -96,6 +89,33 @@
     outline: none;
   }
 
+        .titulo-moderno {
+          font-family: 'Poppins', 'Segoe UI', sans-serif;
+          font-size: 1em;
+          font-weight: 400;
+          color: transparent;
+          background-image: linear-gradient(to right, #3498db, #9b59b6);
+          background-clip: text;
+          -webkit-background-clip: text;
+          text-align: center;
+          position: relative;
+          margin-bottom: 50px;
+          animation: fadeInText 1s ease-out;
+        }
+
+        .titulo-moderno::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 3px;
+          background: linear-gradient(to right, #3498db, #9b59b6);
+          border-radius: 2px;
+          animation: underlineExpand 1s ease-out forwards;
+        }
+  
     </style>
 
 </head>
@@ -153,7 +173,7 @@
                                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.identificador %></td>
                                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.funcionario %></td>
                                               <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                                                  <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %>" 
+                                                  <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %> &func=<%= encodeURIComponent(efuncional.funcionario) %>" 
                                                   class="btn btn-success btn-sm btnind-hover-effect ms-2">...</a>                                            
                                               </td>
                                             </tr>
@@ -168,9 +188,9 @@
                     </div>
                 </div>
             </div>
+            
       </div>
 
-  <%- include('partials/footer') %>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
