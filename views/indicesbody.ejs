@@ -696,8 +696,6 @@
   <script>
     function editarCiudad(button, otrabajo) {
       const dia = $(button).data('dia');
-      console.log("Día desde botón:", dia);
-
       $('#diaSeleccionado').val(dia);
       $('#modalCiudadLabel').text('Modificar ciudad para ' + dia);
       
@@ -786,10 +784,6 @@
   $('#modalCiudad').on('show.bs.modal', function (event) {
     const button = $(event.relatedTarget); // Botón que abrió el modal
     const dia = button.data('dia'); // Lee el atributo data-dia del botón
-
-    // Opcional: mostrar en consola
-    console.log("Día recibido:", dia);
-
     // Cambiar el título del modal con el día
     $('#modalCiudadLabel').text('Modificar ciudad para ' + dia);
 

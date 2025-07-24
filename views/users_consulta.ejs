@@ -153,8 +153,6 @@
 
   <script>
         formatFecha: function (fechaStr) {
-            console.log("FECHA RECIBIDA:", typeof fechaStr, fechaStr);
-
             if (!fechaStr) return '';
             const fecha = new Date(fechaStr);
             if (isNaN(fecha)) return '';

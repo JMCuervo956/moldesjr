@@ -283,7 +283,6 @@ td.sticky-col-2 {
     boton.addEventListener('click', function () {
       const fecha = this.getAttribute('data-fecha');
       if (fecha) {
-        console.log(fecha)
         window.location.href = `/detalle-dia?fecha=${encodeURIComponent(fecha)}`;
       }
     });

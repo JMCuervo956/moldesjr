@@ -167,13 +167,24 @@ app.get('/menuprc', requireSession, async (req, res) => {
   try {
     const fechaHoraBogota = getBogotaDateTime();
     await pool.execute(
-      `INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)`,
+      'INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)',
       [user, 1, fechaHoraBogota]
     );
+
     res.render('menuprc', { user, name, rol, userUser });
   } catch (error) {
     console.error('Error en /menuprc:', error.message);
-    res.status(500).send('Error interno al cargar menú principal.');
+
+    // ✅ Mensaje en sesión con objeto completo (tipo + texto)
+    req.session.mensaje = {
+      texto: 'Ocurrió un error al cargar el menú principal. Intente nuevamente.',
+      tipo: 'danger'
+    };
+
+    // ✅ Redirección segura
+    res.redirect('/menu');
+
+    // 🔴 ¡NO pongas res.status().send() después de redirigir!
   }
 });
 
@@ -236,9 +247,6 @@ app.get('/ccosto', async (req, res) => {
         VALUES (?, ?, ?)`,
       [userUser, 2, fechaHoraBogota]
     );
-    console.log(unidadT);
-    console.log(clienteT);
-    console.log(paisesl);
     res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
   } catch (error) {
     console.error('Error obteniendo ccosto:', error);
@@ -2452,7 +2460,7 @@ app.get('/efuncional/delete/:id/:nombre', async (req, res) => {
       }
       req.session.mensaje = { tipo: 'danger', texto };
     }
-    res.redirect('/efuncional');
+      res.redirect('/efuncional');
   });
 
   /***   CODIGOS *****************************************************************************************************/
@@ -2714,7 +2722,6 @@ import { DateTime } from 'luxon';
 import { Console } from 'console';
 
 app.get('/inspeccion', async (req, res) => {
-  console.log(req.query);
   const { tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
   try {
@@ -3572,7 +3579,6 @@ app.get('/inspecotr', async (req, res) => {
     ]); 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
-    console.log(otrabajo);
     res.render('inspecotr', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
 
   } catch (error) {
@@ -3594,7 +3600,6 @@ app.get('/visor', (req, res) => res.render('visor'));
 
 // Señalización WebRTC con Socket.IO
 io.on('connection', socket => {
-  console.log('Cliente conectado');
   socket.on('offer', data => socket.broadcast.emit('offer', data));
   socket.on('answer', data => socket.broadcast.emit('answer', data));
   socket.on('candidate', data => socket.broadcast.emit('candidate', data));

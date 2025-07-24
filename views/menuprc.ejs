@@ -249,6 +249,15 @@
     
   </header>
 
+  <% if (typeof mensaje !== 'undefined') { %>
+  <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+    <%= mensaje.texto %>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <% } %>
+
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
     <div class="content">
@@ -263,6 +272,14 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // Opcional: autocierra el mensaje después de 5 segundos
+    setTimeout(() => {
+      const alert = document.getElementById('alertaMensaje');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  </script>
 
   <script type="module" src="./main.js"></script>
   <script type="module" src="./pdf.js"></script>

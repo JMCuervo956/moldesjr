@@ -315,7 +315,6 @@
           .then(response => response.json())
           .then(data => {
             data.forEach(ciudad => {
-              console.log('Ciudades recibidas:', data);  // <- línea útil
               const option = document.createElement('option');
               option.value = ciudad.iso_ciudad;
               option.textContent = ciudad.nombre;

@@ -542,7 +542,6 @@
     }
 
     function confirmarEliminacion(idcc) {
-      console.log("ID recibido:", idcc); // para depuración
       document.getElementById('nombreAEliminar').textContent = idcc;
       document.getElementById('confirmarEliminarLink').href = `/ccosto/delete/${idcc}`;
       $('#modalConfirmarEliminar').modal('show');
