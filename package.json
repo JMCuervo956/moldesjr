@@ -29,6 +29,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.8.69",
     "pdfmake": "^0.2.20",
+    "socket.io": "^4.8.1",
     "sweetalert2": "^11.13.1"
   },
   "devDependencies": {
