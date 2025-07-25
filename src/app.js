@@ -182,7 +182,7 @@ app.get('/menuprc', requireSession, async (req, res) => {
     };
 
     // ✅ Redirección segura
-    res.redirect('/menu');
+    res.redirect('/menuprc');
 
     // 🔴 ¡NO pongas res.status().send() después de redirigir!
   }
@@ -680,7 +680,7 @@ app.get('/inspeccioncfg', (req, res) => {
 
 app.get('/inspeccioncfg/mover', async (req, res) => {
   try {
-    console.log('actualizar cfg');
+    //console.log('actualizar cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -705,7 +705,7 @@ app.get('/inspeccioncfg/mover', async (req, res) => {
 
 app.get('/inspeccioncfg/eliminar', async (req, res) => {
   try {
-    console.log('eliminar cfg');
+    //console.log('eliminar cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -729,7 +729,7 @@ app.get('/inspeccioncfg/eliminar', async (req, res) => {
 
 app.get('/inspeccioncfg/generar', async (req, res) => {
   try {
-    console.log('genera cfg');
+    //console.log('genera cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -793,7 +793,7 @@ app.get('/gestionar', async (req, res) => {
         }
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener gestionar');
     }
 });
 
@@ -1340,7 +1340,7 @@ app.get('/modalcc', async (req, res) => {
     res.render('modalcc', { datos: data });
   } catch (error) {
     console.error('Error obteniendo ccosto:', error);
-    res.status(500).send('Error al obtener ccosto');
+    res.status(500).send('Error al obtener modalcc');
   } finally {
     conn.release();
   }
@@ -1382,7 +1382,7 @@ app.get('/ccostofch', async (req, res) => {
 
   } catch (error) {
     console.error('Error obteniendo ccosto:', error);
-    res.status(500).send('Error al obtener ccosto');
+    res.status(500).send('Error al obtener ccostofch');
   } finally {
     conn.release();
   }
@@ -1502,8 +1502,8 @@ app.get('/users_consulta', async (req, res) => {
         }
         });
     } catch (error) {
-        console.error('Error al obtener los datos:', error);
-        res.status(500).send('Error al obtener los datos');
+        console.error('Error al obtener users_consulta:', error);
+        res.status(500).send('Error al obtener users_consulta');
     }
 });
 
@@ -1561,7 +1561,7 @@ app.get('/progresogralT', async (req, res) => {
         }
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener progresogralT');
     }
 });
 
@@ -1775,8 +1775,8 @@ app.get('/ccostoexp', async (req, res) => {
       res.redirect('/');
     }
   } catch (error) {
-    console.error('Error obteniendo ccosto:', error);
-    res.status(500).send('Error al obtener ccosto');
+    console.error('Error obteniendo ccostoexp:', error);
+    res.status(500).send('Error al obtener ccostoexp');
   }
 });
 
@@ -1816,8 +1816,8 @@ app.get('/users', async (req, res) => {
             mensaje
         });
     } catch (error) {
-        console.error('Error al obtener los datos:', error);
-        res.status(500).send('Error al obtener los datos');
+        console.error('Error al obtener users', error);
+        res.status(500).send('Error al obtener users');
     }
 });
 
@@ -2043,8 +2043,8 @@ app.get('/ciudades/:paisId', async (req, res) => {
     const [ciudades] = await pool.execute('SELECT iso_ciudad, nombre FROM tbl_ciudad WHERE pais_codigo = ?', [paisId]);
     res.json(ciudades);
   } catch (err) {
-    console.error('Error al obtener ciudades:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Error al obtener /ciudades/:paisId:', err);
+    res.status(500).json({ error: 'Error interno del /ciudades/:paisId' });
   }
 });
 
@@ -2200,8 +2200,8 @@ app.get('/clientes', async (req, res) => {
             res.redirect('/');
         }
     } catch (error) {
-        console.error('Error obteniendo ciudades:', error);
-        res.status(500).send('Error al obtener las ciudades');
+        console.error('Error obteniendo clientes:', error);
+        res.status(500).send('Error al obtener las clientes');
     }
 });
 
@@ -2342,7 +2342,7 @@ app.get('/efuncional', async (req, res) => {
         }
     } catch (error) {
         console.error('Error obteniendo funcional:', error);
-        res.status(500).send('Error al obtener las funcional');
+        res.status(500).send('Error al obtener efuncional');
     }
 });
   
@@ -2486,8 +2486,8 @@ app.get('/codigos', async (req, res) => {
             mensaje
         });
     } catch (error) {
-        console.error('Error al obtener los datos:', error);
-        res.status(500).send('Error al obtener los datos');
+        console.error('Error al obtener codigos', error);
+        res.status(500).send('Error al obtener codigos');
     }
 });
 
@@ -3011,7 +3011,7 @@ app.get('/indicesbody', async (req, res) => {
         }
     } catch (error) {
         console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener otrabajo');
+        res.status(500).send('Error al obtener indicesbody');
     }
 });
 
@@ -3102,7 +3102,6 @@ app.get('/detalle-dia', async (req, res) => {
 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
-
     const diaFormateadoRaw = fecha;
     res.render('detalle-dia', {
       diaFormateado,
@@ -3156,13 +3155,13 @@ app.post('/detalle-dia', async (req, res) => {
 
         cambios.push(no);
 
-        // En lugar de ejecutar ahora, creamos una función que se ejecutará luego por lotes
+        // En lugar de ejecutar ahora, creamos una función que se ejecutará luego por lotes AQUI
         updateTasks.push(() =>
           conn.execute(
             `
             UPDATE items 
             SET si = ?, no_ = ?, na = ?, observacion = ?
-            WHERE no = ? AND DATE(fecha_inspeccion) = ?
+            WHERE no = ? AND DATE(fecha_inspeccion) = ? AND func_doc = ? AND ocompra = ?
             `,
             [
               opcion === 'SI' ? 'x' : '',
@@ -3170,7 +3169,9 @@ app.post('/detalle-dia', async (req, res) => {
               opcion === 'NA' ? 'x' : '',
               observacion,
               no,
-              fecha
+              fecha,
+              doc_id,
+              tip_func
             ]
           )
         );
@@ -3568,7 +3569,7 @@ app.get('/inspecotr', async (req, res) => {
         FROM tbl_otrabajo AS a
         INNER JOIN tbl_dss AS b ON a.idot = b.idot
         INNER JOIN tbl_efuncional AS c ON c.identificador = b.identificador
-        WHERE c.identificador = 1070330696
+        WHERE c.identificador = ?
         ORDER BY a.idot;
       `, [doc_id]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
@@ -3583,7 +3584,7 @@ app.get('/inspecotr', async (req, res) => {
 
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
-    res.status(500).send('Error al obtener otrabajo');
+    res.status(500).send('Error al obtener inspecotr');
   } finally {
     conn.release();
   }
