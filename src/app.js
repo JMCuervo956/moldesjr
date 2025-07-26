@@ -2185,7 +2185,7 @@ app.get('/clientes', async (req, res) => {
             pool.execute(`
                 SELECT c.*, p.nombre AS pais_nombre
                 FROM tbl_cliente c
-                JOIN tbl_paises p ON c.pais = p.iso_pais
+                LEFT JOIN tbl_paises p ON c.pais = p.iso_pais
                 ORDER BY pais, nit
             `),
             pool.execute('SELECT * FROM tbl_paises')
@@ -2207,7 +2207,7 @@ app.get('/clientes', async (req, res) => {
 
 app.post('/clientes', async (req, res) => {
     try {
-        const { nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto, editando } = req.body;
+        const { nit, dv, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto, editando } = req.body;
         const id = nit;
         let mensaje;
         
@@ -2236,8 +2236,8 @@ app.post('/clientes', async (req, res) => {
             } else {
                 // Insertar nuevo proveedor
                 await pool.execute(
-                    `INSERT INTO tbl_cliente (nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [nit, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto]
+                    `INSERT INTO tbl_cliente (nit, dv, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [nit, dv, cliente, telefono, celular1, celular2, correo, direccion, pais, ciudad, contacto]
                 );
                 mensaje = {
                     tipo: 'success',

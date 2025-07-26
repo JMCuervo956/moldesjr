@@ -222,11 +222,15 @@
                     type="text" 
                     id="nit" 
                     name="nit" 
-                    class="form-control form-control-sm input-con-sombra input-numerico"
-                    pattern="[0-9]{1,9}"
-                    maxlength="9" 
+                    class="form-control form-control-sm input-con-sombra"
+                    maxlength="15" 
                     required
-                    title="Ingrese hasta 9 dígitos numéricos"> 
+                    title="Ingrese hasta 15 dígitos"> 
+                </div>
+
+                <div class="form-row">
+                  <label for="DV">Digito Verificacion</label>
+                  <input type="text" class="form-control form-control-sm" name="dv" id="dv" maxlength="3" required>
                 </div>
 
                 <div class="form-row">
@@ -366,6 +370,7 @@
     function editarCiudad(ciudad) {
       document.getElementById('editando').value = "true";
       document.getElementById('nit').value = ciudad.nit;
+      document.getElementById('dv').value = ciudad.dv;
       document.getElementById('cliente').value = ciudad.cliente;
       document.getElementById('telefono').value = ciudad.telefono;
       document.getElementById('celular1').value = ciudad.celular1;
@@ -386,10 +391,12 @@
       //document.getElementById('ciudad').value = ciudad.ciudad;
       document.getElementById('contacto').value = ciudad.contacto;
       document.getElementById('nit').readOnly = true;
+      document.getElementById('dv').readOnly = true;
     }
 
     function limpiarFormularioCiudad() {
       document.getElementById('nit').value = "";
+      document.getElementById('dv').value = "";
       document.getElementById('cliente').value = "";
       document.getElementById('telefono').value = "";
       document.getElementById('celular1').value = "";
