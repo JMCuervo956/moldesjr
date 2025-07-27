@@ -3675,16 +3675,16 @@ app.post('/api/generar-items', async (req, res) => {
   try {
     const conn = await pool.getConnection();
     
-    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const [countResult] = await conn.query('select count(*) AS total from items');
     const totalRegistros = countResult[0].total;
 
     if (totalRegistros > 0) {
       // Si existen, obtiene fechas mínima y máxima
       const [fechas] = await conn.query(`
-        SELECT 
+        select 
           DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
           DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
-        FROM ITEMS
+        from items
       `);
 
       const { fecha_min, fecha_max } = fechas[0];
@@ -3719,7 +3719,7 @@ app.post('/mover-items', async (req, res) => {
   try {
     const conn = await pool.getConnection();
 
-    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const [countResult] = await conn.query('select count(*) AS total FROM items');
 
     // Si no hay registros, ejecuta SP
     await conn.query('CALL sp_guardar_items_historial()');
@@ -3767,7 +3767,7 @@ app.post('/generar-items', async (req, res) => {
         SELECT 
           DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
           DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
-        FROM ITEMS
+        FROM items
       `);
 
       const { fecha_min, fecha_max } = fechas[0];
@@ -3801,7 +3801,7 @@ app.post('/eliminar-items', async (req, res) => {
     const conn = await pool.getConnection();
 
     // Verifica si hay registros antes de eliminar
-    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM items');
     const total = countResult[0].total;
 
     if (total === 0) {
