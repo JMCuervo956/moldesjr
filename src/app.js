@@ -3758,7 +3758,7 @@ app.post('/generar-items', async (req, res) => {
   try {
     const conn = await pool.getConnection();
 
-    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const [countResult] = await conn.query('select count(*) AS total from items');
     const totalRegistros = countResult[0].total;
 
     if (totalRegistros > 0) {
@@ -3812,7 +3812,7 @@ app.post('/eliminar-items', async (req, res) => {
     }
 
     // Elimina registros
-    await conn.query('TRUNCATE TABLE ITEMS');
+    await conn.query('truncate table items');
     conn.release();
 
     res.render('inspeccioncfg', {
