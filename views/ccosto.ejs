@@ -189,7 +189,20 @@
                   </h4>
                 </div>
                 <br>  
-                
+
+<!-- Input búsqueda -->
+<div class="mb-3">
+  <input 
+    type="text" 
+    id="buscarOrden" 
+    class="form-control" 
+    placeholder="Buscar por Orden, Descripción, Cliente o Estado..." 
+    onkeyup="filtrarTabla()" 
+    autocomplete="off"
+  >
+</div>
+
+
                   <div style="overflow-x: auto;">
                     <table class="table-striped">
 
@@ -673,6 +686,39 @@
         modalHeader.classList.add('bg-success', 'text-white');
       }
     }
+
+function filtrarTabla() {
+  const input = document.getElementById('buscarOrden');
+  const filter = input.value.toLowerCase();
+  const table = document.querySelector('table.table-striped tbody');
+  const rows = table.getElementsByTagName('tr');
+
+  for (let i = 0; i < rows.length; i++) {
+    const tds = rows[i].getElementsByTagName('td');
+
+    if (tds.length >= 3) {
+      const idccText = tds[0].textContent.toLowerCase();
+      const descripcionText = tds[1].textContent.toLowerCase();
+      const estadoText = tds[2].textContent.toLowerCase();
+      // Si tienes clienteN en columna 3, sino deja vacío
+      const clienteNText = tds[3] ? tds[3].textContent.toLowerCase() : "";
+
+      if (
+        idccText.includes(filter) ||
+        descripcionText.includes(filter) ||
+        clienteNText.includes(filter) ||
+        estadoText.includes(filter)
+      ) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+  }
+}
+
+
+
 
   </script>
 

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Órdenes de Trabajo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #007bff;
+    }
+
+    .search-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      background-color: #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      margin: 2px;
+      font-size: 13px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-ver { background-color: #17a2b8; color: white; }
+    .btn-editar { background-color: #ffc107; color: black; }
+    .btn-eliminar { background-color: #dc3545; color: white; }
+    .btn-add { background-color: #28a745; color: white; }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .pagination button {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background-color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination button.active {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Gestión de Órdenes de Trabajo</h2>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Buscar por ID, Descripción, Proveedor o Estado">
+    <button class="btn btn-add" onclick="alert('Abrir modal para adicionar')">Adicionar</button>
+  </div>
+
+  <table id="ordenesTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Descripción</th>
+        <th>Proveedor</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="pagination" class="pagination"></div>
+
+  <script>
+    const ordenes = [
+      { idot: 1792, descripcion: "INSTALACIÓN DE VIBRADOR", proveedor_nombre: "JOSUE", estado_actual: "Atrasado" },
+      { idot: 1793, descripcion: "Facturados", proveedor_nombre: "MARÍA", estado_actual: "Atrasado" },
+      { idot: 1820, descripcion: "Diseño general", proveedor_nombre: "PEDRO", estado_actual: "Por Iniciar" },
+      { idot: 9999, descripcion: "Soldadura final", proveedor_nombre: "JOSUE", estado_actual: "Por Iniciar" },
+      { idot: 10000, descripcion: "Inspección técnica", proveedor_nombre: "JOSUE", estado_actual: "En Progreso" },
+      { idot: 10001, descripcion: "Prueba hidráulica", proveedor_nombre: "MARÍA", estado_actual: "En Progreso" },
+      { idot: 10002, descripcion: "Empaque final", proveedor_nombre: "PEDRO", estado_actual: "Atrasado" },
+      { idot: 10003, descripcion: "Entrega al cliente", proveedor_nombre: "LUIS", estado_actual: "Por Iniciar" },
+      { idot: 10004, descripcion: "Diseño auxiliar", proveedor_nombre: "ANA", estado_actual: "En Progreso" },
+      { idot: 2792, descripcion: "INSTALACIÓN DE VIBRADOR", proveedor_nombre: "JOSUE", estado_actual: "Atrasado" },
+      { idot: 2793, descripcion: "Facturados", proveedor_nombre: "MARÍA", estado_actual: "Atrasado" },
+      { idot: 2820, descripcion: "Diseño general", proveedor_nombre: "PEDRO", estado_actual: "Por Iniciar" },
+      { idot: 2999, descripcion: "Soldadura final", proveedor_nombre: "JOSUE", estado_actual: "Por Iniciar" },
+      { idot: 20000, descripcion: "Inspección técnica", proveedor_nombre: "JOSUE", estado_actual: "En Progreso" },
+      { idot: 20001, descripcion: "Prueba hidráulica", proveedor_nombre: "MARÍA", estado_actual: "En Progreso" },
+      { idot: 20002, descripcion: "Empaque final", proveedor_nombre: "PEDRO", estado_actual: "Atrasado" },
+      { idot: 20003, descripcion: "Entrega al cliente", proveedor_nombre: "LUIS", estado_actual: "Por Iniciar" },
+      { idot: 20004, descripcion: "Diseño auxiliar", proveedor_nombre: "ANA", estado_actual: "En Progreso" },
+      { idot: 3792, descripcion: "INSTALACIÓN DE VIBRADOR", proveedor_nombre: "JOSUE", estado_actual: "Atrasado" },
+      { idot: 3793, descripcion: "Facturados", proveedor_nombre: "MARÍA", estado_actual: "Atrasado" },
+      { idot: 3820, descripcion: "Diseño general", proveedor_nombre: "PEDRO", estado_actual: "Por Iniciar" },
+      { idot: 3999, descripcion: "Soldadura final", proveedor_nombre: "JOSUE", estado_actual: "Por Iniciar" },
+      { idot: 30000, descripcion: "Inspección técnica", proveedor_nombre: "JOSUE", estado_actual: "En Progreso" },
+      { idot: 30001, descripcion: "Prueba hidráulica", proveedor_nombre: "MARÍA", estado_actual: "En Progreso" },
+      { idot: 30002, descripcion: "Empaque final", proveedor_nombre: "PEDRO", estado_actual: "Atrasado" },
+      { idot: 30003, descripcion: "Entrega al cliente", proveedor_nombre: "LUIS", estado_actual: "Por Iniciar" },
+      { idot: 30004, descripcion: "Diseño auxiliar", proveedor_nombre: "ANA", estado_actual: "En Progreso" }
+
+    ];
+
+    let currentPage = 1;
+    const rowsPerPage = 8;
+    let filteredData = [...ordenes];
+
+    function renderTable() {
+      const tbody = document.querySelector("#ordenesTable tbody");
+      tbody.innerHTML = "";
+
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const rows = filteredData.slice(start, end);
+
+      rows.forEach(orden => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${orden.idot}</td>
+          <td>${orden.descripcion}</td>
+          <td>${orden.proveedor_nombre}</td>
+          <td>${orden.estado_actual}</td>
+          <td>
+            <button class="btn btn-ver" onclick="alert('Consultar ${orden.idot}')">Ver</button>
+            <button class="btn btn-editar" onclick="alert('Editar ${orden.idot}')">Editar</button>
+            <button class="btn btn-eliminar" onclick="confirmarEliminacion(${orden.idot})">Eliminar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderPagination(filteredData.length);
+    }
+
+    function renderPagination(totalItems) {
+      const totalPages = Math.ceil(totalItems / rowsPerPage);
+      const container = document.getElementById('pagination');
+      container.innerHTML = '';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '⟨ Anterior';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+        }
+      };
+      container.appendChild(prevBtn);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+          currentPage = i;
+          renderTable();
+        };
+        container.appendChild(btn);
+      }
+
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Siguiente ⟩';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+        }
+      };
+      container.appendChild(nextBtn);
+    }
+
+    function confirmarEliminacion(id) {
+      if (confirm(`¿Estás seguro de eliminar la orden ${id}?`)) {
+        alert(`Orden ${id} eliminada`);
+        // Aquí iría la lógica para eliminar del servidor o del arreglo
+      }
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const texto = this.value.toLowerCase();
+      filteredData = ordenes.filter(o =>
+        o.descripcion.toLowerCase().includes(texto) ||
+        o.proveedor_nombre.toLowerCase().includes(texto) ||
+        o.estado_actual.toLowerCase().includes(texto) ||
+        o.idot.toString().includes(texto)
+      );
+      currentPage = 1;
+      renderTable();
+    });
+
+    renderTable();
+  </script>
+
+</body>
+</html>

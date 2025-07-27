@@ -185,6 +185,16 @@ html, body {
                     </h4>
                   </div>
 
+                  <div class="mb-3">
+                    <input 
+                      type="text" 
+                      id="buscarOrden" 
+                      class="form-control form-control-sm" 
+                      placeholder="Buscar orden o descripción..." 
+                      onkeyup="filtrarTabla()"
+                    >
+                  </div>
+
                   <div style="overflow-x: auto;">
                     <table class="table-striped">
                       <thead class="thead-dark">
@@ -480,7 +490,35 @@ html, body {
       }
     };
 
-  </script>
+    function filtrarTabla() {
+      const input = document.getElementById('buscarOrden');
+      const filter = input.value.toLowerCase();
+      const table = document.querySelector('table.table-striped tbody');
+      const rows = table.getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) {
+        const tds = rows[i].getElementsByTagName('td');
+        if (tds.length >= 3) {
+          const ordenText = tds[0].textContent || tds[0].innerText;
+          const descripcionText = tds[1].textContent || tds[1].innerText;
+          const progresoText = tds[2].textContent || tds[2].innerText;
+
+          if (
+            ordenText.toLowerCase().indexOf(filter) > -1 ||
+            descripcionText.toLowerCase().indexOf(filter) > -1 ||
+            progresoText.toLowerCase().indexOf(filter) > -1
+          ) {
+            rows[i].style.display = "";
+          } else {
+            rows[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+
+</script>
+
 
 <!-- Scripts requeridos -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

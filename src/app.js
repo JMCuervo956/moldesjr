@@ -402,6 +402,64 @@ app.get('/barraprogreso', async (req, res) => {
     }
 });
  
+/*ocompra **********/
+
+app.get('/ordenes', (req, res) => {
+    const idot = req.query.idot;
+    res.render('ordenes', { idot })
+});
+
+app.get('/ordenesss', async (req, res) => {
+  if (!req.session.loggedin) return res.status(401).json({ error: 'Sesión expirada' });
+
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const fechaHoraBogota = getBogotaDateTime();
+
+    // Parámetros para paginación
+    const page = parseInt(req.query.page) || 1;     // página actual, default 1
+    const limit = 10;                               // registros por página
+    const offset = (page - 1) * limit;
+
+    // Obtener total de registros para calcular totalPages
+    const [countResult] = await conn.execute(`SELECT COUNT(*) as total FROM tbl_otrabajo`);
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // Consulta con limit y offset para paginación
+    const [ordenes] = await conn.execute(`
+      SELECT 
+        a.*, 
+        b.funcionario AS proveedor_nombre,
+        CASE
+          WHEN ? < c.fecha_orden THEN 'Por Iniciar'
+          WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
+          WHEN ? > c.fecha_entrega THEN 'Atrasado'
+          ELSE 'Sin Estado'
+        END AS estado_actual
+      FROM tbl_otrabajo a
+      LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+      LEFT JOIN tbl_ccosto c ON a.idot = c.idcc
+      LIMIT ? OFFSET ?;
+    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, limit, offset]);
+
+    // Renderizar la vista y enviar variables necesarias
+    res.render('ordenes', {
+      otrabajo: ordenes,
+      page,
+      totalPages
+    });
+  } catch (err) {
+    console.error('Error en /ordenes:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    conn.release();
+  }
+});
+
+
+
 /* ORDEN DE TRABAJO /***************************************************************************/
 
 app.get('/otrabajo', async (req, res) => {
