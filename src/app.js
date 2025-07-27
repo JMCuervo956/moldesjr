@@ -3664,6 +3664,169 @@ io.on('connection', socket => {
   socket.on('candidate', data => socket.broadcast.emit('candidate', data));
 });
 
+app.post('/api/generar-items', async (req, res) => {
+
+  const { fecha } = req.body;
+
+  if (!fecha) {
+    return res.status(400).json({ message: 'Falta el parámetro fecha' });
+  }
+
+  try {
+    const conn = await pool.getConnection();
+    
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const totalRegistros = countResult[0].total;
+
+    if (totalRegistros > 0) {
+      // Si existen, obtiene fechas mínima y máxima
+      const [fechas] = await conn.query(`
+        SELECT 
+          DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
+          DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
+        FROM ITEMS
+      `);
+
+      const { fecha_min, fecha_max } = fechas[0];
+
+      conn.release();
+
+      return res.render('inspeccioncfg', {
+        mensaje: {
+          tipo: 'danger',
+          texto: `Ya existen registros, desde el ${fecha_min} hasta el ${fecha_max}. Debes eliminarlos antes de generar una nueva semana.`
+        }
+      });
+    }    
+
+
+    await conn.query('CALL sp_insertar_items_por_rango(?, ?)', [fecha, 5]); // el segundo parámetro lo pones fijo o lo cambias según tu lógica
+    conn.release();
+
+    res.json({
+        status: 'success',
+        title: 'Registro Exitoso',
+        message: '¡Registrado correctamente!',
+    });
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.status(500).json({ message: 'Error al ejecutar el procedimiento' });
+  }
+});
+
+app.post('/mover-items', async (req, res) => {
+
+  try {
+    const conn = await pool.getConnection();
+
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+
+    // Si no hay registros, ejecuta SP
+    await conn.query('CALL sp_guardar_items_historial()');
+
+    conn.release();
+
+    res.render('inspeccioncfg', {
+      mensaje: {
+        tipo: 'success',
+        texto: `Procedimiento ejecutado con éxito.`
+      }
+    });
+
+
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+});
+
+
+app.post('/generar-items', async (req, res) => {
+
+
+  const { fecha } = req.body;
+
+  if (!fecha) {
+    // Redirige con mensaje de error
+    return res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha.' }
+    });
+  }
+
+  try {
+    const conn = await pool.getConnection();
+
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const totalRegistros = countResult[0].total;
+
+    if (totalRegistros > 0) {
+      // Si existen, obtiene fechas mínima y máxima
+      const [fechas] = await conn.query(`
+        SELECT 
+          DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
+          DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
+        FROM ITEMS
+      `);
+
+      const { fecha_min, fecha_max } = fechas[0];
+
+      conn.release();
+
+      return res.render('inspeccioncfg', {
+        mensaje: {
+          tipo: 'danger',
+          texto: `Ya existen registros, desde el ${fecha_min} hasta el ${fecha_max}. Debes eliminarlos antes de generar una nueva semana.`
+        }
+      });
+    }    
+
+    await conn.query('CALL sp_insertar_items_por_rango(?, ?)', [fecha, 5]);
+    conn.release();
+
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'success', texto: 'Procedimiento ejecutado con éxito.' }
+    });
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+}); 
+
+app.post('/eliminar-items', async (req, res) => {
+  try {
+    const conn = await pool.getConnection();
+
+    // Verifica si hay registros antes de eliminar
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM ITEMS');
+    const total = countResult[0].total;
+
+    if (total === 0) {
+      conn.release();
+      return res.render('inspeccioncfg', {
+        mensaje: { tipo: 'warning', texto: 'No existen registros para eliminar.' }
+      });
+    }
+
+    // Elimina registros
+    await conn.query('TRUNCATE TABLE ITEMS');
+    conn.release();
+
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'success', texto: `Se eliminaron correctamente ${total} registros.` }
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar registros:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al intentar eliminar los registros.' }
+    });
+  }
+});
+
 
 // Puerto de escucha
 server.listen(PORT, '0.0.0.0', () => {
