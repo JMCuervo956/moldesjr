@@ -225,6 +225,16 @@
     </div> 
   </div>
   <br>
+
+    <% if (typeof mensaje !== 'undefined') { %>
+      <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+        <%= mensaje.texto %>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar" style="background-color: rgb(243, 131, 131); color: white; border: none; padding: 4px 8px; border-radius: 4px;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% } %>
+  
   <div class="register-formAlt">
           <div>
               <h1 class="titulo-moderno">Consultas e Informes</h1>
@@ -254,11 +264,42 @@
                       <a href="/informe.pdf" class="modern-btn btn-rojo" style="flex: 1; max-width: 150px; text-align: center;">
                         📄 PDF
                       </a>
-          </div>
+                      <input type="date" name="fecha" />
+
+                      <form method="POST" action="/generar-pdf">
+                        <tr>
+                            <td>Generar PDF</td>
+                            <td>
+                                <button type="submit" class="btn btn-success btn-sm">Generar</button>
+                                <input type="date" name="fecha" />
+                            </td>
+                        </tr>
+                     </form>
+                      
+            </div>
           <br>
           
 
   </div>
   <script type="module" src="/js/modales.js"></script>
+
+<script>
+  // Espera a que el DOM esté listo
+  document.addEventListener('DOMContentLoaded', function () {
+    const alerta = document.getElementById('alertaMensaje');
+    if (alerta) {
+      setTimeout(() => {
+        // Usa Bootstrap 4's fade-out (remueve la clase `show`)
+        alerta.classList.remove('show');
+        alerta.classList.add('fade');
+        
+        // Opcional: remueve del DOM luego de 500ms (animación)
+        setTimeout(() => alerta.remove(), 500);
+      }, 1500); // 3 segundos
+    }
+  });
+</script>
+
+  
 </body>
 </html>

@@ -213,7 +213,6 @@ td.sticky-col-2 {
   ">
     <a href="/inspecotr?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
     <div id="datos-doc" style="margin-left: 20px; color: white;"></div>
-
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -229,9 +228,23 @@ td.sticky-col-2 {
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <h5 class="acti-title" style="color: blue; margin: 0;">Inspección</h5>
-  </div>
+    <form method="POST" action="/generar-pdfsem">
+      <tr>
+        <% if (dias[0]?.fecha) { %>
+          <td>
+              <button type="submit" class="btn btn-success btn-sm">Generar PDF</button>
+              <input type="hidden" name="fecha" value="<%= dias[0]?.fecha %>" />
+              <!-- Campos ocultos para enviar también doc_id y func -->
+              <input type="hidden" name="doc_id" id="doc-id-hidden">
+              <input type="hidden" name="func" id="func-hidden">              
+              <input type="hidden" name="tip_func" id="tip-func-hidden">              
 
+          </td>
+        <% } %>  
+      </tr>
+    </form>
+
+  </div>
   <div class="detalle-scroll">
     <div class="container-fluid mt-1">
       <div class="content2">
@@ -366,6 +379,12 @@ td.sticky-col-2 {
   const params = new URLSearchParams(window.location.search);
   const docId = params.get("doc_id");
   const func = params.get("func");
+  const tipFunc = params.get("tip_func");
+
+  // Colocarlos en los inputs ocultos
+  document.getElementById("doc-id-hidden").value = docId || "";
+  document.getElementById("func-hidden").value = func || "";
+  document.getElementById("tip-func-hidden").value = tipFunc || "";
 
   // Mostrar los datos en el div
   const datosDiv = document.getElementById("datos-doc");

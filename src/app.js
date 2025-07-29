@@ -3370,10 +3370,30 @@ app.get('/informe', async (req, res) => {
     const [usuarios] = await pool.query('SELECT * FROM users');
     const [rows] = await pool.query
       (` 
-SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
-FROM items a left join tbl_efuncional b
-on b.identificador=a.func_doc
-WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+        SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
+        FROM items_hist a left join tbl_efuncional b
+        on b.identificador=a.func_doc
+      `);
+    res.render('informe', {rows});
+
+  } catch (err) {
+    console.error('Error cargando ', err);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+app.get('/informeP', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+
+  const userCode = req.params.userCode || null;
+  try {
+    const [usuarios] = await pool.query('SELECT * FROM users');
+    const [rows] = await pool.query
+      (` 
+        SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
+        FROM items a left join tbl_efuncional b
+        on b.identificador=a.func_doc
+        WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
       `);
     res.render('informe', {rows});
 
@@ -3482,6 +3502,122 @@ app.get('/informe.xlsx', async (req, res) => {
 import PdfPrinter from 'pdfmake';
 
 app.get('/informe.pdf', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items_hist a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+
+    const fonts = {
+      Roboto: {
+        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+      }
+    };
+
+    const printer = new PdfPrinter(fonts);
+    const content = [];
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+    let currentTableBody = null;
+
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+      // Nuevo grupo de funcionario y centro de costo
+      if (funcionarioKey !== lastFuncionario) {
+        content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+        content.push({ text: `Centro de Costo: ${row.ocompra}` });
+        content.push({ text: '\n' });
+        lastFuncionario = funcionarioKey;
+        lastFecha = ''; // Reinicia fecha al cambiar de grupo
+      }
+
+      // Nueva fecha de inspección
+      if (fechaKey !== lastFecha) {
+        content.push({
+          text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+          style: 'fecha'
+        });
+
+        currentTableBody = [
+          [
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Aspecto', style: 'tableHeader' },
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Observación', style: 'tableHeader' }
+          ]
+        ];
+
+        content.push({
+          table: {
+            headerRows: 1,
+            widths: ['auto', '*', 'auto', '*'],
+            body: currentTableBody
+          },
+          layout: 'lightHorizontalLines'
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      // Fila de datos
+      currentTableBody.push([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+    }
+
+    const docDefinition = {
+      content,
+      styles: {
+        header: {
+          bold: true,
+          fontSize: 12,
+          margin: [0, 10, 0, 5]
+        },
+        fecha: {
+          bold: true,
+          fontSize: 11,
+          margin: [0, 10, 0, 5]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 11,
+          color: 'black'
+        }
+      },
+      defaultStyle: {
+        fontSize: 10
+      },
+      pageSize: 'A4',
+      pageOrientation: 'portrait',
+      pageMargins: [40, 60, 40, 40]
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+    
+  } catch (err) {
+    console.error('Error generando PDF:', err);
+    res.status(500).send('Error al generar PDF');
+  }
+});
+
+app.get('/informeA.pdf', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
@@ -3597,7 +3733,6 @@ app.get('/informe.pdf', async (req, res) => {
     res.status(500).send('Error al generar PDF');
   }
 });
-
 /* ORDEN DE TRABAJO inspeccion /***************************************************************************/
 
 app.get('/inspecotr', async (req, res) => {
@@ -3742,25 +3877,18 @@ app.post('/mover-items', async (req, res) => {
   }
 });
 
-
 app.post('/generar-items', async (req, res) => {
-
-
   const { fecha } = req.body;
-
   if (!fecha) {
     // Redirige con mensaje de error
     return res.render('inspeccioncfg', {
-      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha.' }
+      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha de..........' }
     });
   }
-
   try {
     const conn = await pool.getConnection();
-
     const [countResult] = await conn.query('select count(*) AS total from items');
     const totalRegistros = countResult[0].total;
-
     if (totalRegistros > 0) {
       // Si existen, obtiene fechas mínima y máxima
       const [fechas] = await conn.query(`
@@ -3769,11 +3897,8 @@ app.post('/generar-items', async (req, res) => {
           DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
         FROM items
       `);
-
       const { fecha_min, fecha_max } = fechas[0];
-
       conn.release();
-
       return res.render('inspeccioncfg', {
         mensaje: {
           tipo: 'danger',
@@ -3781,10 +3906,8 @@ app.post('/generar-items', async (req, res) => {
         }
       });
     }    
-
     await conn.query('CALL sp_insertar_items_por_rango(?, ?)', [fecha, 5]);
     conn.release();
-
     res.render('inspeccioncfg', {
       mensaje: { tipo: 'success', texto: 'Procedimiento ejecutado con éxito.' }
     });
@@ -3827,6 +3950,650 @@ app.post('/eliminar-items', async (req, res) => {
   }
 });
 
+/*********************************************** */
+
+app.post('/generar-pdf2', async (req, res) => {
+  const { fecha } = req.body;
+  const fecha2 =  new Date (fecha);
+  fecha2.setDate(fecha2.getDate()+5);
+  const fechaf = fecha2.toISOString().split('T')[0];
+  if (!fecha) {
+    // Redirige con mensaje de error
+    return res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha de..........' }
+    });
+  }
+  try {
+    const conn = await pool.getConnection();
+    const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
+    const totalRegistros = countResult[0].totalRegistros;
+    if (totalRegistros === 0) {
+
+       const [fechas] = await conn.query(`
+        select 
+              DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
+              DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
+        from items_hist where fecha_inspeccion >="2025-07-21" and fecha_inspeccion <="2025-07-21" and func_doc="80164653"
+      `);
+      const { fecha_min, fecha_max } = fechas[0];
+      conn.release();
+      return res.render('inspeccioncfg', {
+        mensaje: {  
+          tipo: 'danger',
+          texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+        }
+      });
+    }    
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items_hist a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+    const fonts = {
+      Roboto: {
+        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+      }
+    };
+    const printer = new PdfPrinter(fonts);
+    const content = [];
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+    let currentTableBody = null;
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+      // Nuevo grupo de funcionario y centro de costo
+      if (funcionarioKey !== lastFuncionario) {
+        content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+        content.push({ text: `Centro de Costo: ${row.ocompra}` });
+        content.push({ text: '\n' });
+        lastFuncionario = funcionarioKey;
+        lastFecha = ''; // Reinicia fecha al cambiar de grupo
+      }
+
+      // Nueva fecha de inspección
+      if (fechaKey !== lastFecha) {
+        content.push({
+          text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+          style: 'fecha'
+        });
+
+        currentTableBody = [
+          [
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Aspecto', style: 'tableHeader' },
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Observación', style: 'tableHeader' }
+          ]
+        ];
+
+        content.push({
+          table: {
+            headerRows: 1,
+            widths: ['auto', '*', 'auto', '*'],
+            body: currentTableBody
+          },
+          layout: 'lightHorizontalLines'
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      // Fila de datos
+      currentTableBody.push([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+    }
+
+    const docDefinition = {
+      content,
+      styles: {
+        header: {
+          bold: true,
+          fontSize: 12,
+          margin: [0, 10, 0, 5]
+        },
+        fecha: {
+          bold: true,
+          fontSize: 11,
+          margin: [0, 10, 0, 5]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 11,
+          color: 'black'
+        }
+      },
+      defaultStyle: {
+        fontSize: 10
+      },
+      pageSize: 'A4',
+      pageOrientation: 'portrait',
+      pageMargins: [40, 60, 40, 40]
+    };
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+}); 
+
+app.post('/generar-pdf', async (req, res) => {
+  const { fecha } = req.body;
+  if (!fecha) {
+    // Redirige con mensaje de error
+    return res.render('opciones', {
+      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+    });
+  }
+  const fecha2 =  new Date (fecha);
+  fecha2.setDate(fecha2.getDate()+5);
+  const fechaf = fecha2.toISOString().split('T')[0];
+  try {
+    const conn = await pool.getConnection();
+    const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
+    const totalRegistros = countResult[0].totalRegistros;
+    if (totalRegistros === 0) {
+
+       const [fechas] = await conn.query(`
+        select 
+              DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
+              DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
+        from items_hist where fecha_inspeccion >="2025-07-21" and fecha_inspeccion <="2025-07-21" and func_doc="80164653"
+      `);
+      const { fecha_min, fecha_max } = fechas[0];
+      conn.release();
+      return res.render('inspeccioncfg', {
+        mensaje: {  
+          tipo: 'danger',
+          texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+        }
+      });
+    }    
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items_hist a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+    const fonts = {
+      Roboto: {
+        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+      }
+    };
+    const printer = new PdfPrinter(fonts);
+    const content = [];
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+    let currentTableBody = null;
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+      // Nuevo grupo de funcionario y centro de costo
+
+
+      // Nueva fecha de inspección
+
+if (fechaKey !== lastFecha) {
+  if (lastFecha !== '') {
+    content.push({ text: '', pageBreak: 'before' });
+  }
+
+  // Mostrar Funcionario y Centro de Costo en cada página por día
+  content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+  content.push({ text: `Centro de Costo: ${row.ocompra}` });
+  content.push({ text: '\n' });
+
+  // Fecha
+  content.push({
+    text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+    style: 'fecha'
+  });
+
+  
+  currentTableBody = [
+    [
+      { text: 'No', style: 'tableHeader' },
+      { text: 'Aspecto', style: 'tableHeader' },
+      { text: 'No', style: 'tableHeader' },
+      { text: 'Observación', style: 'tableHeader' }
+    ]
+  ];
+
+  content.push({
+    table: {
+      headerRows: 1,
+      widths: ['auto', '*', 'auto', '*'],
+      body: currentTableBody
+    },
+    layout: 'lightHorizontalLines'
+  });
+
+  lastFecha = fechaKey;
+}
+
+      // Fila de datos
+      currentTableBody.push([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+    }
+
+
+const docDefinition = {
+  content,
+  styles: {
+    header: {
+      bold: true,
+      fontSize: 12,
+      margin: [0, 10, 0, 5]
+    },
+    fecha: {
+      bold: true,
+      fontSize: 11,
+      margin: [0, 10, 0, 5]
+    },
+    tableHeader: {
+      bold: true,
+      fontSize: 11,
+      color: 'black'
+    }
+  },
+  defaultStyle: {
+    fontSize: 10
+  },
+  pageSize: 'A4',
+  pageOrientation: 'portrait',
+  pageMargins: [40, 60, 40, 40],
+  footer: function(currentPage, pageCount) {
+    return {
+      text: `Página ${currentPage} de ${pageCount}`,
+      alignment: 'right',
+      margin: [0, 0, 40, 20],
+      fontSize: 9
+    };
+  }
+};
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+}); 
+
+
+// PDF SEMANA 
+
+app.post('/generar-pdfsem', async (req, res) => {
+  let conn;
+  try {
+        const { fecha, doc_id, func, tip_func } = req.body;
+        if (!fecha) {
+          // Redirige con mensaje de error
+          return res.render('inspeccion', {
+            mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+          });
+        }
+        const fecha2 =  new Date (fecha);
+        fecha2.setDate(fecha2.getDate()+5);
+        const fechaf = fecha2.toISOString().split('T')[0];
+
+        conn = await pool.getConnection();
+        
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const totalRegistros = countResult[0].totalRegistros;
+        if (totalRegistros === 0) {
+          conn.release();
+          return res.render('inspeccion', {
+            mensaje: {  
+              tipo: 'danger',
+              texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+            }
+          });
+        }    
+        const [rows] = await pool.query(`
+          SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
+          FROM items a
+          LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
+          ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+        `, [fecha, fechaf, doc_id, tip_func]);
+        const fonts = {
+          Roboto: {
+            normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+            bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+            italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+          }
+        };
+        const printer = new PdfPrinter(fonts);
+        const content = [];
+
+        let lastFuncionario = '';
+        let lastFecha = '';
+        let currentTableBody = null;
+        for (const row of rows) {
+          const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+          const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+          // Nuevo grupo de funcionario y centro de costo
+
+
+          // Nueva fecha de inspección
+
+          if (fechaKey !== lastFecha) {
+            if (lastFecha !== '') {
+              content.push({ text: '', pageBreak: 'before' });
+            }
+
+            // Mostrar Funcionario y Centro de Costo en cada página por día
+            content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+            content.push({ text: `Centro de Costo: ${row.ocompra}` });
+            content.push({ text: '\n' });
+
+            // Fecha
+            content.push({
+              text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+              style: 'fecha'
+            });
+            
+            currentTableBody = [
+              [
+                { text: 'Id', style: 'tableHeader' },
+                { text: 'Aspecto', style: 'tableHeader' },
+                { text: 'SI', style: 'tableHeader' },
+                { text: 'NO', style: 'tableHeader' },
+                { text: 'NA', style: 'tableHeader' },
+                { text: 'Observación', style: 'tableHeader' }
+              ]
+            ];
+
+            content.push({
+              table: {
+                headerRows: 1,
+                widths: ['auto', '*', 'auto', 'auto', 'auto', '*'],
+                body: currentTableBody
+              },
+              layout: {
+                hLineWidth: function () {
+                  return 0.5;
+                },
+                vLineWidth: function () {
+                  return 0.5;
+                },
+                hLineColor: function () {
+                  return '#aaa';
+                },
+                vLineColor: function () {
+                  return '#aaa';
+                },
+                paddingLeft: function () {
+                  return 5;
+                },
+                paddingRight: function () {
+                  return 5;
+                }
+              }
+            });
+
+            lastFecha = fechaKey;
+          }
+
+          // Fila de datos
+          currentTableBody.push([
+            row.no,
+            row.aspecto,
+            row.si || '',
+            row.no_ || '',
+            row.na || '',
+            row.observacion || ''            
+          ]);
+        }
+
+        const docDefinition = {
+          content,
+          styles: {
+            header: {
+              bold: true,
+              fontSize: 12,
+              margin: [0, 10, 0, 5]
+            },
+            fecha: {
+              bold: true,
+              fontSize: 11,
+              margin: [0, 10, 0, 5]
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 11,
+              color: 'black'
+            }
+          },
+          defaultStyle: {
+            fontSize: 10
+          },
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          pageMargins: [40, 60, 40, 40],
+          footer: function(currentPage, pageCount) {
+            return {
+              text: `Página ${currentPage} de ${pageCount}`,
+              alignment: 'right',
+              margin: [0, 0, 40, 20],
+              fontSize: 9
+            };
+          }
+        };
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+        
+        conn.release();
+  } catch (error) {
+        if (conn) conn.release();
+        console.error('Error ejecutando SP:', error);
+        res.render('inspeccioncfg', {
+          mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+        });
+  }
+}); 
+
+// copia semana   
+
+// PDF SEMANA 
+
+app.post('/generar-pdfsemcopia', async (req, res) => {
+  const { fecha, doc_id, func } = req.body;
+  if (!fecha) {
+    // Redirige con mensaje de error
+    return res.render('opciones', {
+      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+    });
+  }
+  const fecha2 =  new Date (fecha);
+  fecha2.setDate(fecha2.getDate()+5);
+  const fechaf = fecha2.toISOString().split('T')[0];
+  try {
+    const conn = await pool.getConnection();
+    const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
+    const totalRegistros = countResult[0].totalRegistros;
+    if (totalRegistros === 0) {
+
+       const [fechas] = await conn.query(`
+        select 
+              DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
+              DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
+        from items_hist where fecha_inspeccion >="2025-07-21" and fecha_inspeccion <="2025-07-21" and func_doc="80164653"
+      `);
+      const { fecha_min, fecha_max } = fechas[0];
+      conn.release();
+      return res.render('inspeccioncfg', {
+        mensaje: {  
+          tipo: 'danger',
+          texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+        }
+      });
+    }    
+    const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+             a.no, a.aspecto, a.no_, a.observacion 
+      FROM items_hist a 
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `);
+    const fonts = {
+      Roboto: {
+        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+      }
+    };
+    const printer = new PdfPrinter(fonts);
+    const content = [];
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+    let currentTableBody = null;
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+      // Nuevo grupo de funcionario y centro de costo
+
+
+      // Nueva fecha de inspección
+
+      if (fechaKey !== lastFecha) {
+        if (lastFecha !== '') {
+          content.push({ text: '', pageBreak: 'before' });
+        }
+
+        // Mostrar Funcionario y Centro de Costo en cada página por día
+        content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+        content.push({ text: `Centro de Costo: ${row.ocompra}` });
+        content.push({ text: '\n' });
+
+        // Fecha
+        content.push({
+          text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+          style: 'fecha'
+        });
+        
+        currentTableBody = [
+          [
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Aspecto', style: 'tableHeader' },
+            { text: 'No', style: 'tableHeader' },
+            { text: 'Observación', style: 'tableHeader' }
+          ]
+        ];
+
+        content.push({
+          table: {
+            headerRows: 1,
+            widths: ['auto', '*', 'auto', '*'],
+            body: currentTableBody
+          },
+          layout: 'lightHorizontalLines'
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      // Fila de datos
+      currentTableBody.push([
+        row.no,
+        row.aspecto,
+        row.no_,
+        row.observacion
+      ]);
+    }
+
+const docDefinition = {
+  content,
+  styles: {
+    header: {
+      bold: true,
+      fontSize: 12,
+      margin: [0, 10, 0, 5]
+    },
+    fecha: {
+      bold: true,
+      fontSize: 11,
+      margin: [0, 10, 0, 5]
+    },
+    tableHeader: {
+      bold: true,
+      fontSize: 11,
+      color: 'black'
+    }
+  },
+  defaultStyle: {
+    fontSize: 10
+  },
+  pageSize: 'A4',
+  pageOrientation: 'portrait',
+  pageMargins: [40, 60, 40, 40],
+  footer: function(currentPage, pageCount) {
+    return {
+      text: `Página ${currentPage} de ${pageCount}`,
+      alignment: 'right',
+      margin: [0, 0, 40, 20],
+      fontSize: 9
+    };
+  }
+};
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('inspeccioncfg', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+}); 
+
+// fin copia 
 
 // Puerto de escucha
 server.listen(PORT, '0.0.0.0', () => {
