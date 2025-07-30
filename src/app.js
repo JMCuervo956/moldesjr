@@ -249,8 +249,12 @@ app.get('/ccosto', async (req, res) => {
     );
     res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
   } catch (error) {
-    console.error('Error obteniendo ccosto:', error);
-    res.status(500).send('Error al obtener ccosto');
+    console.error('❌ Error obteniendo ccosto:', error.stack || error);
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: 'Ocurrió un error al cargar la vista de centro de costos.'
+    };
+    res.redirect('/'); // 🔁 Redirige al inicio en caso de error
   } finally {
     conn.release(); // 👈 Siempre libera la conexión
   }
@@ -681,7 +685,6 @@ app.get('/inspeccioncfg', (req, res) => {
 
 app.get('/inspeccioncfg/mover', async (req, res) => {
   try {
-    //console.log('actualizar cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -706,7 +709,6 @@ app.get('/inspeccioncfg/mover', async (req, res) => {
 
 app.get('/inspeccioncfg/eliminar', async (req, res) => {
   try {
-    //console.log('eliminar cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -730,7 +732,6 @@ app.get('/inspeccioncfg/eliminar', async (req, res) => {
 
 app.get('/inspeccioncfg/generar', async (req, res) => {
   try {
-    //console.log('genera cfg');
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
     req.session.mensaje = {
       tipo: 'success',
@@ -1773,37 +1774,43 @@ app.get('/ccostoexp', async (req, res) => {
       const userName = req.session.name;
 
       // Consulta con formato de fecha dd/mm/aaaa
-        const [[ccosto], [unidadT], [clienteT]] = await Promise.all([
+      const [
+        [ccostoRows],     // 0: resultado de tbl_ccosto con joins
+        [unidadTRows],    // 1: resultado de tbl_unidad
+        [clienteTRows]    // 2: resultado de tbl_cliente
+      ] = await Promise.all([
         pool.execute(`
-            SELECT 
+          SELECT 
             a.*, 
             DATE_FORMAT(a.fecha_orden, '%d/%m/%Y') AS fecha_orden_formateada,
             DATE_FORMAT(a.fecha_entrega, '%d/%m/%Y') AS fecha_entrega_formateada,
-            b.cliente AS clienteN, c.nombre as nompais, d.nombre as nomciu
-            FROM tbl_ccosto a
-            LEFT JOIN tbl_cliente b ON a.cliente = b.nit 
-            LEFT JOIN tbl_paises c ON a.pais = c.iso_pais
-            LEFT JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad 
+            b.cliente AS clienteN,
+            c.nombre AS nompais,
+            d.nombre AS nomciu
+          FROM tbl_ccosto a
+          LEFT JOIN tbl_cliente b ON a.cliente = b.nit 
+          LEFT JOIN tbl_paises c ON a.pais = c.iso_pais
+          LEFT JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad
         `),
         pool.execute('SELECT * FROM tbl_unidad'),
         pool.execute('SELECT * FROM tbl_cliente ORDER BY cliente')
-        ]);
-
+      ]);
 
       const mensaje = req.session.mensaje;
       delete req.session.mensaje;
 
       const fechaHoraBogota = getBogotaDateTime();
+
       await pool.execute(
         `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-          VALUES (?, ?, ?)`,
+         VALUES (?, ?, ?)`,
         [userUser, 3, fechaHoraBogota]
       );
 
       res.render('ccostoexp', {
-        ccosto,
-        unidadT,
-        clienteT,
+        ccosto: ccostoRows,
+        unidadT: unidadTRows,
+        clienteT: clienteTRows,
         user: userUser,
         name: userName,
         mensaje
@@ -1812,8 +1819,8 @@ app.get('/ccostoexp', async (req, res) => {
       res.redirect('/');
     }
   } catch (error) {
-    console.error('Error obteniendo ccostoexp:', error);
-    res.status(500).send('Error al obtener ccostoexp');
+    console.error('Error obteniendo ccostoexp:', error.stack || error);
+    res.redirect('/'); // Mejor redirigir que mostrar error crudo
   }
 });
 
@@ -1828,46 +1835,62 @@ app.get('/users', async (req, res) => {
         const userUser = req.session.user;
         const userName = req.session.name;
 
-        const [estados] = await pool.execute('SELECT * FROM tbl_estados');
-        const [roles] = await pool.execute('SELECT * FROM tbl_rol');
-        const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+        // Ejecutar consultas en paralelo
+        const [
+            [estadosRows],
+            [rolesRows],
+            [usersRows]
+        ] = await Promise.all([
+            pool.execute('SELECT * FROM tbl_estados'),
+            pool.execute('SELECT * FROM tbl_rol'),
+            pool.execute('SELECT * FROM users ORDER BY user')
+        ]);
 
-        // ✅ Manejo seguro del mensaje de sesión
+        // Mensaje de sesión (si existe)
         const mensaje = req.session.mensaje || null;
-        delete req.session.mensaje; // Limpieza después de usar
+        delete req.session.mensaje;
 
         const fechaHoraBogota = getBogotaDateTime();
-        
+
         await pool.execute(
-          `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-            VALUES (?, ?, ?)`,
-          [userUser, 6, fechaHoraBogota]
+            `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+             VALUES (?, ?, ?)`,
+            [userUser, 6, fechaHoraBogota]
         );
 
         res.render('users', {
-            users,
-            estados,
-            roles,
+            users: usersRows,
+            estados: estadosRows,
+            roles: rolesRows,
             user: userUser,
             name: userName,
             mensaje
         });
+
     } catch (error) {
-        console.error('Error al obtener users', error);
-        res.status(500).send('Error al obtener users');
+        console.error('Error al obtener users:', error.stack || error);
+        res.redirect('/'); // o mostrar página de error personalizada si prefieres
     }
 });
 
 app.post('/users', async (req, res) => {
   try {
+    if (!req.session.loggedin) {
+      return res.redirect('/?expired=1');
+    }
+
     const { user, name, email, rol, telefono, estado, fecha_nac, editando } = req.body;
+    const userUser = req.session.user;
+    const userName = req.session.name;
+
     let mensaje;
+    const fechaHoraBogota = getBogotaDateTime();
 
     if (editando === "true") {
-      // Actualizar
-      const fechaHoraBogota = getBogotaDateTime();
+      // Actualizar usuario
       await pool.execute(
-        `UPDATE users SET name = ?, email = ?, rol = ?, telefono = ?, estado = ?, fecha_nac = ?, fecha_act = ?  WHERE user = ?`,
+        `UPDATE users SET name = ?, email = ?, rol = ?, telefono = ?, estado = ?, fecha_nac = ?, fecha_act = ?
+         WHERE user = ?`,
         [name, email, rol, telefono, estado, fecha_nac, fechaHoraBogota, user]
       );
 
@@ -1876,10 +1899,10 @@ app.post('/users', async (req, res) => {
         texto: 'Cambio actualizado exitosamente.'
       };
     } else {
-      // Verificar si ya existe
-      const [rows] = await pool.execute('SELECT COUNT(*) AS count FROM users WHERE user = ?', [user]);
+      // Verificar existencia del usuario
+      const [existRows] = await pool.execute('SELECT COUNT(*) AS count FROM users WHERE user = ?', [user]);
 
-      if (rows[0].count > 0) {
+      if (existRows[0].count > 0) {
         mensaje = {
           tipo: 'danger',
           texto: 'Ya existe el código.'
@@ -1887,7 +1910,6 @@ app.post('/users', async (req, res) => {
       } else {
         // Insertar nuevo usuario
         const passwordHash = await bcryptjs.hash(user, 8);
-        const fechaHoraBogota = getBogotaDateTime();
 
         await pool.execute(
           `INSERT INTO users (user, name, email, pass, rol, telefono, estado, fecha_nac, fecha_cre, fecha_act)
@@ -1902,31 +1924,41 @@ app.post('/users', async (req, res) => {
       }
     }
 
-    // Obtener lista actualizada
-    const [estados] = await pool.execute('SELECT * FROM tbl_estados');
-    const [roles] = await pool.execute('SELECT * FROM tbl_rol');
-    const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+    // Recargar datos actualizados para render
+    const [[usersRows], [estadosRows], [rolesRows]] = await Promise.all([
+      pool.execute('SELECT * FROM users ORDER BY user'),
+      pool.execute('SELECT * FROM tbl_estados'),
+      pool.execute('SELECT * FROM tbl_rol')
+    ]);
+
     res.render('users', {
       mensaje,
-      users,
-      estados,
-      roles
+      users: usersRows,
+      estados: estadosRows,
+      roles: rolesRows,
+      user: userUser,
+      name: userName
     });
 
   } catch (error) {
-    console.error('Error guardando: ', error);
-    const [roles] = await pool.execute('SELECT * FROM tbl_rol');
-    const [estados] = await pool.execute('SELECT * FROM tbl_estados');
-    const [users] = await pool.execute(`SELECT * FROM users ORDER BY user`);
+    console.error('Error guardando usuario:', error.stack || error);
+
+    const [[usersRows], [estadosRows], [rolesRows]] = await Promise.all([
+      pool.execute('SELECT * FROM users ORDER BY user'),
+      pool.execute('SELECT * FROM tbl_estados'),
+      pool.execute('SELECT * FROM tbl_rol')
+    ]);
 
     res.status(500).render('users', {
       mensaje: {
         tipo: 'danger',
         texto: 'Error al procesar la solicitud.'
       },
-      users,
-      roles,
-      estados
+      users: usersRows,
+      estados: estadosRows,
+      roles: rolesRows,
+      user: req.session.user || '',
+      name: req.session.name || ''
     });
   }
 });
@@ -2383,101 +2415,118 @@ app.get('/efuncional', async (req, res) => {
     }
 });
   
-// Crear o actualizar ciudad
+// Crear o actualizar funcional
 app.post('/efuncional', async (req, res) => {
-    try {
-        const { tipo_id, documento, funcionario, perfil, fechaini, estado, fechaest, editando } = req.body;
-        let mensaje;
-        let texto;
-        
-        if (editando === "true") {
-            // Actualizar Ciudad
-            await pool.execute(
-                `UPDATE tbl_efuncional SET funcionario= ?, perfil= ?, estado= ? WHERE tipo_id = ? AND identificador = ?`,
-                [funcionario, perfil, estado, tipo_id, documento]
-            );
-            mensaje = {
-                tipo: 'success',
-                texto: 'Funcional actualizado exitosamente.'
-            };
-        } else {
+  try {
+    const { tipo_id, documento, funcionario, perfil, estado, editando } = req.body;
 
-            // Verificar si Ciudad ya existe
-            const [rows] = await pool.execute(
-                'SELECT COUNT(*) AS count FROM tbl_efuncional WHERE tipo_id = ? AND identificador = ?',
-                [tipo_id, documento]
-            );
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    let mensaje;
 
-            if (rows[0].count > 0) {
-                mensaje = {
-                    tipo: 'danger',
-                    texto: 'Ya existe un CLIENTE con este Nit.'
-                };
-            } else {
+    if (editando === "true") {
+      // Actualizar
+      await pool.execute(
+        `UPDATE tbl_efuncional SET funcionario = ?, perfil = ?, estado = ? WHERE tipo_id = ? AND identificador = ?`,
+        [funcionario, perfil, estado, tipo_id, documento]
+      );
 
-                // Insertar nuevo proveedor
-                await pool.execute(
-                    `INSERT INTO tbl_efuncional (tipo_id, identificador, funcionario, perfil, estado) VALUES (?, ?, ?, ?, ?)`,
-                    [tipo_id, documento, funcionario, perfil, estado]
-                );
-                mensaje = {
-                    tipo: 'success',
-                    texto: `Funcional guardado exitosamente. : ${funcionario}` 
-                };
-            }
-        }
-        // Obtener clientes
+      mensaje = {
+        tipo: 'success',
+        texto: 'Funcional actualizado exitosamente.'
+      };
+    } else {
+      // Verificar si ya existe
+      const [rows] = await pool.execute(
+        'SELECT COUNT(*) AS count FROM tbl_efuncional WHERE tipo_id = ? AND identificador = ?',
+        [tipo_id, documento]
+      );
 
-        const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
-        pool.execute(` 
-            SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
-                    b.id as idp, b.perfil as perfilp, c.estado as destado
-            FROM tbl_efuncional a
-            JOIN tbl_perfil b ON a.perfil = b.id
-            JOIN tbl_estados c ON a.estado = c.id
-            ORDER BY a.perfil, a.estado;
-        `),
-        pool.execute('SELECT * FROM tbl_tipodoc'),
-        pool.execute('SELECT * FROM tbl_estados'),
-        pool.execute('SELECT * FROM tbl_perfil')
-        ]);
-        
-        // Renderizar la vista con el mensaje y la lista de proveedores
-        res.render('efuncional', {
-            mensaje,
-            efuncional,
-            tipodocl,
-            estados,
-            perfilf
-        });
+      if (rows[0].count > 0) {
+        mensaje = {
+          tipo: 'danger',
+          texto: 'Ya existe un funcionario con este documento.'
+        };
+      } else {
+        // Insertar nuevo
+        await pool.execute(
+          `INSERT INTO tbl_efuncional (tipo_id, identificador, funcionario, perfil, estado)
+           VALUES (?, ?, ?, ?, ?)`,
+          [tipo_id, documento, funcionario, perfil, estado]
+        );
 
-    } catch (error) {
-
-        console.error('Error guardando ciudad:', error);
-        const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
-        pool.execute(` 
-            SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
-                    b.id as idp, b.perfil as perfilp, c.estado as destado
-            FROM tbl_efuncional a
-            JOIN tbl_perfil b ON a.perfil = b.id
-            JOIN tbl_estados c ON a.estado = c.id
-            ORDER BY a.perfil, a.estado;
-        `),
-        pool.execute('SELECT * FROM tbl_tipodoc'),
-        pool.execute('SELECT * FROM tbl_estados'),
-        pool.execute('SELECT * FROM tbl_perfil')
-        ]);        
-        res.status(500).render('efuncional', {
-            mensaje: {
-                tipo: 'danger',
-                texto: 'Error al procesar la solicitud.'
-            },
-            efuncional,
-            tipodocl,
-            estados,
-            perfilf
-        });
+        mensaje = {
+          tipo: 'success',
+          texto: `Funcional guardado exitosamente: ${funcionario}`
+        };
+      }
     }
+
+    // Consultar datos para renderizar la vista
+    const [
+      [efuncionalRows],
+      [tipodoclRows],
+      [estadosRows],
+      [perfilfRows]
+    ] = await Promise.all([
+      pool.execute(`
+        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+               b.id AS idp, b.perfil AS perfilp, c.estado AS destado
+        FROM tbl_efuncional a
+        JOIN tbl_perfil b ON a.perfil = b.id
+        JOIN tbl_estados c ON a.estado = c.id
+        ORDER BY a.perfil, a.estado
+      `),
+      pool.execute('SELECT * FROM tbl_tipodoc'),
+      pool.execute('SELECT * FROM tbl_estados'),
+      pool.execute('SELECT * FROM tbl_perfil')
+    ]);
+
+    res.render('efuncional', {
+      mensaje,
+      efuncional: efuncionalRows,
+      tipodocl: tipodoclRows,
+      estados: estadosRows,
+      perfilf: perfilfRows,
+      user: userUser,
+      name: userName
+    });
+
+  } catch (error) {
+    console.error('Error guardando funcional:', error.stack || error);
+
+    const [
+      [efuncionalRows],
+      [tipodoclRows],
+      [estadosRows],
+      [perfilfRows]
+    ] = await Promise.all([
+      pool.execute(`
+        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+               b.id AS idp, b.perfil AS perfilp, c.estado AS destado
+        FROM tbl_efuncional a
+        JOIN tbl_perfil b ON a.perfil = b.id
+        JOIN tbl_estados c ON a.estado = c.id
+        ORDER BY a.perfil, a.estado
+      `),
+      pool.execute('SELECT * FROM tbl_tipodoc'),
+      pool.execute('SELECT * FROM tbl_estados'),
+      pool.execute('SELECT * FROM tbl_perfil')
+    ]);
+
+    res.status(500).render('efuncional', {
+      mensaje: {
+        tipo: 'danger',
+        texto: 'Error al procesar la solicitud.'
+      },
+      efuncional: efuncionalRows,
+      tipodocl: tipodoclRows,
+      estados: estadosRows,
+      perfilf: perfilfRows,
+      user: req.session.user || '',
+      name: req.session.name || ''
+    });
+  }
 });
 
 
@@ -3029,27 +3078,46 @@ app.get('/inspecciones/delete/:idcc', async (req, res) => {
 /* INDICE DESCRIPCIONES /***************************************************************************/
 
 app.get('/indicesbody', async (req, res) => {
-    try {
-        if (req.session.loggedin) {
-            const userUser = req.session.user;
-            const userName = req.session.name;
-            const fechaHoraBogota = getBogotaDateTime();
-            const [otrabajo] = await pool.execute(`select a.*,b.descripcion from tbl_insp_body a inner join tbl_insp_opc b on a.indice=b.indice order by indice`);
-            const [otrb] = await pool.execute('select * from tbl_otrabajo;');
-            const [dise] = await pool.execute('select * from tbl_insp_opc;');
+  try {
+    if (req.session.loggedin) {
+      const userUser = req.session.user;
+      const userName = req.session.name;
 
-            //  Recuperar mensaje de sesión  idots
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
+      const fechaHoraBogota = getBogotaDateTime();
 
-            res.render('indicesbody', { otrabajo, otrb, dise, user: userUser, name: userName, mensaje });
-        } else {
-            res.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error obteniendo otrabajo:', error);
-        res.status(500).send('Error al obtener indicesbody');
+      const [
+        [otrabajoRows],  // resultado de la consulta JOIN
+        [otrbRows],      // otras tareas
+        [diseRows]       // opciones disponibles
+      ] = await Promise.all([
+        pool.execute(`
+          SELECT a.*, b.descripcion 
+          FROM tbl_insp_body a 
+          INNER JOIN tbl_insp_opc b ON a.indice = b.indice 
+          ORDER BY a.indice
+        `),
+        pool.execute('SELECT * FROM tbl_otrabajo'),
+        pool.execute('SELECT * FROM tbl_insp_opc')
+      ]);
+
+      const mensaje = req.session.mensaje || null;
+      delete req.session.mensaje;
+
+      res.render('indicesbody', {
+        otrabajo: otrabajoRows,
+        otrb: otrbRows,
+        dise: diseRows,
+        user: userUser,
+        name: userName,
+        mensaje
+      });
+    } else {
+      res.redirect('/');
     }
+  } catch (error) {
+    console.error('Error obteniendo indicesbody:', error.stack || error);
+    res.redirect('/'); // Mejor que mostrar error 500 directamente
+  }
 });
 
 app.get('/valida', (req, res) => {
@@ -3168,7 +3236,6 @@ async function runInBatches(tasks, batchSize = 20) {
 }
 
 app.post('/detalle-dia', async (req, res) => {
-  console.log(req.body);
   const { fecha, datos, tip_func, doc_id, firma } = req.body;
 
   if (!fecha || !datos) {
@@ -3245,33 +3312,49 @@ app.get('/inspasig', async (req, res) => {
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
-            const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
-            pool.execute(` 
-                SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
-                        b.id as idp, b.perfil as perfilp, c.estado as destado
-                FROM tbl_efuncional a
-                JOIN tbl_perfil b ON a.perfil = b.id
-                JOIN tbl_estados c ON a.estado = c.id
-                where a.perfil=14
-                ORDER BY a.perfil, a.estado;
-            `),
-            pool.execute('SELECT * FROM tbl_tipodoc'),
-            pool.execute('SELECT * FROM tbl_estados'),
-            pool.execute('SELECT * FROM tbl_perfil')
+
+            const [
+                [efuncionalRows], // resultado de SELECT con JOIN
+                [tipodoclRows],
+                [estadosRows],
+                [perfilfRows]
+            ] = await Promise.all([
+                pool.execute(` 
+                    SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                           b.id AS idp, b.perfil AS perfilp, c.estado AS destado
+                    FROM tbl_efuncional a
+                    JOIN tbl_perfil b ON a.perfil = b.id
+                    JOIN tbl_estados c ON a.estado = c.id
+                    WHERE a.perfil = 14
+                    ORDER BY a.perfil, a.estado;
+                `),
+                pool.execute('SELECT * FROM tbl_tipodoc'),
+                pool.execute('SELECT * FROM tbl_estados'),
+                pool.execute('SELECT * FROM tbl_perfil')
             ]);
 
-            //  Recuperar mensaje de sesión
+            // Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
-            res.render('inspasig', { efuncional, tipodocl, estados, perfilf, user: userUser, name: userName, mensaje });
+
+            res.render('inspasig', {
+                efuncional: efuncionalRows,
+                tipodocl: tipodoclRows,
+                estados: estadosRows,
+                perfilf: perfilfRows,
+                user: userUser,
+                name: userName,
+                mensaje
+            });
         } else {
             res.redirect('/');
         }
     } catch (error) {
-        console.error('Error obteniendo funcional:', error);
-        res.status(500).send('Error al obtener las funcional');
+        console.error('Error obteniendo funcional:', error.stack || error);
+        res.redirect('/');
     }
 });
+
 
 app.get('/respmod', async (req, res) => {
   const idot = req.query.idot;
@@ -3347,7 +3430,6 @@ import ExcelJS from 'exceljs';
 
 app.get('/informe.xlsx', async (req, res) => {
   try {
-    console.log(req.query); 
     const { fecha, doc_id, tip_func } = req.query;
 
     if (!fecha || !doc_id || !tip_func) {
@@ -3454,8 +3536,6 @@ app.get('/informe.xlsx', async (req, res) => {
 
 app.get('/informecopia.xlsx', async (req, res) => {
   try {
-    console.log(req.query);
-    console.log(req.body);
       const [rows] = await pool.query(`
       SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
              a.no, a.aspecto, a.no_, a.observacion 
