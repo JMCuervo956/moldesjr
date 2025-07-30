@@ -68,6 +68,11 @@
     margin-top: 1.5rem;
     }
 
+    #signatureCanvas {
+      border: 1px solid #000;
+      touch-action: none;
+    }
+
   </style>
 </head>
 <body>
@@ -168,6 +173,13 @@
         <% }) %>
 
         <div class="d-flex justify-content-end mt-3">
+          <a 
+            href="/firma?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+            class="btn btn-warning"
+          >
+            Ir a Firma
+          </a>
+          
             <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
             <a 
               href="/detalle-dia?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 

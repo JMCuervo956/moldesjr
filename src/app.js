@@ -1269,9 +1269,45 @@ app.post('/respuesta', async (req, res) => {
 
 /* Opciones **********************************************************************/
     
-app.get('/opciones', (req, res) => {
-    res.render('opciones');
-  });
+app.get('/opciones', async (req, res) => {
+  try {
+    if (!req.session.loggedin) return res.redirect('/?expired=1');
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    // Ejecutar todas las consultas en paralelo con Promise.all
+    const [
+      [tfunc],
+      [tccos]
+    ] = await Promise.all([
+      pool.execute(`
+        SELECT a.func_doc, max(b.funcionario) as func
+        FROM items_hist a 
+        LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+        GROUP BY func_doc
+        ORDER BY a.func_doc
+      `),
+      pool.execute(`
+        SELECT a.ocompra
+        FROM items_hist a 
+        LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+        GROUP BY a.ocompra
+        ORDER BY a.ocompra;
+      `)
+    ]);
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('opciones', { tfunc, tccos, user: userUser, name: userName, mensaje });
+
+  } catch (error) {
+    console.error('Error obteniendo actividades:', error);
+    if (error.code === 'ECONNRESET') {
+      res.status(503).send('Servicio de base de datos no disponible. Intenta nuevamente en unos segundos.');
+    } else {
+      res.status(500).send('Error interno al obtener datos.');
+    }
+  }
+});
 
 
 /*** C COSTO CONSULTAR ********/ 
@@ -3132,7 +3168,8 @@ async function runInBatches(tasks, batchSize = 20) {
 }
 
 app.post('/detalle-dia', async (req, res) => {
-  const { fecha, datos, tip_func, doc_id } = req.body;
+  console.log(req.body);
+  const { fecha, datos, tip_func, doc_id, firma } = req.body;
 
   if (!fecha || !datos) {
     return res.status(400).send('Datos incompletos');
@@ -3152,7 +3189,7 @@ app.post('/detalle-dia', async (req, res) => {
 
       for (const itemIndex in items) {
         const item = items[itemIndex];
-        const { no, opcion, observacion } = item;
+        const { no, opcion, observacion, firma } = item;
 
         cambios.push(no);
 
@@ -4518,6 +4555,63 @@ app.get('/pendientesh', async (req, res) => {
   `);
   res.render('pendientesh', { rows });
 });
+
+// Firma
+app.get('/firma', (req, res) => {
+  res.render('firma'); // Renderiza views/firma.ejs
+});
+
+app.post('/guardar-firma', async (req, res) => {
+  const { tip_func, doc_id, fecha, firma } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO firmas (tip_func, cedula, fecha, firma_base64) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE firma_base64 = VALUES(firma_base64)`,
+      [tip_func, doc_id, fecha, firma]
+    );
+
+    res.redirect(`/firma?tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}&fecha=${encodeURIComponent(fecha)}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al guardar la firma.');
+  }
+});
+
+
+
+app.get('/obtener-firma', async (req, res) => {
+  const { tip_func, doc_id, fecha } = req.query;
+
+  try {
+    // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
+    const [rows] = await pool.query(
+      'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? LIMIT 1',
+      [doc_id, fecha]
+    );
+
+    if (rows.length > 0) {
+      res.json({ firmaBase64: rows[0].firma_base64 });
+    } else {
+      res.json({ firmaBase64: null });
+    }
+  } catch (err) {
+    console.error('Error al obtener la firma:', err);
+    res.status(500).json({ firmaBase64: null });
+  }
+});
+
+
+app.get('/firmas', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT cedula, firma_base64, fecha FROM firmas ORDER BY fecha DESC');
+    res.render('firmas', { firmas: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener las firmas');
+  }
+});
+
 
 // Puerto de escucha
 server.listen(PORT, '0.0.0.0', () => {
