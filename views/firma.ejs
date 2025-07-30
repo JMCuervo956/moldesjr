@@ -145,22 +145,58 @@
 </script>
 
   <script>
-    const canvas = document.getElementById('signatureCanvas');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
+const canvas = document.getElementById('signatureCanvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
 
-    canvas.addEventListener('mousedown', e => {
-      isDrawing = true;
-      ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
-    });
+// Mouse Events
+canvas.addEventListener('mousedown', (e) => {
+  isDrawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
 
-    canvas.addEventListener('mousemove', e => {
-      if (isDrawing) {
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-      }
-    });
+canvas.addEventListener('mousemove', (e) => {
+  if (isDrawing) {
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  isDrawing = false;
+});
+
+// Touch Events (para móviles)
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length > 0) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    isDrawing = true;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (isDrawing && e.touches.length > 0) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+});
+
+canvas.addEventListener('touchend', () => {
+  isDrawing = false;
+});
+
 
     canvas.addEventListener('mouseup', () => {
       isDrawing = false;
