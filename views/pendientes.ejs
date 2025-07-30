@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pendientes día</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+  
+  <style>
+    body {
+      padding: 20px;
+    }
+    table {
+      font-size: 0.9rem;
+    }
+    .grupo {
+      margin-top: 40px;
+    }
+    .grupo h5 {
+      margin-bottom: 10px;
+      color: #0d6efd;
+    }
+
+
+    .regresar-link {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.regresar-link::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: white;
+  bottom: 0;
+  left: 0;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  transform-origin: bottom right;
+}
+
+.regresar-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+.regresar-link:hover {
+  color: #f0f0f0;
+}
+
+  </style>
+</head>
+
+<body>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/opciones" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div> 
+  </div>
+  <br>
+
+  <div class="container">
+    <h2 class="mb-4">Observaciones día</h2>
+
+    <div class="ms-5 mb-3">
+        <button class="btn btn-primary btn-sm" onclick="exportarExcel()">Exportar a Excel</button>
+    </div>
+
+    <% if (rows && rows.length > 0) { %>
+      <% let lastFuncionario = '', lastOcompra = ''; %>
+
+      <% rows.forEach((row, idx) => {
+        const currentFuncionario = row.funcionario;
+        const currentOcompra = row.ocompra;
+        const currentFecha = new Date(row.fecha_inspeccion).toLocaleDateString('es-CO');
+        const isNewGroup = currentFuncionario !== lastFuncionario || currentOcompra !== lastOcompra;
+
+        if (isNewGroup) { %>
+          <table class="table table-bordered table-sm tablaExportable mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>No</th>
+                <th>Aspecto</th>
+                <th>No_</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-info">
+                <td colspan="5">
+                  <strong>Funcionario:</strong> <%= row.funcionario %> (<%= row.func_doc %>) —
+                  <strong>Centro de Costo:</strong> <%= row.ocompra %>
+                </td>
+              </tr>
+        <% } %>
+
+          <tr>
+            <td><%= currentFecha %></td>
+            <td><%= row.no %></td>
+            <td><%= row.aspecto %></td>
+            <td><%= row.no_ %></td>
+            <td><%= row.observacion %></td>
+          </tr>
+
+        <% 
+          const next = rows[idx + 1];
+          const isNextDifferentGroup = !next || next.funcionario !== currentFuncionario || next.ocompra !== currentOcompra;
+          if (isNextDifferentGroup) { %>
+            </tbody>
+          </table>
+        <% }
+
+        lastFuncionario = currentFuncionario;
+        lastOcompra = currentOcompra;
+      }); %>
+    <% } else { %>
+      <div class="alert alert-warning">No hay registros para mostrar.</div>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script>
+    function exportarExcel() {
+      const tablas = document.querySelectorAll('.tablaExportable');
+      const data = [];
+
+      tablas.forEach((tabla) => {
+        const filas = Array.from(tabla.rows);
+        filas.forEach(fila => {
+          const celdas = Array.from(fila.cells);
+          const filaDatos = [];
+
+          celdas.forEach(celda => {
+            let texto = celda.innerText.trim();
+
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+              const [d, m, y] = texto.split('/');
+              const fecha = new Date(`${y}-${m}-${d}`);
+              filaDatos.push({ t: 'd', v: fecha });
+            } else {
+              filaDatos.push(texto);
+            }
+          });
+
+          data.push(filaDatos);
+        });
+
+        data.push([]); // Separador entre tablas
+      });
+
+      const hoja = XLSX.utils.aoa_to_sheet(data);
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, "Historial");
+      XLSX.writeFile(libro, "historial_observaciones.xlsx");
+    }
+  </script>
+
+</body>
+
+
+
+</html>

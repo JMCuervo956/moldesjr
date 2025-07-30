@@ -402,63 +402,6 @@ app.get('/barraprogreso', async (req, res) => {
     }
 });
  
-/*ocompra **********/
-
-app.get('/ordenes', (req, res) => {
-    const idot = req.query.idot;
-    res.render('ordenes', { idot })
-});
-
-app.get('/ordenesss', async (req, res) => {
-  if (!req.session.loggedin) return res.status(401).json({ error: 'Sesión expirada' });
-
-  const conn = await pool.getConnection();
-  try {
-    const userUser = req.session.user;
-    const fechaHoraBogota = getBogotaDateTime();
-
-    // Parámetros para paginación
-    const page = parseInt(req.query.page) || 1;     // página actual, default 1
-    const limit = 10;                               // registros por página
-    const offset = (page - 1) * limit;
-
-    // Obtener total de registros para calcular totalPages
-    const [countResult] = await conn.execute(`SELECT COUNT(*) as total FROM tbl_otrabajo`);
-    const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
-
-    // Consulta con limit y offset para paginación
-    const [ordenes] = await conn.execute(`
-      SELECT 
-        a.*, 
-        b.funcionario AS proveedor_nombre,
-        CASE
-          WHEN ? < c.fecha_orden THEN 'Por Iniciar'
-          WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
-          WHEN ? > c.fecha_entrega THEN 'Atrasado'
-          ELSE 'Sin Estado'
-        END AS estado_actual
-      FROM tbl_otrabajo a
-      LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-      LEFT JOIN tbl_ccosto c ON a.idot = c.idcc
-      LIMIT ? OFFSET ?;
-    `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, limit, offset]);
-
-    // Renderizar la vista y enviar variables necesarias
-    res.render('ordenes', {
-      otrabajo: ordenes,
-      page,
-      totalPages
-    });
-  } catch (err) {
-    console.error('Error en /ordenes:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  } finally {
-    conn.release();
-  }
-});
-
-
 
 /* ORDEN DE TRABAJO /***************************************************************************/
 
@@ -3360,48 +3303,6 @@ app.post('/reseli/delete/:task', async (req, res) => {
 });
 
 
-// informe 1
-
-app.get('/informe', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/?expired=1');
-
-  const userCode = req.params.userCode || null;
-  try {
-    const [usuarios] = await pool.query('SELECT * FROM users');
-    const [rows] = await pool.query
-      (` 
-        SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
-        FROM items_hist a left join tbl_efuncional b
-        on b.identificador=a.func_doc
-      `);
-    res.render('informe', {rows});
-
-  } catch (err) {
-    console.error('Error cargando ', err);
-    res.status(500).send('Error interno del servidor');
-  }
-});
-
-app.get('/informeP', async (req, res) => {
-  if (!req.session.loggedin) return res.redirect('/?expired=1');
-
-  const userCode = req.params.userCode || null;
-  try {
-    const [usuarios] = await pool.query('SELECT * FROM users');
-    const [rows] = await pool.query
-      (` 
-        SELECT a.func_doc,b.funcionario,a.ocompra, a.fecha_inspeccion, a.no, a.aspecto, a.no_, a.observacion 
-        FROM items a left join tbl_efuncional b
-        on b.identificador=a.func_doc
-        WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
-      `);
-    res.render('informe', {rows});
-
-  } catch (err) {
-    console.error('Error cargando ', err);
-    res.status(500).send('Error interno del servidor');
-  }
-});
 
 // xlsx
 
@@ -3409,7 +3310,116 @@ import ExcelJS from 'exceljs';
 
 app.get('/informe.xlsx', async (req, res) => {
   try {
+    console.log(req.query); 
+    const { fecha, doc_id, tip_func } = req.query;
+
+    if (!fecha || !doc_id || !tip_func) {
+      return res.status(400).send('Faltan parámetros requeridos: fecha, doc_id o tip_func');
+    }
+
+    const fechaInicial = new Date(fecha);
+    const fechaFinal = new Date(fecha);
+    fechaFinal.setDate(fechaFinal.getDate() + 5);
+
+    const fechaIniStr = fechaInicial.toISOString().split('T')[0];
+    const fechaFinStr = fechaFinal.toISOString().split('T')[0];
+
     const [rows] = await pool.query(`
+      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
+             a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
+      FROM items a
+      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+      WHERE a.func_doc = ? AND a.ocompra = ? AND a.fecha_inspeccion >= ? AND a.fecha_inspeccion < ?
+      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+    `, [doc_id, tip_func, fechaIniStr, fechaFinStr]);
+
+    // Crear Excel con ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Informe');
+
+    let lastFuncionario = '';
+    let lastFecha = '';
+
+    for (const row of rows) {
+      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
+
+      if (funcionarioKey !== lastFuncionario) {
+        worksheet.addRow([`Funcionario: ${row.funcionario} (${row.func_doc})`]).font = { bold: true };
+        worksheet.addRow([`Centro de Costo: ${row.ocompra}`]);
+        worksheet.addRow([]);
+        lastFuncionario = funcionarioKey;
+        lastFecha = '';
+      }
+
+      if (fechaKey !== lastFecha) {
+        const fechaRow = worksheet.addRow([`Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`]);
+        fechaRow.font = { bold: true };
+        worksheet.addRow([]);
+
+        const headerRow = worksheet.addRow(['No', 'Aspecto', 'Si', 'No', 'NA', 'Observación']);
+        headerRow.eachCell(cell => {
+          cell.font = { bold: true };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+
+        lastFecha = fechaKey;
+      }
+
+      const dataRow = worksheet.addRow([
+          row.no,
+          row.aspecto,
+          row.si || '',
+          row.no_ || '',
+          row.na || '',
+          row.observacion || ''
+      ]);
+
+      dataRow.eachCell(cell => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    }
+
+    worksheet.columns = [
+      { width: 10, alignment: { wrapText: false, vertical: 'top' } },
+      { width: 120, alignment: { wrapText: true, vertical: 'top' } },
+      { width: 12, alignment: { wrapText: true, vertical: 'top', horizontal: 'center' } },
+      { width: 12, alignment: { wrapText: true, vertical: 'top', horizontal: 'center' } },
+      { width: 12, alignment: { wrapText: true, vertical: 'top', horizontal: 'center' } },
+      { width: 50, alignment: { wrapText: true, vertical: 'top' } }
+    ];
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=informe.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error('Error al generar Excel:', err);
+    res.status(500).send('Error generando archivo');
+  }
+});
+
+
+
+// copia excel 
+
+app.get('/informecopia.xlsx', async (req, res) => {
+  try {
+    console.log(req.query);
+    console.log(req.body);
+      const [rows] = await pool.query(`
       SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
              a.no, a.aspecto, a.no_, a.observacion 
       FROM items a 
@@ -4096,160 +4106,201 @@ app.post('/generar-pdf2', async (req, res) => {
 }); 
 
 app.post('/generar-pdf', async (req, res) => {
-  const { fecha } = req.body;
-  if (!fecha) {
-    // Redirige con mensaje de error
-    return res.render('opciones', {
-      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
-    });
-  }
-  const fecha2 =  new Date (fecha);
-  fecha2.setDate(fecha2.getDate()+5);
-  const fechaf = fecha2.toISOString().split('T')[0];
+  let conn;
   try {
-    const conn = await pool.getConnection();
-    const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
-    const totalRegistros = countResult[0].totalRegistros;
-    if (totalRegistros === 0) {
-
-       const [fechas] = await conn.query(`
-        select 
-              DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
-              DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
-        from items_hist where fecha_inspeccion >="2025-07-21" and fecha_inspeccion <="2025-07-21" and func_doc="80164653"
-      `);
-      const { fecha_min, fecha_max } = fechas[0];
-      conn.release();
-      return res.render('inspeccioncfg', {
-        mensaje: {  
-          tipo: 'danger',
-          texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+        const { fecha, doc_id, func, tip_func } = req.body;
+        if (!fecha) {
+          // Redirige con mensaje de error
+          return res.render('inspeccion', {
+            mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+          });
         }
-      });
-    }    
-    const [rows] = await pool.query(`
-      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
-             a.no, a.aspecto, a.no_, a.observacion 
-      FROM items_hist a 
-      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
-      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
-      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
-    `);
-    const fonts = {
-      Roboto: {
-        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
-        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
-        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
-        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
-      }
-    };
-    const printer = new PdfPrinter(fonts);
-    const content = [];
+        const fecha2 =  new Date (fecha);
+        fecha2.setDate(fecha2.getDate()+5);
+        const fechaf = fecha2.toISOString().split('T')[0];
 
-    let lastFuncionario = '';
-    let lastFecha = '';
-    let currentTableBody = null;
-    for (const row of rows) {
-      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
-      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+        conn = await pool.getConnection();
+        
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const totalRegistros = countResult[0].totalRegistros;
+        if (totalRegistros === 0) {
+          conn.release();
+          return res.render('inspeccion', {
+            mensaje: {  
+              tipo: 'danger',
+              texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+            }
+          });
+        }    
 
-      // Nuevo grupo de funcionario y centro de costo
+        // Suponiendo que 'fecha' viene en formato 'YYYY-MM-DD' (de tu formulario)
+        const [year, month, day] = fecha.split('-');
+        const fechaInicial = new Date(year, month - 1, day);
 
+        // Crear la fecha final sumando 5 días
+        const fechaFinal = new Date(fechaInicial);
+        fechaFinal.setDate(fechaFinal.getDate() + 5);
 
-      // Nueva fecha de inspección
+        // Formatear fechas en 'YYYY-MM-DD' (sin zona horaria)
+        function formatDate(date) {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
 
-if (fechaKey !== lastFecha) {
-  if (lastFecha !== '') {
-    content.push({ text: '', pageBreak: 'before' });
-  }
+        const fechaISO = formatDate(fechaInicial);  // Ej: "2025-07-22"
+        const fechafISO = formatDate(fechaFinal);   // Ej: "2025-07-27"
 
-  // Mostrar Funcionario y Centro de Costo en cada página por día
-  content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
-  content.push({ text: `Centro de Costo: ${row.ocompra}` });
-  content.push({ text: '\n' });
+        // Ahora la consulta con parámetros sin comillas:
+        const [rows] = await pool.query(`
+          SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
+          FROM items_hist a
+          LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
+          ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+        `, [fechaISO, fechafISO, doc_id, tip_func]);
 
-  // Fecha
-  content.push({
-    text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
-    style: 'fecha'
-  });
+        const fonts = {
+          Roboto: {
+            normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+            bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+            italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+          }
+        };
+        const printer = new PdfPrinter(fonts);
+        const content = [];
 
-  
-  currentTableBody = [
-    [
-      { text: 'No', style: 'tableHeader' },
-      { text: 'Aspecto', style: 'tableHeader' },
-      { text: 'No', style: 'tableHeader' },
-      { text: 'Observación', style: 'tableHeader' }
-    ]
-  ];
+        let lastFuncionario = '';
+        let lastFecha = '';
+        let currentTableBody = null;
+        for (const row of rows) {
+          const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+          const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
 
-  content.push({
-    table: {
-      headerRows: 1,
-      widths: ['auto', '*', 'auto', '*'],
-      body: currentTableBody
-    },
-    layout: 'lightHorizontalLines'
-  });
-
-  lastFecha = fechaKey;
-}
-
-      // Fila de datos
-      currentTableBody.push([
-        row.no,
-        row.aspecto,
-        row.no_,
-        row.observacion
-      ]);
-    }
+          // Nuevo grupo de funcionario y centro de costo
 
 
-const docDefinition = {
-  content,
-  styles: {
-    header: {
-      bold: true,
-      fontSize: 12,
-      margin: [0, 10, 0, 5]
-    },
-    fecha: {
-      bold: true,
-      fontSize: 11,
-      margin: [0, 10, 0, 5]
-    },
-    tableHeader: {
-      bold: true,
-      fontSize: 11,
-      color: 'black'
-    }
-  },
-  defaultStyle: {
-    fontSize: 10
-  },
-  pageSize: 'A4',
-  pageOrientation: 'portrait',
-  pageMargins: [40, 60, 40, 40],
-  footer: function(currentPage, pageCount) {
-    return {
-      text: `Página ${currentPage} de ${pageCount}`,
-      alignment: 'right',
-      margin: [0, 0, 40, 20],
-      fontSize: 9
-    };
-  }
-};
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
-    pdfDoc.pipe(res);
-    pdfDoc.end();
+          // Nueva fecha de inspección
+
+          if (fechaKey !== lastFecha) {
+            if (lastFecha !== '') {
+              content.push({ text: '', pageBreak: 'before' });
+            }
+
+            // Mostrar Funcionario y Centro de Costo en cada página por día
+            content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+            content.push({ text: `Centro de Costo: ${row.ocompra}` });
+            content.push({ text: '\n' });
+
+            // Fecha
+            content.push({
+              text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+              style: 'fecha'
+            });
+            
+            currentTableBody = [
+              [
+                { text: 'Id', style: 'tableHeader' },
+                { text: 'Aspecto', style: 'tableHeader' },
+                { text: 'SI', style: 'tableHeader' },
+                { text: 'NO', style: 'tableHeader' },
+                { text: 'NA', style: 'tableHeader' },
+                { text: 'Observación', style: 'tableHeader' }
+              ]
+            ];
+
+            content.push({
+              table: {
+                headerRows: 1,
+                widths: ['auto', '*', 'auto', 'auto', 'auto', '*'],
+                body: currentTableBody
+              },
+              layout: {
+                hLineWidth: function () {
+                  return 0.5;
+                },
+                vLineWidth: function () {
+                  return 0.5;
+                },
+                hLineColor: function () {
+                  return '#aaa';
+                },
+                vLineColor: function () {
+                  return '#aaa';
+                },
+                paddingLeft: function () {
+                  return 5;
+                },
+                paddingRight: function () {
+                  return 5;
+                }
+              }
+            });
+
+            lastFecha = fechaKey;
+          }
+
+          // Fila de datos
+          currentTableBody.push([
+            row.no,
+            row.aspecto,
+            row.si || '',
+            row.no_ || '',
+            row.na || '',
+            row.observacion || ''            
+          ]);
+        }
+
+        const docDefinition = {
+          content,
+          styles: {
+            header: {
+              bold: true,
+              fontSize: 12,
+              margin: [0, 10, 0, 5]
+            },
+            fecha: {
+              bold: true,
+              fontSize: 11,
+              margin: [0, 10, 0, 5]
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 11,
+              color: 'black'
+            }
+          },
+          defaultStyle: {
+            fontSize: 10
+          },
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          pageMargins: [40, 60, 40, 40],
+          footer: function(currentPage, pageCount) {
+            return {
+              text: `Página ${currentPage} de ${pageCount}`,
+              alignment: 'right',
+              margin: [0, 0, 40, 20],
+              fontSize: 9
+            };
+          }
+        };
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+        
+        conn.release();
   } catch (error) {
-    console.error('Error ejecutando SP:', error);
-    res.render('inspeccioncfg', {
-      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
-    });
+        if (conn) conn.release();
+        console.error('Error ejecutando SP:', error);
+        res.render('inspeccioncfg', {
+          mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+        });
   }
 }); 
 
@@ -4433,167 +4484,40 @@ app.post('/generar-pdfsem', async (req, res) => {
   }
 }); 
 
-// copia semana   
+app.get('/pendientes', async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+           a.no, a.aspecto, a.no_, a.observacion 
+    FROM items a 
+    LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+    WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+    ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+  `);
+  res.render('pendientes', { rows });
+});
 
-// PDF SEMANA 
+app.get('/inspdia', async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+           a.no, a.aspecto, a.si, a.no_, a.na, a.observacion 
+    FROM items a 
+    LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+    ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+  `);
+  res.render('inspdia', { rows });
+});
 
-app.post('/generar-pdfsemcopia', async (req, res) => {
-  const { fecha, doc_id, func } = req.body;
-  if (!fecha) {
-    // Redirige con mensaje de error
-    return res.render('opciones', {
-      mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
-    });
-  }
-  const fecha2 =  new Date (fecha);
-  fecha2.setDate(fecha2.getDate()+5);
-  const fechaf = fecha2.toISOString().split('T')[0];
-  try {
-    const conn = await pool.getConnection();
-    const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
-    const totalRegistros = countResult[0].totalRegistros;
-    if (totalRegistros === 0) {
-
-       const [fechas] = await conn.query(`
-        select 
-              DATE_FORMAT(MIN(fecha_inspeccion), '%Y-%m-%d') AS fecha_min, 
-              DATE_FORMAT(MAX(fecha_inspeccion), '%Y-%m-%d') AS fecha_max 
-        from items_hist where fecha_inspeccion >="2025-07-21" and fecha_inspeccion <="2025-07-21" and func_doc="80164653"
-      `);
-      const { fecha_min, fecha_max } = fechas[0];
-      conn.release();
-      return res.render('inspeccioncfg', {
-        mensaje: {  
-          tipo: 'danger',
-          texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
-        }
-      });
-    }    
-    const [rows] = await pool.query(`
-      SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
-             a.no, a.aspecto, a.no_, a.observacion 
-      FROM items_hist a 
-      LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
-      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
-      ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
-    `);
-    const fonts = {
-      Roboto: {
-        normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
-        bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
-        italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
-        bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
-      }
-    };
-    const printer = new PdfPrinter(fonts);
-    const content = [];
-
-    let lastFuncionario = '';
-    let lastFecha = '';
-    let currentTableBody = null;
-    for (const row of rows) {
-      const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
-      const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
-
-      // Nuevo grupo de funcionario y centro de costo
-
-
-      // Nueva fecha de inspección
-
-      if (fechaKey !== lastFecha) {
-        if (lastFecha !== '') {
-          content.push({ text: '', pageBreak: 'before' });
-        }
-
-        // Mostrar Funcionario y Centro de Costo en cada página por día
-        content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
-        content.push({ text: `Centro de Costo: ${row.ocompra}` });
-        content.push({ text: '\n' });
-
-        // Fecha
-        content.push({
-          text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
-          style: 'fecha'
-        });
-        
-        currentTableBody = [
-          [
-            { text: 'No', style: 'tableHeader' },
-            { text: 'Aspecto', style: 'tableHeader' },
-            { text: 'No', style: 'tableHeader' },
-            { text: 'Observación', style: 'tableHeader' }
-          ]
-        ];
-
-        content.push({
-          table: {
-            headerRows: 1,
-            widths: ['auto', '*', 'auto', '*'],
-            body: currentTableBody
-          },
-          layout: 'lightHorizontalLines'
-        });
-
-        lastFecha = fechaKey;
-      }
-
-      // Fila de datos
-      currentTableBody.push([
-        row.no,
-        row.aspecto,
-        row.no_,
-        row.observacion
-      ]);
-    }
-
-const docDefinition = {
-  content,
-  styles: {
-    header: {
-      bold: true,
-      fontSize: 12,
-      margin: [0, 10, 0, 5]
-    },
-    fecha: {
-      bold: true,
-      fontSize: 11,
-      margin: [0, 10, 0, 5]
-    },
-    tableHeader: {
-      bold: true,
-      fontSize: 11,
-      color: 'black'
-    }
-  },
-  defaultStyle: {
-    fontSize: 10
-  },
-  pageSize: 'A4',
-  pageOrientation: 'portrait',
-  pageMargins: [40, 60, 40, 40],
-  footer: function(currentPage, pageCount) {
-    return {
-      text: `Página ${currentPage} de ${pageCount}`,
-      alignment: 'right',
-      margin: [0, 0, 40, 20],
-      fontSize: 9
-    };
-  }
-};
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
-    pdfDoc.pipe(res);
-    pdfDoc.end();
-  } catch (error) {
-    console.error('Error ejecutando SP:', error);
-    res.render('inspeccioncfg', {
-      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
-    });
-  }
-}); 
-
-// fin copia 
+app.get('/pendientesh', async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+           a.no, a.aspecto, a.no_, a.observacion 
+    FROM items_hist a 
+    LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+    WHERE no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> '')
+    ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+  `);
+  res.render('pendientesh', { rows });
+});
 
 // Puerto de escucha
 server.listen(PORT, '0.0.0.0', () => {
