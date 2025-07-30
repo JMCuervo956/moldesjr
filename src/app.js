@@ -3662,6 +3662,7 @@ app.get('/informe.pdf', async (req, res) => {
       if (funcionarioKey !== lastFuncionario) {
         content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
         content.push({ text: `Centro de Costo: ${row.ocompra}` });
+        
         content.push({ text: '\n' });
         lastFuncionario = funcionarioKey;
         lastFecha = ''; // Reinicia fecha al cambiar de grupo
@@ -4453,9 +4454,10 @@ app.post('/generar-pdfsem', async (req, res) => {
         }    
         const [rows] = await pool.query(`
           SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
-                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion, c.firma_base64
           FROM items a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
           WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fecha, fechaf, doc_id, tip_func]);
@@ -4537,6 +4539,38 @@ app.post('/generar-pdfsem', async (req, res) => {
               }
             });
 
+
+
+
+// ⬇️ Aquí insertas la firma y texto antes del cambio de página
+if (row.firma_base64) {
+  let firmaImg = row.firma_base64;
+  if (!firmaImg.startsWith('data:image')) {
+    firmaImg = `data:image/png;base64,${firmaImg}`;
+  }
+
+  // Firma
+  content.push({
+    image: firmaImg,
+    width: 120,
+    height: 50,
+    margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
+  });
+
+  // Línea + Aceptado
+  content.push({
+    text: '________________________\nAceptado',
+    alignment: 'left',
+    margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
+    fontSize: 10
+});
+}
+
+
+
+
+
+
             lastFecha = fechaKey;
           }
 
@@ -4550,6 +4584,12 @@ app.post('/generar-pdfsem', async (req, res) => {
             row.observacion || ''            
           ]);
         }
+
+// aqui
+
+
+
+// aqui
 
         const docDefinition = {
           content,
@@ -4599,7 +4639,7 @@ app.post('/generar-pdfsem', async (req, res) => {
           mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
         });
   }
-}); 
+});     
 
 app.get('/pendientes', async (req, res) => {
   const [rows] = await pool.query(`
