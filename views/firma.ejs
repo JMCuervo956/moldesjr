@@ -53,6 +53,22 @@
     }
     /* f moviles */
 
+    @media (max-width: 600px) {
+      .firma-wrapper {
+        overflow-x: auto;
+        display: block;
+      }
+
+      .firma-wrapper > div {
+        min-width: 420px; /* ancho mínimo para que canvas y firma entren sin romperse */
+      }
+
+      canvas,
+      #firmaGuardadaImg {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }    
 
   </style>
 </head>
@@ -114,19 +130,18 @@
                 >
                 </div>
             </div>
-
-            <div style="display: flex; gap: 20px; align-items: flex-start;">
-            <div>
-                <label for="signatureCanvas">Firma:</label><br>
-                <canvas id="signatureCanvas" width="400" height="200" style="border: 1px solid #000;"></canvas><br>
+            <div class="firma-wrapper">
+                        <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        <div>
+                            <label for="signatureCanvas">Firma:</label><br>
+                            <canvas id="signatureCanvas" width="400" height="200" style="border: 1px solid #000;"></canvas><br>
+                        </div>
+                            <div id="firmaGuardadaContainer" style="margin-top: 0;">
+                                <label>Firma Guardada:</label><br>
+                                <img id="firmaGuardadaImg" src="" alt="Firma guardada" style="border: 1px solid #ccc; width: 400px; height: 200px;">
+                            </div>
+                        </div>
             </div>
-
-            <div id="firmaGuardadaContainer" style="margin-top: 0;">
-                <label>Firma Guardada:</label><br>
-                <img id="firmaGuardadaImg" src="" alt="Firma guardada" style="border: 1px solid #ccc; width: 400px; height: 200px;">
-            </div>
-            </div>
-
             <button type="button" onclick="limpiarFirma()">Limpiar Firma</button><br><br>
             <input type="hidden" name="firma" id="firmaInput">
             <button type="submit">Enviar</button>
