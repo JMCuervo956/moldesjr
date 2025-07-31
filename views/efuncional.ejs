@@ -128,11 +128,7 @@
   </div>
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
-          <div class="d-flex justify-content-start align-items-center mb-0">
-            <button class="btn btn-primary btn-sm ms-5" data-toggle="modal" data-target="#modalCiudad" onclick="limpiarFormularioCiudad()">Adicionar</button>
-            <a href="/menuprc" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
-          </div>
-          
+         
           <% if (typeof mensaje !== 'undefined') { %>
           <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
             <%= mensaje.texto %>
