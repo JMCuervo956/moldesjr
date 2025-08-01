@@ -1,11 +1,11 @@
 import {createPool} from 'mysql2';
 import mysql from 'mysql2/promise';
 import {
-    DB_HOST,
-    DB_NAME,
-    DB_PASSWORD,
-    DB_USER,
-    DB_PORT
+  DB_HOST,
+  DB_USER,
+  DB_PASSWORD,
+  DB_NAME,
+  DB_PORT
 } from './config.js';
 
 export const pool = mysql.createPool({
@@ -15,6 +15,21 @@ export const pool = mysql.createPool({
   database: DB_NAME,
   port: DB_PORT,
   waitForConnections: true,
-  connectionLimit: 3,      // 👈 Ajusta este valor a menos del máximo permitido (ej. 3 si tu host permite 5)
-  queueLimit: 0
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 10000,
+  acquireTimeout: 10000,
+  ssl: {
+    rejectUnauthorized: false // ← Clever Cloud NO requiere validación estricta de certificados
+  }
 });
+
+// Opcional pero recomendable: mantiene la conexión activa
+setInterval(async () => {
+  try {
+    await pool.query('SELECT 1');
+    console.log('✅ Ping a Clever Cloud exitoso');
+  } catch (err) {
+    console.error('❌ Error en ping a Clever Cloud:', err.message);
+  }
+}, 30000);
