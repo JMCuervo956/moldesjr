@@ -1303,7 +1303,7 @@ app.get('/opciones', async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo actividades:', error);
     if (error.code === 'ECONNRESET') {
-      res.status(503).send('Servicio de base de datos no disponible. Intenta nuevamente en unos segundos.');
+      res.status(503).send('Opciones, Servicio de base de datos no disponible. Intenta nuevamente en unos segundos.');
     } else {
       res.status(500).send('Error interno al obtener datos.');
     }
