@@ -1,24 +1,38 @@
 export const menuData2 = [
-      {
-        title: "Salir",
-        link: "/",
-        icon: "fas fa-home" // Ícono de Font Awesome
-      },
-      {
-        title: "Sobre Nosotros",
-        icon: "fas fa-users", // Ícono de Font Awesome
-        subItems: [
-          {
-            title: "Equipo",
-            //link: "/nosotros/equipo",
-            icon: "fas fa-user-friends",
-            subItems: [
-              { title: "Miembros del Equipo", link: "/usuarios", icon: "fas fa-users-cog" },
-              { title: "Contactar con el Equipo", link: "/nosotros/equipo/contactar", icon: "fas fa-envelope" }
-            ]
-          },
-          { title: "Historia", link: "/nosotros/historia", icon: "fas fa-history" }
-        ]
-      }
-    ];
+    {
+        title: "Salir",
+        link: "/",
+        icon: "fas fa-home" // Ícono de Font Awesome
+    },
+
+    {
+        title: "Centros de Costos",
+        link: "/ccosto",
+        icon: "fas fa-user-plus icon-envelope",
+    },
+
+    {
+        title: "Ordenes de Trabajo",
+        icon: "fas fa-users icon-users",
+        subItems: [
+        { title: "Ordenes", link: "/otrabajo", icon: "fas fa-users-cog icon-users-cog" },
+        { title: "Actividades", link: "/actividades", icon: "fas fa-history icon-history" },
+        {
+            title: "Inspeccion",
+            icon: "fas fa-users icon-users",
+            subItems: [
+            { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
+            { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-folder-open" },
+            { title: "Cerrar e Historial", link: "/inspeccioncfg", icon: "fas fa-puzzle-piece" },
+            ]
+        },      
+        ]
+    },
+
+    {
+        title: "Informes / Consultas",
+        link: "/opciones",
+        icon: "fas fa-file-alt icon-file-alt",
+    },
+  ];
     

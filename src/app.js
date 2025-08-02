@@ -406,6 +406,59 @@ app.get('/barraprogreso', async (req, res) => {
     }
 });
  
+app.get('/modal', async (req, res) => {
+    if (!req.session.loggedin) return res.redirect('/?expired=1');
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+            // Recuperar datos de la URL
+            //const id = req.params.id;
+            const id = req.query.idcc;
+            const [rows] = await pool.execute(`
+                SELECT a.*, b.cliente as client,c.unidad as nund
+                FROM tbl_ccosto a
+                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
+                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
+                WHERE idcc = ?
+            `, [id]);
+            const row = rows[0]; // obtenemos la primera fila
+            const data = {
+            cc: row.idcc,
+            descripcion: row.descripcion,
+            oc: row.ocompra,
+            cliente: row.cliente,
+            ncliente: row.client,
+            cantidad: row.cantidad,
+            peso: row.peso,
+            unidad: row.unidad,
+            nunidad: row.nund,
+            comentarios: row.comentarios
+                ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
+                : '',
+            FechaOrden: row.fecha_orden
+                ? row.fecha_orden.toISOString().split('T')[0]
+                : null,
+            FechaEntrega: row.fecha_entrega
+                ? row.fecha_entrega.toISOString().split('T')[0]
+                : null,
+            FechaFin: row.fecha_fin
+                ? row.fecha_fin.toISOString().split('T')[0]
+                : null
+            };
+            //  Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+            res.render('barraprogreso', { preguntas: rows, user: userUser, name: userName, datosBD: data });
+
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error real:', error);
+        res.status(500).send('Error conectando a la base de datos.');
+    }
+});
 
 /* ORDEN DE TRABAJO /***************************************************************************/
 
@@ -2905,6 +2958,107 @@ app.get('/inspeccion', async (req, res) => {
   }
 });
 
+// inspeccion_aux
+
+app.get('/inspeccion_aux', async (req, res) => {
+  const { tip_func, doc_id } = req.query;
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    
+    // Obtener todos los datos sin filtrar por semana
+    const [inspecc] = await conn.execute(`
+      SELECT 
+        b.id_bloque,
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.fecha_inspeccion,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.observacion,
+        i.firma
+      FROM bloques_aux b
+      JOIN items_aux i ON b.id_bloque = i.id_bloque
+      where func_doc = ? 
+      ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
+    `, [doc_id] );  
+
+    // Extraer fechas únicas reales desde los resultados SQL
+    const fechasUnicas = [...new Set(inspecc.map(row =>
+      new Date(row.fecha_inspeccion).toISOString().slice(0, 10)
+    ))].sort(); // ordena por fecha ascendente
+
+    // Crear array de días en formato { fecha, nombre }
+    const abreviaciones = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    const dias = fechasUnicas.map(fecha => {
+      const diaBogota = DateTime.fromISO(fecha, { zone: 'America/Bogota' });
+      const nombre = diaBogota.setLocale('es').toFormat('ccc'); // 'Vie', 'Lun', etc.
+      return {
+        fecha,
+        nombre
+      };
+    });
+    
+    // Agrupar por bloques
+    const bloquesAgrupados = [];
+
+    inspecc.forEach(row => {
+      let bloque = bloquesAgrupados.find(b => b.id_bloque === row.id_bloque);
+      if (!bloque) {
+        bloque = {
+          id_bloque: row.id_bloque,
+          titulo: row.titulo,
+          items: []
+        };
+        bloquesAgrupados.push(bloque);
+      }
+
+      let item = bloque.items.find(i => i.no === row.no);
+      if (!item) {
+        item = {
+          no: row.no,
+          aspecto: row.aspecto,
+          valores: {}
+        };
+        bloque.items.push(item);
+      }
+
+      const fechaStr = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
+      item.valores[fechaStr] = {
+        si: (row.si || '').trim().toUpperCase(),
+        no_: (row.no_ || '').trim().toUpperCase(),
+        na: (row.na || '').trim().toUpperCase(),
+        observacion: row.observacion || '',
+        firma: row.firma || ''
+      };
+    });
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('inspeccion_aux', {
+      inspecc: bloquesAgrupados,
+      dias,
+      tip_func,
+      doc_id,
+      user: userUser,
+      name: userName,
+      mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo inspeccion:', error);
+    res.status(500).send('Error al obtener inspeccion aux');
+  } finally {
+    conn.release();
+  }
+});
+
+
 // Endpoint para actualizar
 app.post('/api/items/update', (req, res) => {
   const { fecha_inspeccion, no, si, no_, na, observacion } = req.body;
@@ -3338,6 +3492,54 @@ app.get('/inspasig', async (req, res) => {
             delete req.session.mensaje;
 
             res.render('inspasig', {
+                efuncional: efuncionalRows,
+                tipodocl: tipodoclRows,
+                estados: estadosRows,
+                perfilf: perfilfRows,
+                user: userUser,
+                name: userName,
+                mensaje
+            });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo funcional:', error.stack || error);
+        res.redirect('/');
+    }
+});
+
+app.get('/inspaux', async (req, res) => {
+    try {
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [
+                [efuncionalRows], // resultado de SELECT con JOIN
+                [tipodoclRows],
+                [estadosRows],
+                [perfilfRows]
+            ] = await Promise.all([
+                pool.execute(` 
+                    SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                           b.id AS idp, b.perfil AS perfilp, c.estado AS destado
+                    FROM tbl_efuncional a
+                    JOIN tbl_perfil b ON a.perfil = b.id
+                    JOIN tbl_estados c ON a.estado = c.id
+                    WHERE a.perfil = 10
+                    ORDER BY a.perfil, a.estado;
+                `),
+                pool.execute('SELECT * FROM tbl_tipodoc'),
+                pool.execute('SELECT * FROM tbl_estados'),
+                pool.execute('SELECT * FROM tbl_perfil')
+            ]);
+
+            // Recuperar mensaje de sesión
+            const mensaje = req.session.mensaje;
+            delete req.session.mensaje;
+
+            res.render('inspaux', {
                 efuncional: efuncionalRows,
                 tipodocl: tipodoclRows,
                 estados: estadosRows,

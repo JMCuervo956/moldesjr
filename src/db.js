@@ -15,7 +15,7 @@ export const pool = mysql.createPool({
   database: DB_NAME,
   port: DB_PORT,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 20,
   queueLimit: 0,
   connectTimeout: 10000,
   ssl: {
@@ -34,3 +34,4 @@ setInterval(async () => {
     console.error('❌ Error en ping a Clever Cloud:', err.message);
   }
 }, 30000);
+
