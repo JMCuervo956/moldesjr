@@ -321,9 +321,9 @@
           <div class="modal-dialog modal-lg" role="document">
             <form action="/ccosto" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
 
-            <input type="text" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
-            <input type="text" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
-            <input type="text" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
+            <input type="hidden" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
+            <input type="hidden" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
+            <input type="hidden" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
 
 
 
