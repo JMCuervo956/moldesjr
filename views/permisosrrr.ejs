@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Permisos</title>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <style>
+    .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .detalle-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2px;
+        background-color: #f7f7f7;
+      }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      padding: 30px;
+      color: #333;
+    }
+    h1, h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px 15px;
+      text-align: center;
+    }
+    th {
+      background-color: #34495e;
+      color: #ecf0f1;
+      font-weight: 600;
+    }
+    tbody tr:hover {
+      background-color: #f1f6f9;
+    }
+    form {
+      margin: 0;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      transform: scale(1.1);
+    }
+    button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      padding: 7px 15px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1c5980;
+    }
+    label {
+      display: inline-block;
+      margin: 10px 15px 10px 0;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    input[type="text"], select {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 200px;
+      margin-bottom: 15px;
+    }
+    input[type="hidden"] {
+      display: none;
+    }
+
+    .permiso-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    }
+
+    .permiso-row label {
+    margin: 0;
+    font-weight: 500;
+    }
+
+    .permiso-row select {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    }
+
+.linea-con-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 40px 0;
+  font-weight: bold;
+  font-size: 15px;
+  color: #333;
+  position: relative;
+}
+
+.linea-con-titulo::before,
+.linea-con-titulo::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: #ccc;
+  margin: 0 10px;
+  border-radius: 2px;
+  transform-origin: left;
+  transform: scaleX(0);
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-out;
+  animation-duration: 1s;
+}
+
+.linea-con-titulo::before {
+  animation-name: dibujarLineaAntes;
+}
+
+.linea-con-titulo::after {
+  animation-name: dibujarLineaDespues;
+  animation-delay: 0.3s;
+}
+
+/* Animaciones */
+@keyframes dibujarLineaAntes {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes dibujarLineaDespues {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .linea-con-titulo {
+    color: #f0f0f0;
+  }
+
+  .linea-con-titulo::before,
+  .linea-con-titulo::after {
+    background: #555;
+  }
+}
+    
+  </style>
+</head>
+<body>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <a href="/users" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
+  </div>
+
+
+    <h1>Gestión de Permisos</h1>
+
+<div class="detalle-scroll">
+
+  <!-- Selección de usuario -->
+  <form method="GET" action="/permisos">
+    <label for="userCode">Seleccione un usuario:</label>
+            <select name="id" id="userCode" onchange="this.form.action='/permisos/' + this.value; this.form.submit()" style="width: 400px;">
+            <option value="">-- Seleccione --</option>
+            <% usuarios.forEach(u => { %>
+                    <option value="<%= u.user %>" <%= userCode == u.user ? 'selected' : '' %>>
+                    <%= u.user %> - <%= u.name %>
+                    </option>
+                <% }) %>
+            </select>
+  </form>
+
+<div style="display: flex; align-items: center; margin: 30px 0;">
+  <div style="flex: 1; height: 2px; background: linear-gradient(to right, #3498db, transparent);"></div>
+  <span style="margin: 0 15px; font-weight: bold; color: #444;">
+  </span>
+  <div style="flex: 1; height: 2px; background: linear-gradient(to left, #3498db, transparent);"></div>
+</div>
+  <% if (userCode) { %>
+    <h3 style="padding-left: 20px;">Agregar nuevo permiso</h3>
+    <form method="POST" action="/permisos/agregar" style="max-width: 600px;">
+      <div>
+        <input type="text" name="user_code" value="<%= userCode %>">
+        <br>
+        <label for="module" style="margin-right: 10px;">Módulo:</label>
+        <select id="module" name="module" required>
+          <label for="user_code">Usuario:</label>
+            <option value="">-- Seleccione un módulo --</option>
+            <% modulos.forEach(m => { %>
+            <option value="<%= m.menu %>"><%= m.menu %></option>
+            <% }) %>
+        </select>
+
+        <label><input type="checkbox" name="can_view" /> Ver</label>
+        <label><input type="checkbox" name="can_create" /> Crear</label>
+        <label><input type="checkbox" name="can_edit" /> Editar</label>
+        <label><input type="checkbox" name="can_delete" /> Eliminar</label>
+        <button type="submit">Agregar</button>
+        </div>
+        <br />
+    </form>
+
+<div class="linea-con-titulo animada">
+  <span> Permisos Otorgados </span>
+</div>    
+
+    <!-- Tabla de permisos -->
+    <table>
+      <thead>
+        <tr>
+          <th>Módulo</th>
+          <!-- <th>Opción</th> -->
+          <th>Ver</th>
+          <th>Crear</th>
+          <th>Editar</th>
+          <th>Eliminar</th>
+          <!-- <th>Asignado por</th> -->
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (permisos.length === 0) { %>
+          <tr><td colspan="8">No hay permisos asignados.</td></tr>
+        <% } else { %>
+          <% permisos.forEach(p => { %>
+                <tr>
+                <td><%= p.module %></td>
+                <!-- <td><%= p.opcion || '-' %></td> -->
+                <td><input type="checkbox" name="can_view" <%= p.can_view ? 'checked' : '' %> form="form-<%= p.userCode %>-<%= p.module %>-<%= p.opcion %>" /></td>
+                <td><input type="checkbox" name="can_create" <%= p.can_create ? 'checked' : '' %> form="form-<%= p.userCode %>-<%= p.module %>-<%= p.opcion %>" /></td>
+                <td><input type="checkbox" name="can_edit" <%= p.can_edit ? 'checked' : '' %> form="form-<%= p.userCode %>-<%= p.module %>-<%= p.opcion %>" /></td>
+                <td><input type="checkbox" name="can_delete" <%= p.can_delete ? 'checked' : '' %> form="form-<%= p.userCode %>-<%= p.module %>-<%= p.opcion %>" /></td>
+                <!-- <td><%= p.asignado_por || 'Desconocido' %></td> -->
+                <td>
+                    <form id="form-<%= p.userCode %>-<%= p.module %>-<%= p.opcion %>" method="POST" action="/permisos/actualizar">
+                    <input type="hidden" name="user_code" value="<%= p.user_code %>" />
+                    <input type="hidden" name="module" value="<%= p.module %>" />
+                    <input type="hidden" name="opcion" value="<%= p.opcion || '' %>" />
+                    <button type="submit">Guardar</button>
+                    </form>
+                </td>
+                </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>Seleccione un usuario para gestionar sus permisos.</p>
+  <% } %>
+</div>
+
+<script>
+  // Bloquear clic derecho
+  document.addEventListener('contextmenu', event => event.preventDefault());
+
+  // Bloquear teclas como F12, Ctrl+Shift+I, Ctrl+U, etc.
+  document.addEventListener('keydown', event => {
+    // F12
+    if (event.key === "F12") {
+      event.preventDefault();
+    }
+
+    // Ctrl+Shift+I, Ctrl+Shift+J
+    if (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J')) {
+      event.preventDefault();
+    }
+
+    // Ctrl+U
+    if (event.ctrlKey && event.key === 'u') {
+      event.preventDefault();
+    }
+
+    // Ctrl+S (para evitar guardar página)
+    if (event.ctrlKey && event.key === 's') {
+      event.preventDefault();
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -18,16 +18,22 @@
   <%- include('partials/head') %>
 
   <style>
-        .encabezado {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          background-color: #fff;
-          z-index: 1000;
-          padding: 15px 20px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
+
+            .encabezado {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 15px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+.detalle-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  background-color: #f7f7f7;
+}
 
         /* Esta clase reserva espacio para el header fijo */
         .contenido-principal {
@@ -345,6 +351,7 @@
                     <a href="/pendientes" class="modern-btn btn-rojo">Pendiente Día</a>
                     <a href="/pendientesh" class="modern-btn btn-verde">Pendiente Historico</a>
                     <a href="/inspdia" class="modern-btn btn-azul">Insp. Dia</a>
+                    <a href="/cambioctr" class="modern-btn btn-azul">Cambio Contraseña</a>
 
           </div>
           <br>

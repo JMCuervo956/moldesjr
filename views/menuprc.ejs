@@ -11,6 +11,26 @@
     <%- include('partials/head') %> <!-- <link rel="stylesheet" href="main.css"> /// partial para repetir en cada una de las paginas -->
 
     <style>
+
+        .encabezado {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          background-color: #fff;
+          z-index: 1000;
+          padding: 15px 20px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Altura reservada para el encabezado */
+        .detalle-scroll {
+          margin-top: 150px; /* Ajusta según el alto real del header */
+          height: calc(100% - 120px);
+          overflow-y: auto;
+          padding: 20px;
+          background-color: #f7f7f7;
+        }        
+
         .dropdown {
           position: relative; /* Necesario para el dropdown */
         }
@@ -195,26 +215,7 @@
           height: 100%;
           overflow: hidden; /* Evita que el body entero tenga scroll */
           font-family: 'Roboto', sans-serif;
-        }
 
-        .encabezado {
-          position: fixed;
-          top: 0;
-          width: 100%;
-          background-color: #fff;
-          z-index: 1000;
-          padding: 15px 20px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Altura reservada para el encabezado */
-        .detalle-scroll {
-          margin-top: 120px; /* Ajusta según el alto real del header */
-          height: calc(100% - 120px);
-          overflow-y: auto;
-          padding: 20px;
-          background-color: #f7f7f7;
-        }
 
 
       /* iconColors.css */
@@ -226,6 +227,47 @@
       .icon-users-cog  { color: #9b59b6; }   /* púrpura */
       .icon-history    { color: #f1c40f; }   /* amarillo */
 
+    /* Barra horizontal elegante */
+    .barra-opciones {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background-color: #8b0b07;
+      padding: 10px 20px;
+      gap: 15px; /* Espacio entre botones */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .barra-opciones button {
+      background-color: #f3f8f3;
+      border: none;
+      color: rgb(99, 6, 6);
+      padding: 10px 16px;
+      margin-left: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    .barra-opciones button:hover {
+      background-color: #dbdbd6;
+    }      
+
+    .barra-opciones a {
+      text-decoration: none;
+      background-color: #3a66cc; /* Estilo de botón */
+      color: white;
+      padding: 10px 16px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .barra-opciones a:hover {
+      background-color: #2f55aa;
+    }    
       </style>
 
 </head>
@@ -237,7 +279,7 @@
     <% } else { %> 
         <%- include('partials/navigation') %>   
     <% } %>
-
+    
     <div style="display: flex; justify-content: flex-end; padding: 10px 20px;">
       <h5 style="font-size: 10px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); transition: color 0.3s ease; margin: 0;"
         onmouseover="this.querySelector('.user').style.color='darkblue'; this.querySelector('.name').style.color='darkred';"
@@ -248,7 +290,7 @@
     </div>
     
   </header>
-
+  
   <% if (typeof mensaje !== 'undefined') { %>
   <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
     <%= mensaje.texto %>
@@ -260,18 +302,31 @@
 
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
+  <div class="barra-opciones">
+    <a href="/cambioctr" class="modern-btn btn-azul">Cambiar Contraseña</a>
+    <a href="/" class="modern-btn btn-azul">Salir</a>
+  </div>
+
+
     <div class="content">
       <div style="display: inline;">
         <div class="register-menu">
           <% if (rol === '1') { %>
             <nav id="menu"></nav>
           <% } else { %>
-            <nav id="menu2"></nav>
+            <nav id="filteredMenu"></nav>
           <% } %>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+    window.permisosUsuario = <%- JSON.stringify(modulos) %>; // 👈 lista como array JS
+  </script>
+
+  <!-- Cargar tu JS -->
+  <script type="module" src="./main.js"></script>
 
   <script>
     // Opcional: autocierra el mensaje después de 5 segundos

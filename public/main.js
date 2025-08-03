@@ -1,9 +1,12 @@
 import { menuData } from './menuData.js';
 import { menuData2 } from './menuData2.js';
 
+const userRole = "josem"; // o el rol que tengas dinámico
 document.addEventListener("DOMContentLoaded", () => {
   const nav1 = document.getElementById("menu");
-  const nav2 = document.getElementById("menu2");
+  const nav2 = document.getElementById("filteredMenu");
+  const permisos = window.permisosUsuario || [];
+  const filteredMenu = filterMenuByModulos(menuData2, permisos);
 
   const storedPath = JSON.parse(localStorage.getItem("menuPath") || "[]");
 
@@ -58,7 +61,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (nav2) {
-    const menu2 = createMenu(menuData2);
-    nav2.appendChild(menu2);
+    const menu = createMenu(filteredMenu); // <-- usa el menú filtrado
+    nav2.appendChild(menu);
   }
 });
+
+function filterMenuByModulos(menu, modulosPermitidos) {
+  return menu
+    .map(item => {
+      const subItems = item.subItems
+        ? filterMenuByModulos(item.subItems, modulosPermitidos)
+        : null;
+
+      const tienePermiso = modulosPermitidos.includes(item.title);
+
+      if (tienePermiso || (subItems && subItems.length > 0)) {
+        return {
+          ...item,
+          subItems: subItems && subItems.length > 0 ? subItems : undefined
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+}

@@ -48,6 +48,17 @@ app.get('/', (req, res) => {
   res.render('login', { query: req.query });
 });
 
+app.get('/session-info', (req, res) => {
+  if (req.session.loggedin) {
+    res.json({
+      user: req.session.user,
+      username: req.session.username,
+      mensaje: 'Sesión activa'
+    });
+  } else {
+    res.status(401).json({ mensaje: 'No has iniciado sesión' });
+  }
+});
 
 // Ruta para mostrar permisos del usuario
 app.get('/permisos/:userCode?', async (req, res) => {
@@ -61,7 +72,9 @@ app.get('/permisos/:userCode?', async (req, res) => {
 
     if (userCode) {
       [permisos] = await pool.query(
-        'SELECT * FROM users_add WHERE user_code = ?',
+        `SELECT a.user_code, a.module, a.opcion, a.can_view, a.can_create, a.can_edit, a.can_delete, a.activo, a.fecha_cre, a.fecha_act, a.asignado_por FROM users_add a
+        left join tbl_menu b on a.module=b.menu
+        WHERE a.user_code = ? order by b.id_menu`,
         [userCode]
       );
     }
@@ -111,9 +124,9 @@ app.post('/permisos/actualizar', async (req, res) => {
   }
 });
 
-// Agregar nuevo permiso
 app.post('/permisos/agregar', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
+
   const {
     user_code,
     module,
@@ -125,8 +138,20 @@ app.post('/permisos/agregar', async (req, res) => {
   } = req.body;
 
   try {
+    // Verificar si ya existe permiso para ese user_code + module + opcion
+    const [existing] = await pool.query(
+      `SELECT * FROM users_add WHERE user_code = ? AND module = ? AND opcion = ?`,
+      [user_code, module, opcion || '']
+    );
+
+    if (existing.length > 0) {
+      // Ya existe, no insertar y redirigir o enviar mensaje
+      return res.redirect(`/permisos/${user_code}?msg=existe`);
+    }
+
+    // No existe, insertar nuevo permiso
     await pool.query(
-      `INSERT INTO users_add (user_code , module, opcion, can_view, can_create, can_edit, can_delete, fecha_cre)
+      `INSERT INTO users_add (user_code, module, opcion, can_view, can_create, can_edit, can_delete, fecha_cre)
        VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())`,
       [
         user_code,
@@ -139,13 +164,12 @@ app.post('/permisos/agregar', async (req, res) => {
       ]
     );
 
-    res.redirect(`/permisos/${user_code}`);
+    res.redirect(`/permisos/${user_code}?msg=agregado`);
   } catch (err) {
     console.error('Error agregando permiso:', err);
     res.status(500).send('Error al agregar permiso');
   }
 });
-
 
 // Descarga de archivos
 app.get('/origen/:folder/:filename', (req, res) => {
@@ -162,6 +186,39 @@ app.get('/origen/:folder/:filename', (req, res) => {
 
 // Vista del menú principal
 app.get('/menuprc', requireSession, async (req, res) => {
+  const { user, name, rol, unidad: userUser } = req.session;
+
+  try {
+    const fechaHoraBogota = getBogotaDateTime();
+    await pool.execute(
+      'INSERT INTO logs_mjr (user, proceso, fecha_proceso) VALUES (?, ?, ?)',
+      [user, 1, fechaHoraBogota]
+    );
+
+    // Consulta los módulos permitidos desde la base de datos
+    const [rows] = await pool.execute(
+      'SELECT module FROM users_add WHERE user_code = ?  and (can_view>0 or can_create>0 or can_edit>0 or can_delete>0)',
+      [user]
+    );
+    const modulosPermitidos = rows.map(row => row.module); // array de strings
+    res.render('menuprc', { user, name, rol, userUser, modulos: modulosPermitidos });
+  } catch (error) {
+    console.error('Error en /menuprc:', error.message);
+
+    // ✅ Mensaje en sesión con objeto completo (tipo + texto)
+    req.session.mensaje = {
+      texto: 'Ocurrió un error al cargar el menú principal. Intente nuevamente.',
+      tipo: 'danger'
+    };
+
+    // ✅ Redirección segura
+    res.redirect('/menuprc');
+
+    // 🔴 ¡NO pongas res.status().send() después de redirigir!
+  }
+});
+
+app.get('/menuprcCOP', requireSession, async (req, res) => {
   const { user, name, rol, unidad: userUser } = req.session;
 
   try {
@@ -188,8 +245,6 @@ app.get('/menuprc', requireSession, async (req, res) => {
   }
 });
 
-
-
 // Rutas externas (login modularizado)
 app.use('/', authRoutes);
 
@@ -215,13 +270,32 @@ function getBogotaDateTime() {
 
 app.get('/ccosto', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
-
   const conn = await pool.getConnection();
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
+//
+    let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
+    if (userUser !== 'admin') {
+      const [permisos] = await conn.execute(
+        'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
+        [userUser, 'Centros de Costo']
+      );
+      if (permisos.length === 0) {
+        return; // no hace nada si no tiene permisos
+      }
+      // Aquí va el código si sí tiene permisos
+      const permiso = permisos[0];
+      canView = permiso.can_view;
+      canCreate = permiso.can_create;
+      canEdit = permiso.can_edit;
+      canDelete = permiso.can_delete;
+    } else {
+      // Si es admin, tal vez le asignas permisos máximos
+      canView = canCreate = canEdit = canDelete = 1;
+    }
+//
     const fechaHoraBogota = getBogotaDateTime();
-
     const [[ccosto], [unidadT], [clienteT], [paisesl]] = await Promise.all([
       conn.execute(` 
         SELECT a.*, b.cliente as clienteN,
@@ -247,7 +321,8 @@ app.get('/ccosto', async (req, res) => {
         VALUES (?, ?, ?)`,
       [userUser, 2, fechaHoraBogota]
     );
-    res.render('ccosto', { ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName, mensaje });
+    res.render('ccosto', { canCreate, canView, canEdit, canDelete, mensaje, ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName });
+
   } catch (error) {
     console.error('❌ Error obteniendo ccosto:', error.stack || error);
     req.session.mensaje = {
@@ -268,24 +343,20 @@ app.post('/ccosto', async (req, res) => {
     const {
       idcc, descripcion, ocompra, cliente, fecha_orden,
       fecha_entrega, cantidad, unidad, peso, pais,
-      ciudad, comentarios, editando
+      ciudad, comentarios, editando, canCreate, canEdit, canDelete
     } = req.body;
-
     let mensaje;
-
     if (editando === "true") {
-      await conn.execute(
-        `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, comentarios=? WHERE idcc=?`,
-        [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
-      );
-
-      mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
+        await conn.execute(
+          `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, comentarios=? WHERE idcc=?`,
+          [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
+        );
+        mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
     } else {
       const [rows] = await conn.execute(
         'SELECT COUNT(*) AS count FROM tbl_ccosto WHERE idcc = ?',
         [idcc]
       );
-
       if (rows[0].count > 0) {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
@@ -294,7 +365,6 @@ app.post('/ccosto', async (req, res) => {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios?.trim()]
         );
-
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }
     }
@@ -308,8 +378,7 @@ app.post('/ccosto', async (req, res) => {
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
-
-    res.render('ccosto', { mensaje, ccosto, unidadT, clienteT, paisesl });
+    res.render('ccosto', { canCreate, canEdit, canDelete,mensaje, ccosto, unidadT, clienteT, paisesl });
 
   } catch (error) {
     console.error('Error guardando ccosto:', error);
@@ -464,13 +533,34 @@ app.get('/modal', async (req, res) => {
 
 app.get('/otrabajo', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
-
   const conn = await pool.getConnection();
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-    const fechaHoraBogota = getBogotaDateTime();
 
+    //
+        let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
+        if (userUser !== 'admin') {
+          const [permisos] = await conn.execute(
+            'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
+            [userUser, 'Ordenes']
+          );
+          if (permisos.length === 0) {
+            return; // no hace nada si no tiene permisos
+          }
+          // Aquí va el código si sí tiene permisos
+          const permiso = permisos[0];
+          canView = permiso.can_view;
+          canCreate = permiso.can_create;
+          canEdit = permiso.can_edit;
+          canDelete = permiso.can_delete;
+        } else {
+          // Si es admin, tal vez le asignas permisos máximos
+          canView = canCreate = canEdit = canDelete = 1;
+        }
+    //
+
+    const fechaHoraBogota = getBogotaDateTime();
     const [
       [otrabajo],
       [prov],
@@ -509,7 +599,8 @@ app.get('/otrabajo', async (req, res) => {
     );
 
     
-    res.render('otrabajo', { otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+    res.render('otrabajo', { canCreate, canView, canEdit, canDelete, otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+    
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
     res.status(500).send('Error al obtener otrabajo');
@@ -1373,19 +1464,22 @@ app.get('/ccostocc', async (req, res) => {
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-
+    const [permisos] = await conn.execute(
+      'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
+      [userUser, 'Centros de Costo']
+    );
+    if (permisos.length === 0) {
+      return; // simplemente no hace nada más
+    }
     const [ccosto] = await conn.execute(`
       SELECT a.*, b.cliente as clienteN
       FROM tbl_ccosto a
       JOIN tbl_cliente b ON a.cliente = b.nit;
     `);
-
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
-
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
-
     res.render('ccostocc', { ccosto, unidadT, clienteT, user: userUser, name: userName, mensaje });
   } catch (error) {
     console.error('Error obteniendo ccosto:', error);
@@ -4740,10 +4834,6 @@ app.post('/generar-pdfsem', async (req, res) => {
                 }
               }
             });
-
-
-
-
 // ⬇️ Aquí insertas la firma y texto antes del cambio de página
 if (row.firma_base64) {
   let firmaImg = row.firma_base64;
@@ -4767,12 +4857,6 @@ if (row.firma_base64) {
     fontSize: 10
 });
 }
-
-
-
-
-
-
             lastFecha = fechaKey;
           }
 
@@ -4931,6 +5015,82 @@ app.get('/firmas', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Error al obtener las firmas');
+  }
+});
+
+app.get('/cambioctr', (req, res) => {
+  const { user, name, rol, unidad: userUser } = req.session;
+  const userSession = req.session.user;
+
+  if (!userSession) {
+    return res.redirect('/'); // o muestra un mensaje de no autenticado
+  }
+
+//  res.render('cambioctr', { user: userSession }); // renderiza tu archivo .ejs
+  res.render('cambioctr', { user, name, rol, userUser });
+});
+
+
+const cambioctr = express.Router();
+
+// POST: Cambiar contraseña
+app.post('/cambioctr', async (req, res) => {
+  const { user, name, rol, unidad: userUser } = req.session;
+  const { actualPass, newPass, confirmNewPass } = req.body;
+  const userSession = req.session.user;
+  let mensaje;
+  let opc;
+  opc = 0;
+  if (!userSession && opc=== 0) {
+//    return res.status(401).json({ status: 'error', message: 'No autenticado' });
+    mensaje = {
+      tipo: 'success',
+      texto: 'No autenticado'};
+    opc = 1;
+  }
+
+  if (newPass !==confirmNewPass  && opc=== 0 ) {
+//    return res.json({ status: 'error', message: 'Las contraseñas nuevas no coinciden' });
+    mensaje = {
+      tipo: 'success',
+      texto: 'Las contraseñas nuevas no coinciden'};
+    opc = 1;
+  }
+
+  try {
+    const [rows] = await pool.execute('SELECT * FROM users WHERE user = ?', [req.session.user]);
+    if (rows.length === 0 && opc=== 0) {
+//      return res.json({ status: 'error', message: 'Usuario no encontrado' });
+      mensaje = {
+      tipo: 'success',
+      texto: 'Usuario no encontrado'};
+      opc = 1;
+    }
+
+    const userRecord = rows[0];
+    const passwordMatch = await bcryptjs.compare(actualPass, userRecord.pass);
+
+    if (!passwordMatch && opc=== 0) {
+//      return res.json({ status: 'error', message: 'Contraseña actual incorrecta' });
+      mensaje = {
+      tipo: 'success',
+      texto: 'Contraseña actual incorrecta'};
+      opc = 1;
+    }
+
+    const hashedPassword = await bcryptjs.hash(newPass, 10);
+    if (opc===0) {
+        await pool.execute('UPDATE users SET pass = ?, fecha_act = NOW() WHERE user = ?', [hashedPassword, req.session.user]);
+        //return res.json({ status: 'success', message: 'Contraseña actualizada correctamente' });
+        mensaje = {
+        tipo: 'success',
+        texto: 'Contraseña actualizada correctamente'};
+        opc = 1;
+    }
+    res.render('cambioctr', { mensaje, user, name, rol, userUser });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
   }
 });
 
