@@ -21,7 +21,7 @@
 
     .detalle-scroll {
       overflow-y: auto;
-      padding: 0px;
+      padding: 60px;
       background-color: #f7f7f7;
     }
 
@@ -87,7 +87,7 @@
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <a href="/inspeccion?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <a href="/inspeccion_aux?doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -119,70 +119,67 @@
 
 <div class="content2">
     <div class="register-formAnchoCM">
-        <form action="/detalle-dia" method="POST">
+        <form action="/detalle-diaux" method="POST">
         <input type="hidden" name="fecha" value="<%= diaFormateadoRaw %>">
-        <input type="hidden" name="tip_func" value="<%= tip_func %>">
         <input type="hidden" name="doc_id" value="<%= doc_id %>">          
-        <% inspeccion.forEach((bloque, bloqueIndex) => { %>
-            <h5 class="bloque-titulo px-2 py-2"><strong><%= bloque.titulo %></strong></h5>
 
-            <table class="table table-bordered table-sm align-middle">
+        <% inspeccion.forEach((bloque, bloqueIndex) => { %>
+          <table class="table table-bordered table-sm align-middle">
             <colgroup>
-                    <col style="width: 5%;">
-                    <col style="width: 40%;">
-                    <col style="width: 5%;">
-                    <col style="width: 5%;">
-                    <col style="width: 5%;">
-                    <col style="width: 40%;">
-            </colgroup>  
-            <thead>
+              <col style="width: 5%;">
+              <col style="width: 12%;">
+              <col style="width: 30%;">
+              <col style="width: 10%;">
+              <col style="width: 100%;">
+            </colgroup>
+
+            <% if (bloqueIndex === 0) { %>
+              <thead>
                 <tr>
-                <th style="width: 50px;">No.</th>
-                <th style="min-width: 300px;">Aspecto</th>
-                <th style="width: 50px; text-align: center;">Si</th>
-                <th style="width: 50px; text-align: center;">No</th>
-                <th style="width: 50px; text-align: center;">Na</th>
-                <th style="min-width: 200px;">Observación</th>
+                  <th style="width: 5%;">No.</th>
+                  <th style="min-width: 12%;">Aspecto</th>
+                  <th style="width: 30%; text-align: center;">C. Costo</th>
+                  <th style="width: 10%; text-align: center;">Cantidad</th>
+                  <th style="min-width: 100%;">Observación</th>
                 </tr>
-            </thead>
+              </thead>
+            <% } %>
+
             <tbody>
-                <% bloque.items.forEach((item, itemIndex) => { 
+              <% bloque.items.forEach((item, itemIndex) => {
                 const prefix = `datos[${bloqueIndex}][${itemIndex}]`;
-                %>
+              %>
                 <tr>
-                    <td><%= item.no %></td>
-                    <td><%= item.aspecto %></td>
-                        <td class="text-center">
-                        <input type="radio" class="opcion-radio" name="<%= prefix %>[opcion]" value="SI" <%= item.si === 'X' ? 'checked' : '' %>>
-                        </td>
-                        <td class="text-center">
-                        <input type="radio" class="opcion-radio" name="<%= prefix %>[opcion]" value="NO" <%= item.no_ === 'X' ? 'checked' : '' %>>
-                        </td>
-                        <td class="text-center">
-                        <input type="radio" class="opcion-radio" name="<%= prefix %>[opcion]" value="NA" <%= item.na === 'X' ? 'checked' : '' %>>
-                        </td>                
-                    <td>
-                    <input type="text" name="<%= prefix %>[observacion]" class="form-control form-control-sm" value="<%= item.observacion %>">
-                    </td>
+                  <td><%= item.no %></td>
+                  <td style="font-size: 1rem;"><%= item.aspecto %></td>
+                  <td class="text-center">
+                  <select name="<%= prefix %>[ccosto]" class="form-control form-control-sm" style="width: 100%; font-size: 0.7rem;">
+                    <% ccost.forEach(p => { %>
+                      <option value="<%= p.idcc %>" <%= String(p.idcc).trim() === String(item.ccosto).trim() ? 'selected' : '' %>>
+                        <%= p.idcc %> - <%= p.descripcion %>
+                      </option>
+                    <% }) %>
+                  </select>
+                  </td>
+                  <td class="text-center">
+                    <input type="number" name="<%= prefix %>[ocompra]" class="form-control form-control-sm" style="width: 100%; text-align: right;" value="<%= (item.ocompra != null && item.ocompra !== '') ? item.ocompra : 0 %>">
+                  </td>
+                  <td>
+                    <input type="text" name="<%= prefix %>[observacion]" class="form-control form-control-sm" style="width: 100%;" value="<%= item.observacion %>">
+                  </td>
                 </tr>
                 <input type="hidden" name="<%= prefix %>[no]" value="<%= item.no %>">
                 <input type="hidden" name="<%= prefix %>[aspecto]" value="<%= item.aspecto %>">
-                <% }) %>
+              <% }) %>
             </tbody>
-            </table>
+          </table>
         <% }) %>
-
+        
         <div class="d-flex justify-content-end mt-3">
-          <a 
-            href="/firma?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
-            class="btn btn-warning"
-          >
-            Ir a Firma
-          </a>
           
             <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
             <a 
-              href="/detalle-dia?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+              href="/detalle-diaux?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
               class="btn btn-secondary"
             >
               Cancelar Cambios
@@ -192,6 +189,7 @@
         </form>
     </div>
 </div>
+
 </div>
 </div>
 
@@ -217,7 +215,6 @@
 </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <%- include('partials/footer') %>
 
 </body>
 

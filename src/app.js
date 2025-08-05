@@ -3060,7 +3060,6 @@ app.get('/inspeccion_aux', async (req, res) => {
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-    
     // Obtener todos los datos sin filtrar por semana
     const [inspecc] = await conn.execute(`
       SELECT 
@@ -3069,10 +3068,9 @@ app.get('/inspeccion_aux', async (req, res) => {
         i.no,
         i.aspecto,
         i.fecha_inspeccion,
-        i.si,
-        i.no_ ,
-        i.na,
+        i.ocompra,
         i.observacion,
+        i.ccosto,
         i.firma
       FROM bloques_aux b
       JOIN items_aux i ON b.id_bloque = i.id_bloque
@@ -3123,9 +3121,8 @@ app.get('/inspeccion_aux', async (req, res) => {
 
       const fechaStr = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
       item.valores[fechaStr] = {
-        si: (row.si || '').trim().toUpperCase(),
-        no_: (row.no_ || '').trim().toUpperCase(),
-        na: (row.na || '').trim().toUpperCase(),
+        ocompra: (row.ocompra),
+        ccosto: (row.ccosto), 
         observacion: row.observacion || '',
         firma: row.firma || ''
       };
@@ -3403,6 +3400,8 @@ app.post('/valreg', async (req, res) => {
 
 //const { DateTime } = require('luxon'); // si ya usas Luxon
 
+// Detalle dia - Seguimiento Soldadores 
+
 app.get('/detalle-dia', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
   const { fecha, tip_func, doc_id } = req.query;
@@ -3551,6 +3550,151 @@ app.post('/detalle-dia', async (req, res) => {
     conn.release();
   }
 });
+
+
+/* DETALLE AUXILIARES  **************************************************************************/
+
+// Detalle dia - Seguimiento Soldadores 
+
+app.get('/detalle-diaux', async (req, res) => {
+  if (!req.session.loggedin) return res.redirect('/?expired=1');
+  const { fecha, tip_func, doc_id } = req.query;
+  const conn = await pool.getConnection();
+  try {
+    if (!fecha) {
+      return res.status(400).send('Falta la fecha en la URL');
+    }
+
+    // Consulta los datos filtrados por la fecha
+    const [items] = await conn.execute(`
+      SELECT 
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.ocompra,
+        i.ccosto,
+        i.observacion
+      FROM bloques_aux b
+      JOIN items_aux i ON b.id_bloque = i.id_bloque
+      WHERE DATE(i.fecha_inspeccion) = ? and func_doc = ? 
+      ORDER BY b.id_bloque, i.no
+    `, [fecha, doc_id]);
+    const [ccost] = await conn.execute('select idcc, descripcion from tbl_ccosto order by idcc');  
+    // Agrupar los datos como lo haces en la principal
+    const inspeccion = [];
+    items.forEach(row => {
+      let bloque = inspeccion.find(b => b.titulo === row.titulo);
+      if (!bloque) {
+        bloque = {
+          titulo: row.titulo,
+          items: []
+        };
+        inspeccion.push(bloque);
+      }
+
+      bloque.items.push({
+        no: row.no,
+        aspecto: row.aspecto,
+        ccosto: row.ccosto || '',
+        ocompra: row.ocompra || '',
+        observacion: row.observacion || ''
+      });
+    });
+
+    // Formatear nombre del día
+    const diaFormateado = DateTime.fromISO(fecha, { zone: 'America/Bogota' }).setLocale('es').toFormat('cccc dd/MM/yyyy');
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+    const diaFormateadoRaw = fecha;
+    res.render('detalle-diaux', {
+      ccost,
+      diaFormateado,
+      diaFormateadoRaw,
+      doc_id,
+      inspeccion,
+      user: req.session.user,
+      name: req.session.name,
+      mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo detalle del día:', error);
+    res.status(500).send('Error al obtener detalle del día auxiliar');
+  } finally {
+    if (conn) conn.release(); 
+  }
+});
+
+app.post('/detalle-diaux', async (req, res) => {
+  const { fecha, datos, tip_func, doc_id, firma } = req.body;
+
+  if (!fecha || !datos) {
+    return res.status(400).send('Datos incompletos');
+  }
+
+  const conn = await pool.getConnection();
+  await conn.beginTransaction();
+
+  console.time('actualizacion-items');
+
+  try {
+    const cambios = [];
+    const updateTasks = [];
+
+    for (const bloqueIndex in datos) {
+      const items = datos[bloqueIndex];
+
+      for (const itemIndex in items) {
+        const item = items[itemIndex];
+        const { ccosto, no, opcion, ocompra, observacion, firma } = item;
+
+        cambios.push(no);
+
+        // En lugar de ejecutar ahora, creamos una función que se ejecutará luego por lotes AQUI
+        updateTasks.push(() =>
+          conn.execute(
+            `
+            UPDATE items_aux 
+            SET ccosto = ?, ocompra = ?, observacion = ?
+            WHERE no = ? AND DATE(fecha_inspeccion) = ? AND func_doc = ? 
+            `,
+            [
+              ccosto,
+              ocompra,
+              observacion,
+              no,
+              fecha,
+              doc_id
+            ]
+          )
+        );
+      }
+    }
+
+    // Ejecutar los updates por lotes de máximo 20
+    await runInBatches(updateTasks, 20);
+
+    await conn.commit();
+    console.timeEnd('actualizacion-items');
+
+    req.session.mensaje = 'Cambios guardados correctamente';
+    res.redirect(
+      `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}`
+    );
+  } catch (err) {
+    await conn.rollback();
+    console.error('Error actualizando:', err);
+    res.status(500).send('Error al guardar los cambios');
+  } finally {
+    conn.release();
+  }
+});
+
+/* FIN DETALLE AUXILIARES **********************************************************************/
 
 
 /* equipo inspeccion */
@@ -4224,10 +4368,7 @@ io.on('connection', socket => {
 });
 
 app.post('/api/generar-items', async (req, res) => {
-
-  const { fecha } = req.body;
-
-  if (!fecha) {
+   if (!fecha) {
     return res.status(400).json({ message: 'Falta el parámetro fecha' });
   }
 
@@ -4274,7 +4415,6 @@ app.post('/api/generar-items', async (req, res) => {
 });
 
 app.post('/mover-items', async (req, res) => {
-
   try {
     const conn = await pool.getConnection();
 
@@ -4291,8 +4431,6 @@ app.post('/mover-items', async (req, res) => {
         texto: `Procedimiento ejecutado con éxito.`
       }
     });
-
-
   } catch (error) {
     console.error('Error ejecutando SP:', error);
     res.render('inspeccioncfg', {
@@ -4302,6 +4440,7 @@ app.post('/mover-items', async (req, res) => {
 });
 
 app.post('/generar-items', async (req, res) => {
+  console.log(req.body);
   const { fecha } = req.body;
   if (!fecha) {
     // Redirige con mensaje de error
@@ -4371,6 +4510,30 @@ app.post('/eliminar-items', async (req, res) => {
     res.render('inspeccioncfg', {
       mensaje: { tipo: 'danger', texto: 'Error al intentar eliminar los registros.' }
     });
+  }
+});
+
+/***** CREAR PLATILLA AUXILIAR *********************************/
+
+app.post('/crear-aux', async (req, res) => {
+  try {
+    console.log(req.body);
+    const { fecha } = req.body;
+    console.log(fecha);
+    const conn = await pool.getConnection();
+    const [countResult] = await conn.query('select count(*) AS total FROM items');
+
+    // Si no hay registros, ejecuta SP
+    //await conn.query('CALL sp_guardar_items_historial()');
+
+    conn.release();
+
+    console.log('positivo');
+    res.redirect('/inspaux');
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    console.log('nada');
+    res.redirect('/inspaux');
   }
 });
 
