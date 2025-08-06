@@ -339,12 +339,12 @@ app.get('/ccosto', async (req, res) => {
 
 app.post('/ccosto', async (req, res) => {
   const conn = await pool.getConnection();
+  const {
+    idcc, descripcion, ocompra, cliente, fecha_orden,
+    fecha_entrega, cantidad, unidad, peso, pais,
+    ciudad, comentarios, editando, canCreate, canEdit, canDelete
+  } = req.body;
   try {
-    const {
-      idcc, descripcion, ocompra, cliente, fecha_orden,
-      fecha_entrega, cantidad, unidad, peso, pais,
-      ciudad, comentarios, editando, canCreate, canEdit, canDelete
-    } = req.body;
     let mensaje;
     if (editando === "true") {
         await conn.execute(
@@ -392,7 +392,7 @@ app.post('/ccosto', async (req, res) => {
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
 
-    res.status(500).render('ccosto', {
+    res.status(500).render('ccosto', {canCreate, canEdit, canDelete,
       mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
       ccosto, unidadT, clienteT, paisesl
     });
@@ -2275,7 +2275,8 @@ app.get('/ciudades', async (req, res) => {
                 pool.execute(`
                     SELECT c.*, p.nombre AS pais_nombre
                     FROM tbl_ciudad c
-                    JOIN tbl_paises p ON c.pais_codigo = p.iso_pais
+                    JOIN tbl_paises p ON c.pais_codigo = p.iso_pais 
+                    order by iso_ciudad desc
                 `),
                 pool.execute('SELECT * FROM tbl_paises')
             ]);

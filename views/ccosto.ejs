@@ -380,9 +380,9 @@
                       type="text" 
                       id="ocompra" 
                       name="ocompra" 
-                      class="form-control form-control-sm input-con-sombra input-numerico igualar-altura"
-                      pattern="[0-9]{1,9}"
-                      maxlength="9" 
+                      class="form-control form-control-sm input-con-sombra igualar-altura"
+                      pattern="[A-Za-z0-9\-]{1,20}"
+                      maxlength="20" 
                       required
                       title="Ingrese hasta 9 dígitos numéricos">
                   </div>    
@@ -429,7 +429,7 @@
                 
                 <div class="form-row align-items-center mb-2">
                   <div class="col-4">                  
-                    <label for="fecha_orden">Fecha Orden</label>
+                    <label for="fecha_orden">Fecha Inicio</label>
                   </div>
                   <div class="col-2">
                     <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_orden" id="fecha_orden" maxlength="60" required>
@@ -456,7 +456,7 @@
 
                 <div class="form-row align-items-center mb-2">
                   <div class="col-4">                  
-                    <label for="peso">Peso</label>
+                    <label for="peso">Peso Total</label>
                   </div>
                   <div class="col-2">
                     <input type="number" class="form-control form-control-sm input-con-sombra igualar-altura" name="peso" id="peso" maxlength="60" required>
