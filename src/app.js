@@ -612,10 +612,9 @@ app.get('/otrabajo', async (req, res) => {
 
 app.post('/otrabajo', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
-
   const conn = await pool.getConnection();
   try {
-    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando } = req.body;
+    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando, canCreate, canEdit, canDelete } = req.body;
     let mensaje;
 
     if (editando === "true") {
@@ -689,7 +688,7 @@ app.post('/otrabajo', async (req, res) => {
       conn.execute('SELECT * FROM tbl_ccosto')
     ]);
 
-    res.render('otrabajo', {
+    res.render('otrabajo', {canCreate, canEdit, canDelete,
       mensaje,
       otrabajo,
       prov,
@@ -728,7 +727,7 @@ app.post('/otrabajo', async (req, res) => {
           tipo: 'danger',
           texto: 'Error al procesar la solicitud.'
         },
-        otrabajo,
+        otrabajo, canCreate, canEdit, canDelete,
         prov,
         dise,
         supe,
@@ -4515,7 +4514,6 @@ app.post('/eliminar-items', async (req, res) => {
 /***** CREAR PLATILLA AUXILIAR *********************************/
 
 app.post('/crear-aux', async (req, res) => {
-  console.log(req.body);
   const { fecha_seleccionada, doc_id } = req.body;
 
   const conn = await pool.getConnection();

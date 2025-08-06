@@ -160,7 +160,9 @@ html, body {
       class="texto-link"
       data-toggle="modal"
       data-target="#modalCiudad"
-      >
+      onclick="limpiarFormularioCiudad()"
+      style="margin-left: 20px; <%= canCreate ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+      <%= canCreate ? '' : 'disabled' %>>
       Adicionar
     </button>
 
@@ -232,7 +234,8 @@ html, body {
                                     data-toggle="modal" 
                                     data-target="#modalCiudad" 
                                     title="Modificar"
-                                    >>
+                                    style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                    <%= canEdit ? '' : 'disabled' %>>
                                     <i class="bi bi-pencil-square"></i>
                                   </button>                                  
 
@@ -240,7 +243,8 @@ html, body {
                                     class="btn btn-danger btn-sm icon-btn" 
                                     onclick="confirmarEliminacion('<%= otrabajo.idot %>')" 
                                     title="Eliminar"
-                                    >
+                                    style="<%= canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                    <%= canDelete ? '' : 'disabled' %>>
                                     <i class="bi bi-trash"></i>
                                   </button>
 
@@ -255,8 +259,8 @@ html, body {
                                     href="/complementar?idot=<%= otrabajo.idot %>" 
                                     class="btn btn-secondary btn-sm icon-btn" 
                                     title="Complementar"
-                                    
-                                    >>
+                                    style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                    <%= canEdit ? '' : 'disabled' %>>
                                     <i class="bi bi-box-arrow-up-right"></i>
                                   </a>                                  
 
@@ -302,6 +306,10 @@ html, body {
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
             <form action="/otrabajo" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
+
+            <input type="hidden" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
+            <input type="hidden" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
+            <input type="hidden" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
 
               <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
                 <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
