@@ -310,7 +310,8 @@ app.get('/ccosto', async (req, res) => {
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_unidad'),
       conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),
-      conn.execute('SELECT * FROM tbl_paises')
+      conn.execute('SELECT * FROM tbl_paises'),
+      conn.execute('SELECT * FROM tbl_ccosto')
     ]);
 
     const mensaje = req.session.mensaje;
@@ -338,6 +339,7 @@ app.get('/ccosto', async (req, res) => {
 // POST CCOSTO
 
 app.post('/ccosto', async (req, res) => {
+  console.log(req.body);
   const conn = await pool.getConnection();
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
@@ -378,7 +380,16 @@ app.post('/ccosto', async (req, res) => {
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
-    res.render('ccosto', { canCreate, canEdit, canDelete,mensaje, ccosto, unidadT, clienteT, paisesl });
+    res.render('ccosto', {
+      canCreate: Boolean(Number(canCreate)),
+      canEdit: Boolean(Number(canEdit)),
+      canDelete: Boolean(Number(canDelete)),
+      mensaje,
+      ccosto,
+      unidadT,
+      clienteT,
+      paisesl
+    });
 
   } catch (error) {
     console.error('Error guardando ccosto:', error);
@@ -1463,13 +1474,14 @@ app.get('/ccostocc', async (req, res) => {
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-    const [permisos] = await conn.execute(
+/*    const [permisos] = await conn.execute(
       'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
       [userUser, 'Centros de Costo']
     );
     if (permisos.length === 0) {
       return; // simplemente no hace nada más
     }
+*/      
     const [ccosto] = await conn.execute(`
       SELECT a.*, b.cliente as clienteN
       FROM tbl_ccosto a
