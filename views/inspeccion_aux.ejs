@@ -304,6 +304,45 @@ td.observacion-cell {
   vertical-align: middle; /* opcional, para centrar vertical */
 }
 
+  .info-card {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px 30px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    border-left: 6px solid #007bff;
+  }
+
+  .info-card h2 {
+    margin-top: 0;
+    color: #007bff;
+    font-weight: 600;
+  }
+
+  .info-card p {
+    font-size: 1.1em;
+    margin: 10px 0;
+  }
+
+  .info-card strong {
+    color: #444;
+  }
+
+.info-card.horizontal {
+  display: flex;
+  justify-content: center;  /* Centra el contenido horizontalmente */
+  align-items: center;      /* Alinea verticalmente */
+  gap: 10px;                /* Espacio entre elementos si hay más */
+  flex-wrap: wrap;          /* Por si en pantallas pequeñas se necesita */
+  font-size: 0.9rem;        /* Letra un poco más pequeña si quieres */
+}
+
+.info-card.horizontal p {
+  margin: 0;
+}
 </style>
 </head>
 
@@ -319,12 +358,18 @@ td.observacion-cell {
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <a href="/inspaux?tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
-    <div id="datos-doc" style="margin-left: 20px; color: white;"></div>
+    <a href="/inspaux?doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div  style="margin-left: 20px; color: white;"></div>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
   </div>
+
+<div class="info-card horizontal">
+  <p><strong>Documento ID:</strong> <span id="doc-id-display"></span> &nbsp; | &nbsp; 
+     <strong>Funcionario:</strong> <span id="func-display"></span></p>
+</div>
+
   <div id="activities" style="
     border: 2px solid #BA1A1A;
     padding: 10px;
@@ -336,10 +381,17 @@ td.observacion-cell {
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-  </div>
+          <% if (typeof mensaje !== 'undefined') { %>
+            <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+              <%= mensaje.texto %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
 
-<!-- aqui -->
   <div class="detalle-scroll">
+  </div>
     <div class="container-fluid mt-1">
       <div class="content2">
         <div class="register-formAnchoCM">  
@@ -347,36 +399,42 @@ td.observacion-cell {
         <tr>
           <h5 class="text-center">Verificación Semanal</h5>
           <br>
+
         </tr>
       <% } else { %>
 
 <form method="POST" action="/crear-aux">
   <input type="hidden" name="doc_id" value="<%= doc_id %>">
-  <input type="hidden" name="tip_func" value="<%= tip_func %>">
   <input type="date" name="fecha_seleccionada" />
-
   <table>
-    <thead>...</thead>
     <tbody>
       <% inspecc.forEach(bloque => {
         bloque.items.forEach(item => { %>
           <tr>
             <td><%= item.no %></td>
             <td><%= item.aspecto %></td>
-            <% dias.forEach(dia => {
-              var val = item.valores[dia.fecha] || {};
-            %>
-              <td><input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][ccosto]" value="<%= val.ccosto || '' %>"></td>
-              <td><input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][ocompra]" value="<%= val.ocompra || '' %>"></td>
-              <td><input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][observacion]" value="<%= val.observacion || '' %>"></td>
-            <% }) %>
+                <% dias.forEach(dia => {
+                  var val = (item.valores && item.valores[dia.fecha]) ? item.valores[dia.fecha] : {};
+                %>
+                  <td>
+                    <input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][ccosto]"
+                          value="<%= (val.ccosto !== undefined && val.ccosto !== null) ? val.ccosto : '' %>">
+                  </td>
+                  <td>
+                    <input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][ocompra]"
+                          value="<%= (val.ocompra !== undefined && val.ocompra !== null) ? val.ocompra : '' %>">
+                  </td>
+                  <td>
+                    <input type="text" name="valores[<%= item.no %>][<%= dia.fecha %>][observacion]"
+                          value="<%= (val.observacion !== undefined && val.observacion !== null) ? val.observacion : '' %>">
+                  </td>
+                <% }); %>
           </tr>
       <% }) }) %>
     </tbody>
   </table>
-
-  <button type="submit" class="btn btn-primary">Enviar</button>
-</form>
+  <button type="submit" class="btn btn-primary">Generar</button>
+</form> 
 
                 <br>
       <% } %>
@@ -403,7 +461,6 @@ td.observacion-cell {
                         type="button"
                         class="btn btn-sm btn-dia text-white btn-ir-a-detalle"
                         data-fecha="<%= dia.fecha %>"
-                        data-tip-func="<%= tip_func %>"
                         data-doc-id="<%= doc_id %>"                        
                         style="line-height: 1.2;"
                       >
@@ -436,8 +493,6 @@ td.observacion-cell {
                         var val = item.valores[dia.fecha] || {};
                         const tieneCheck = val.ccosto || val.ocompra || val.na;
                     %>
-                    
-                      <% if (tieneCheck) { %>
                         <td class="center"><%= val.ccosto %></td>
                         <td class="center"><%= val.ocompra %></td>
 
@@ -454,13 +509,7 @@ td.observacion-cell {
                           <% } else { %>
                             <%= val.observacion || '' %>
                           <% } %>
-                        </td>                       
-
-                        <% } else { %>
-
-                      <% } %>
-
-                      
+                        </td>       
                     <% }) %>
                   </tr>
                 <% }) %>
@@ -515,7 +564,6 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
   document.querySelectorAll('.btn-ir-a-detalle').forEach(boton => {
     boton.addEventListener('click', function () {
       const fecha = this.getAttribute('data-fecha');
-      const tip_func = this.dataset.tipFunc;
       const doc_id = this.dataset.docId;
       if (fecha && doc_id) {
         const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}`;
@@ -527,11 +575,42 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
   });
 </script>  
 
-
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const botones = document.querySelectorAll('.btn-ir-a-detalle');
+    // Extraer los parámetros de la URL
+    const params = new URLSearchParams(window.location.search);
+    const docId = params.get("doc_id");
+    const func = params.get("func");
+    const tipFunc = params.get("tip_func");
 
+    // Colocarlos en los inputs ocultos
+    const inputDoc = document.getElementById("doc-id-hidden");
+    const inputFunc = document.getElementById("func-hidden");
+    const inputTip = document.getElementById("tip-func-hidden");
+
+    if (inputDoc) inputDoc.value = docId || "";
+    if (inputFunc) inputFunc.value = func || "";
+    if (inputTip) inputTip.value = tipFunc || "";
+
+    // Mostrar los datos en pantalla
+    const datosDiv = document.getElementById("datos-doc");
+    const spanDoc = document.getElementById("doc-id-display");
+    const spanFunc = document.getElementById("func-display");
+
+    if (docId && func) {
+      if (datosDiv) {
+        datosDiv.textContent = `${docId} | ${decodeURIComponent(func)}`;
+      }
+      if (spanDoc) {
+        spanDoc.textContent = docId;
+      }
+      if (spanFunc) {
+        spanFunc.textContent = decodeURIComponent(func);
+      }
+    }
+
+    // Script para botones de detalle
+    const botones = document.querySelectorAll('.btn-ir-a-detalle');
     const ahoraEnBogota = new Date(
       new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Bogota',
@@ -548,16 +627,14 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
       fechaBoton.setHours(0, 0, 0, 0);
 
       if (ahoraEnBogota > fechaBoton) {
-        // Buscar el div que contiene la fecha dentro del botón
         const divs = boton.querySelectorAll('div');
         const divFecha = Array.from(divs).find(div => div.textContent.trim() === fechaStr);
 
         if (divFecha) {
-          divFecha.style.color = 'red'; // 'red' o 'yellow'
+          divFecha.style.color = 'red';
           divFecha.style.fontWeight = 'bold';
         }
 
-        // También puedes desactivar el botón si quieres
         boton.style.pointerEvents = 'none';
         boton.title = 'Fecha vencida';
       }
@@ -565,24 +642,9 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
   });
 </script>
 
-<script>
-  // Extraer los parámetros de la URL
-  const params = new URLSearchParams(window.location.search);
-  const docId = params.get("doc_id");
-  const func = params.get("func");
-  const tipFunc = params.get("tip_func");
 
-  // Colocarlos en los inputs ocultos
-  document.getElementById("doc-id-hidden").value = docId || "";
-  document.getElementById("func-hidden").value = func || "";
-  document.getElementById("tip-func-hidden").value = tipFunc || "";
 
-  // Mostrar los datos en el div
-  const datosDiv = document.getElementById("datos-doc");
-  if (docId && func) {
-    datosDiv.textContent = `${docId} | ${decodeURIComponent(func)}`;
-  }
-</script>
+
 
 
   <%- include('partials/foot') %>

@@ -4440,7 +4440,6 @@ app.post('/mover-items', async (req, res) => {
 });
 
 app.post('/generar-items', async (req, res) => {
-  console.log(req.body);
   const { fecha } = req.body;
   if (!fecha) {
     // Redirige con mensaje de error
@@ -4516,26 +4515,46 @@ app.post('/eliminar-items', async (req, res) => {
 /***** CREAR PLATILLA AUXILIAR *********************************/
 
 app.post('/crear-aux', async (req, res) => {
+  console.log(req.body);
+  const { fecha_seleccionada, doc_id } = req.body;
+
+  const conn = await pool.getConnection();
+
   try {
-    console.log(req.body);
-    const { fecha } = req.body;
-    console.log(fecha);
-    const conn = await pool.getConnection();
-    const [countResult] = await conn.query('select count(*) AS total FROM items');
+    if (!fecha_seleccionada) {
+      req.session.mensaje = {
+        tipo: 'warning',
+        texto: '⚠️ Debes seleccionar una fecha.'
+      };
+      return res.redirect('/inspaux');
+    }
+    // Ejecutar SP si lo necesitas:
+    // if (countResult[0].total === 0) {
+    //   await conn.query('CALL sp_guardar_items_historial()');
+    // }
 
-    // Si no hay registros, ejecuta SP
-    //await conn.query('CALL sp_guardar_items_historial()');
+    await conn.query('CALL insertar_items_aux(?, ?, ?, ?, ?)', [fecha_seleccionada, 5, 1, doc_id, 0]);
+//    CALL insertar_items_aux('2025-06-23', 5, 1, 1070330696, 1792);
 
-    conn.release();
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: '✅ Datos procesados'
+    };
+    return res.redirect('/inspaux');
 
-    console.log('positivo');
-    res.redirect('/inspaux');
   } catch (error) {
     console.error('Error ejecutando SP:', error);
-    console.log('nada');
-    res.redirect('/inspaux');
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: '❌ Error procesando la solicitud.'
+    };
+    return res.redirect('/inspaux');
+  } finally {
+    conn.release();
   }
 });
+
 
 /*********************************************** */
 
