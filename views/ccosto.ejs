@@ -163,15 +163,15 @@
 
   <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
 
-  <button
-    class="texto-link"
-    data-toggle="modal"
-    data-target="#modalCiudad"
-    onclick="limpiarFormularioCiudad()"
-    style="margin-left: 20px; <%= canCreate ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-    <%= canCreate ? '' : 'disabled' %>>
-    Adicionar
-  </button>
+    <button
+      class="texto-link"
+      data-toggle="modal"
+      data-target="#modalCiudad"
+      onclick="limpiarFormularioCiudad()"
+      style="<%= canCreate ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+      <%= canCreate ? '' : 'disabled' %>>
+      Adicionar
+    </button>
 
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
@@ -249,25 +249,25 @@
                               <td class="text-center align-middle" style="width: 200px; font-size: 12px;">
                                 <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
 
-                                  <button 
-                                    class="btn btn-warning btn-sm icon-btn" 
-                                    onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
-                                    data-toggle="modal" 
-                                    data-target="#modalCiudad" 
-                                    title="Modificar"
-                                    style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-                                    <%= canEdit ? '' : 'disabled' %>>
-                                    <i class="bi bi-pencil-square"></i>
-                                  </button>
+                                <button 
+                                  class="btn btn-warning btn-sm icon-btn" 
+                                  onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
+                                  data-toggle="modal" 
+                                  data-target="#modalCiudad" 
+                                  title="Modificar"
+                                  style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                  <%= canEdit ? '' : 'disabled' %>>
+                                  <i class="bi bi-pencil-square"></i>
+                                </button>
 
-                                  <button 
-                                    class="btn btn-danger btn-sm icon-btn" 
-                                    onclick="confirmarEliminacion('<%= ccosto.idcc %>')" 
-                                    title="Eliminar"
-                                    style="<%= canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-                                    <%= canDelete ? '' : 'disabled' %>>
-                                    <i class="bi bi-trash"></i>
-                                  </button>
+                                <button 
+                                  class="btn btn-danger btn-sm icon-btn" 
+                                  onclick="confirmarEliminacion('<%= ccosto.idcc %>')" 
+                                  title="Eliminar"
+                                  style="<%= canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                  <%= canDelete ? '' : 'disabled' %>>
+                                  <i class="bi bi-trash"></i>
+                                </button>
 
                                   <a 
                                     href="/barraprogreso?idcc=<%= ccosto.idcc %>" 

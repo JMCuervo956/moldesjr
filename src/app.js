@@ -287,9 +287,9 @@ app.get('/ccosto', async (req, res) => {
       // Aquí va el código si sí tiene permisos
       const permiso = permisos[0];
       canView = permiso.can_view;
-      canCreate = permiso.can_create;
-      canEdit = permiso.can_edit;
-      canDelete = permiso.can_delete;
+      canCreate = permiso.can_create == 1; // true si es 1 o '1', false si es 0 o '0'
+      canEdit = permiso.can_edit == 1;
+      canDelete = permiso.can_delete == 1;
     } else {
       // Si es admin, tal vez le asignas permisos máximos
       canView = canCreate = canEdit = canDelete = 1;
@@ -339,14 +339,53 @@ app.get('/ccosto', async (req, res) => {
 // POST CCOSTO
 
 app.post('/ccosto', async (req, res) => {
-  console.log(req.body);
   const conn = await pool.getConnection();
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
     fecha_entrega, cantidad, unidad, peso, pais,
-    ciudad, comentarios, editando, canCreate, canEdit, canDelete
+    ciudad, comentarios, editando
   } = req.body;
+
+  const userUser = req.session.user;
+  let canCreate = false, canEdit = false, canDelete = false;
+
   try {
+
+
+    // Consulta segura de permisos
+    if (userUser !== 'admin') {
+      const [permisos] = await conn.execute(
+        'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
+        [userUser, 'Centros de Costo']
+      );
+      if (permisos.length > 0) {
+        const permiso = permisos[0];
+        canCreate = permiso.can_create == 1;
+        canEdit = permiso.can_edit == 1;
+        canDelete = permiso.can_delete == 1;
+      }
+    } else {
+      canCreate = canEdit = canDelete = true;
+    }
+
+    // ⛔ Protección adicional
+    if (editando === "true" && !canEdit) {
+      return res.status(403).render('ccosto', {
+        canCreate, canEdit, canDelete,
+        mensaje: { tipo: 'danger', texto: 'No tienes permisos para editar.' },
+        ccosto: [], unidadT: [], clienteT: [], paisesl: []
+      });
+    }
+
+    if (editando !== "true" && !canCreate) {
+      return res.status(403).render('ccosto', {
+        canCreate, canEdit, canDelete,
+        mensaje: { tipo: 'danger', texto: 'No tienes permisos para crear.' },
+        ccosto: [], unidadT: [], clienteT: [], paisesl: []
+      });
+    }
+
+
     let mensaje;
     if (editando === "true") {
         await conn.execute(
@@ -381,9 +420,9 @@ app.post('/ccosto', async (req, res) => {
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
     res.render('ccosto', {
-      canCreate: Boolean(Number(canCreate)),
-      canEdit: Boolean(Number(canEdit)),
-      canDelete: Boolean(Number(canDelete)),
+      canCreate,
+      canEdit,
+      canDelete,
       mensaje,
       ccosto,
       unidadT,
@@ -545,12 +584,15 @@ app.get('/modal', async (req, res) => {
 app.get('/otrabajo', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
   const conn = await pool.getConnection();
+
+  const userUser = req.session.user;
+  let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
+
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
 
     //
-        let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
         if (userUser !== 'admin') {
           const [permisos] = await conn.execute(
             'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
@@ -565,6 +607,14 @@ app.get('/otrabajo', async (req, res) => {
           canCreate = permiso.can_create;
           canEdit = permiso.can_edit;
           canDelete = permiso.can_delete;
+
+          req.session.permisos = {
+            canCreate: permiso.can_create == 1,
+            canEdit: permiso.can_edit == 1,
+            canDelete: permiso.can_delete == 1,
+            canView: permiso.can_view == 1
+          };
+          
         } else {
           // Si es admin, tal vez le asignas permisos máximos
           canView = canCreate = canEdit = canDelete = 1;
@@ -608,8 +658,7 @@ app.get('/otrabajo', async (req, res) => {
         VALUES (?, ?, ?)`,
       [userUser, 3, fechaHoraBogota]
     );
-
-    
+   
     res.render('otrabajo', { canCreate, canView, canEdit, canDelete, otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
     
   } catch (error) {
@@ -625,9 +674,16 @@ app.post('/otrabajo', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
   const conn = await pool.getConnection();
   try {
-    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando, canCreate, canEdit, canDelete } = req.body;
-    let mensaje;
+    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando, } = req.body;
 
+    const permisos = req.session.permisos || {};
+    const canCreate = permisos.canCreate;
+    const canEdit = permisos.canEdit;
+    const canDelete = permisos.canDelete;
+    const canView = permisos.canView;
+
+
+    let mensaje;
     if (editando === "true") {
       // Actualizar registro
       await conn.execute(
@@ -699,7 +755,7 @@ app.post('/otrabajo', async (req, res) => {
       conn.execute('SELECT * FROM tbl_ccosto')
     ]);
 
-    res.render('otrabajo', {canCreate, canEdit, canDelete,
+    res.render('otrabajo', {canCreate, canEdit, canDelete, canView,
       mensaje,
       otrabajo,
       prov,
