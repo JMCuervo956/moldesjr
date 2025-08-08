@@ -296,7 +296,7 @@ app.get('/ccosto', async (req, res) => {
     }
 //
     const fechaHoraBogota = getBogotaDateTime();
-    const [[ccosto], [unidadT], [clienteT], [paisesl]] = await Promise.all([
+    const [[ccosto], [unidadT], [clienteT], [paisesl], [estccoT]] = await Promise.all([
       conn.execute(` 
         SELECT a.*, b.cliente as clienteN,
           CASE
@@ -311,7 +311,7 @@ app.get('/ccosto', async (req, res) => {
       conn.execute('SELECT * FROM tbl_unidad'),
       conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),
       conn.execute('SELECT * FROM tbl_paises'),
-      conn.execute('SELECT * FROM tbl_ccosto')
+      conn.execute('select * from tbl_estcco')
     ]);
 
     const mensaje = req.session.mensaje;
@@ -322,7 +322,7 @@ app.get('/ccosto', async (req, res) => {
         VALUES (?, ?, ?)`,
       [userUser, 2, fechaHoraBogota]
     );
-    res.render('ccosto', { canCreate, canView, canEdit, canDelete, mensaje, ccosto, unidadT, clienteT, paisesl, user: userUser, name: userName });
+    res.render('ccosto', { canCreate, canView, canEdit, canDelete, mensaje, ccosto, unidadT, clienteT, paisesl, estccoT, user: userUser, name: userName });
 
   } catch (error) {
     console.error('❌ Error obteniendo ccosto:', error.stack || error);
@@ -342,10 +342,11 @@ app.post('/ccosto', async (req, res) => {
   const conn = await pool.getConnection();
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
-    fecha_entrega, cantidad, unidad, peso, pais,
-    ciudad, comentarios, editando
+    fecha_entrega, fecha_fin, cantidad, unidad, peso, pais,
+    ciudad, estcco, comentarios, editando
   } = req.body;
-
+  const isValidDate = fecha_fin && /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin) && !isNaN(Date.parse(fecha_fin));
+  const fecFinal = isValidDate ? fecha_fin : null;
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
 
@@ -373,7 +374,7 @@ app.post('/ccosto', async (req, res) => {
       return res.status(403).render('ccosto', {
         canCreate, canEdit, canDelete,
         mensaje: { tipo: 'danger', texto: 'No tienes permisos para editar.' },
-        ccosto: [], unidadT: [], clienteT: [], paisesl: []
+        ccostoT: [], unidadT: [], clienteT: [], paisesl: []
       });
     }
 
@@ -381,16 +382,15 @@ app.post('/ccosto', async (req, res) => {
       return res.status(403).render('ccosto', {
         canCreate, canEdit, canDelete,
         mensaje: { tipo: 'danger', texto: 'No tienes permisos para crear.' },
-        ccosto: [], unidadT: [], clienteT: [], paisesl: []
+        ccostoT: [], unidadT: [], clienteT: [], paisesl: []
       });
     }
-
 
     let mensaje;
     if (editando === "true") {
         await conn.execute(
-          `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, comentarios=? WHERE idcc=?`,
-          [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios, idcc]
+          `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_inicio=?, fecha_entrega=?, fecha_fin=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, estado=?, comentarios=? WHERE idcc=?`,
+          [descripcion, ocompra, cliente, fecha_orden, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios, idcc]
         );
         mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
     } else {
@@ -402,9 +402,9 @@ app.post('/ccosto', async (req, res) => {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
         await conn.execute(
-          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, cantidad, unidad, peso, pais, ciudad, comentarios?.trim()]
+          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_inicio, fecha_entrega, fecha_fin,cantidad, unidad, peso, pais, ciudad, estado, comentarios)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios?.trim()]
         );
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }
@@ -419,6 +419,8 @@ app.post('/ccosto', async (req, res) => {
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+    const [estccoT] = await conn.execute('select * from tbl_estcco');
+
     res.render('ccosto', {
       canCreate,
       canEdit,
@@ -427,7 +429,8 @@ app.post('/ccosto', async (req, res) => {
       ccosto,
       unidadT,
       clienteT,
-      paisesl
+      paisesl,
+      estccoT
     });
 
   } catch (error) {
@@ -441,15 +444,16 @@ app.post('/ccosto', async (req, res) => {
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
     const [paisesl] = await conn.execute('SELECT * FROM tbl_paises');
+    const [estccoT] = await conn.execute('select * from tbl_estcco');
 
     res.status(500).render('ccosto', {canCreate, canEdit, canDelete,
       mensaje: { tipo: 'danger', texto: 'Error al procesar la solicitud.' },
-      ccosto, unidadT, clienteT, paisesl
+      ccosto, unidadT, clienteT, paisesl, estccoT
     });
   } finally {
     conn.release(); 
   }
-});
+}); 
 
 app.get('/ccosto/delete/:idcc', async (req, res) => {
     const idcc = req.params.idcc;
@@ -1874,7 +1878,6 @@ app.post('/tareasg', async (req, res) => {
     const [[{ max_fecha_entrega }]] = await pool.execute(
       "SELECT MAX(fecha_entrega) AS max_fecha_entrega FROM tbl_ccosto"
     );
-
     // Función para formatear fecha como YYYY/MM/DD
     function formatDate(date) {
       const d = new Date(date);
@@ -1950,25 +1953,27 @@ app.post('/tareasg', async (req, res) => {
             color = "#FF6347"; // Rojo - aún no finaliza y está vencida
         }
     }
-      return {
-        task: row.idcc,
-        text: row.descripcion || "Tarea sin descripción",
-        start_date: row.fecha_orden,
-        end_date: row.fecha_entrega,
-        fin_date: row.fecha_fin,
-        duration,
-        progress,
-        color
-      };
-    });
+
+    return {
+      task: row.idcc,
+      text: row.descripcion || "Tarea sin descripción",
+      start_date: formatDateAAAAMMDD(row.fecha_orden),
+      end_date: formatDateAAAAMMDD(row.fecha_entrega),
+      fin_date: row.fecha_fin ? formatDateAAAAMMDD(row.fecha_fin) : null,
+      duration,
+      progress,
+      color
+    };
+
+  });
 
     // Enviar la respuesta al cliente  start_date
 
     res.json({
       tasks,
       links: [],
-      min_fecha_orden: formatDate(min_fecha_orden),
-      max_fecha_entrega: formatDate(max_fecha_entrega)
+      min_fecha_orden: formatDateAAAAMMDD(min_fecha_orden),
+      max_fecha_entrega: formatDateAAAAMMDD(max_fecha_entrega)
     });
 
   } catch (error) {
@@ -1977,7 +1982,13 @@ app.post('/tareasg', async (req, res) => {
   }
 });
 
-
+function formatDateAAAAMMDD(date) {
+  if (!date || isNaN(date)) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 //  ccosto excel
 

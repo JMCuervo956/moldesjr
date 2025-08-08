@@ -312,7 +312,7 @@
           </div>
         </div>
 
-        <!-- Modal Adicionar / Modificar Ciudad -->
+        <!-- Modal Adicionar / Modificar -->
         
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg" role="document">
@@ -464,7 +464,7 @@
                   <div class="col-4">                  
                     <label for="unidad">Unidad</label>
                   </div>
-                  <div class="col-2">
+                  <div class="col-4">
                       <select class="form-control form-control-sm input-con-sombra igualar-altura" name="unidad" id="unidad" required>
                         <option value="">Seleccione unidad</option>
                         <% unidadT.forEach(p => { %>
@@ -473,12 +473,34 @@
                       </select>
                   </div> 
                 </div> 
+
+                <div class="form-row align-items-center mb-2">
+                  <div class="col-4">                  
+                  <label for="estcco">Estado</label>
+                  </div>
+                  <div class="col-4">
+                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="estcco" id="estcco" required>
+                        <option value="">Seleccione Edtado</option>
+                        <% estccoT.forEach(p => { %>
+                          <option value="<%= p.cco_idest %>"><%= p.cco_descrip %></option>
+                        <% }) %>
+                      </select>
+                  </div> 
+                </div>
+
+                <div class="form-row align-items-center mb-2">
+                  <div class="col-4">                  
+                    <label for="fecha_fin">Fecha Finalizacion</label>
+                  </div>
+                  <div class="col-2">
+                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_fin" id="fecha_fin" maxlength="60">
+                  </div>    
+                </div>                
                 
                 <div class="form-group">
                   <label for="comentarios">Comentarios</label>
                   <textarea class="form-control form-control-sm input-con-sombra " name="comentarios" id="comentarios" rows="4" style="resize: vertical;" placeholder="Ej: - OPC1\n- OPC2\n- OPC3"></textarea>
                 </div>
-
               </div>
 
               <div class="modal-footer">
@@ -591,9 +613,11 @@
       document.getElementById('fecha_entrega').disabled = false;
       document.getElementById('cantidad').disabled = false;
       document.getElementById('unidad').disabled = false;
+      document.getElementById('estcco').disabled = false;
       document.getElementById('peso').disabled = false;
       document.getElementById('pais').disabled = false;
       document.getElementById('ciudad').disabled = false;
+      document.getElementById('fecha_fin').disabled = false;
       document.getElementById('comentarios').disabled = false;
 
       // Set valores visibles (bloqueados)
@@ -606,15 +630,19 @@
       document.getElementById('ocompra').value = ccosto.ocompra;
       document.getElementById('cliente').value = ccosto.cliente;
       document.getElementById('fecha_orden').value = ccosto.fecha_orden;
-      document.getElementById('fecha_entrega').value = ccosto.fecha_entrega;
       document.getElementById('fecha_entrega').value = formatFecha(ccosto.fecha_entrega);
       document.getElementById('fecha_orden').value = formatFecha(ccosto.fecha_orden);
       document.getElementById('cantidad').value = ccosto.cantidad;
       document.getElementById('unidad').value = ccosto.unidad;
+      document.getElementById('estcco').value = ccosto.estado;
       document.getElementById('peso').value = ccosto.peso;
       document.getElementById('pais').value = ccosto.pais;
-
-
+      const fechaInput = document.getElementById('fecha_fin');
+      if (!ccosto.fecha_fin || isNaN(Date.parse(ccosto.fecha_fin))) {
+        fechaInput.value = '';
+      } else {
+        fechaInput.value = formatFecha(ccosto.fecha_fin);
+      }      
       // Dispara el cambio para cargar las ciudades del país
       const selectPais = document.getElementById('pais');
       selectPais.dispatchEvent(new Event('change'));
@@ -630,8 +658,10 @@
 
     }
 
-
     function formatFecha(fechaTexto) {
+        if (!fechaTexto || isNaN(Date.parse(fechaTexto))) {
+            return '';
+        }
         const fecha = new Date(fechaTexto);
         const year = fecha.getFullYear();
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -650,11 +680,13 @@
       document.getElementById('fecha_entrega').value = "";
       document.getElementById('cantidad').value = "";
       document.getElementById('unidad').value = "";
+      document.getElementById('estcco').value = "";
       document.getElementById('peso').value = "";
       document.getElementById('pais').value = "";
       document.getElementById('ciudad').value = "";
       document.getElementById('comentarios').value = "";
       document.getElementById('editando').value = "false";
+      document.getElementById('fecha_fin').value = "";
     }
 
     function copiarDatosFormulario() {
