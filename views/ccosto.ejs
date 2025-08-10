@@ -490,6 +490,15 @@
 
                 <div class="form-row align-items-center mb-2">
                   <div class="col-4">                  
+                    <label for="fecha_fin">Fecha Inicio Real</label>
+                  </div>
+                  <div class="col-2">
+                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_inicio" id="fecha_inicio" maxlength="60">
+                  </div>    
+                </div>                
+
+                <div class="form-row align-items-center mb-2">
+                  <div class="col-4">                  
                     <label for="fecha_fin">Fecha Finalizacion</label>
                   </div>
                   <div class="col-2">
@@ -618,6 +627,7 @@
       document.getElementById('pais').disabled = false;
       document.getElementById('ciudad').disabled = false;
       document.getElementById('fecha_fin').disabled = false;
+      document.getElementById('fecha_inicio').disabled = false;
       document.getElementById('comentarios').disabled = false;
 
       // Set valores visibles (bloqueados)
@@ -629,7 +639,6 @@
       document.getElementById('descripcion').value = ccosto.descripcion;
       document.getElementById('ocompra').value = ccosto.ocompra;
       document.getElementById('cliente').value = ccosto.cliente;
-      document.getElementById('fecha_orden').value = ccosto.fecha_orden;
       document.getElementById('fecha_entrega').value = formatFecha(ccosto.fecha_entrega);
       document.getElementById('fecha_orden').value = formatFecha(ccosto.fecha_orden);
       document.getElementById('cantidad').value = ccosto.cantidad;
@@ -643,6 +652,13 @@
       } else {
         fechaInput.value = formatFecha(ccosto.fecha_fin);
       }      
+      const fechaIniput = document.getElementById('fecha_inicio');
+      if (!ccosto.fecha_inicio || isNaN(Date.parse(ccosto.fecha_inicio))) {
+        fechaIniput.value = '';
+      } else {
+        fechaIniput.value = formatFecha(ccosto.fecha_inicio);
+      }      
+
       // Dispara el cambio para cargar las ciudades del país
       const selectPais = document.getElementById('pais');
       selectPais.dispatchEvent(new Event('change'));
@@ -687,6 +703,7 @@
       document.getElementById('comentarios').value = "";
       document.getElementById('editando').value = "false";
       document.getElementById('fecha_fin').value = "";
+      document.getElementById('fecha_inicio').value = "";
     }
 
     function copiarDatosFormulario() {

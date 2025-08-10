@@ -342,7 +342,7 @@ app.post('/ccosto', async (req, res) => {
   const conn = await pool.getConnection();
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
-    fecha_entrega, fecha_fin, cantidad, unidad, peso, pais,
+    fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais,
     ciudad, estcco, comentarios, editando
   } = req.body;
   const isValidDate = fecha_fin && /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin) && !isNaN(Date.parse(fecha_fin));
@@ -389,8 +389,8 @@ app.post('/ccosto', async (req, res) => {
     let mensaje;
     if (editando === "true") {
         await conn.execute(
-          `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_inicio=?, fecha_entrega=?, fecha_fin=?, cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, estado=?, comentarios=? WHERE idcc=?`,
-          [descripcion, ocompra, cliente, fecha_orden, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios, idcc]
+          `UPDATE tbl_ccosto SET descripcion=?, ocompra=?, cliente=?, fecha_orden=?, fecha_entrega=?, fecha_fin=?, fecha_inicio=?,cantidad=?, unidad=?, peso=?, pais=?, ciudad=?, estado=?, comentarios=? WHERE idcc=?`,
+          [descripcion, ocompra, cliente, fecha_orden, fecha_entrega, fecFinal, fecha_inicio, cantidad, unidad, peso, pais, ciudad, estcco, comentarios, idcc]
         );
         mensaje = { tipo: 'success', texto: 'Centro de costo actualizado exitosamente.' };
     } else {
@@ -402,9 +402,9 @@ app.post('/ccosto', async (req, res) => {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
         await conn.execute(
-          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_inicio, fecha_entrega, fecha_fin,cantidad, unidad, peso, pais, ciudad, estado, comentarios)
+          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais, ciudad, estado, comentarios)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios?.trim()]
+          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios?.trim()]
         );
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }
@@ -1864,7 +1864,7 @@ app.post('/tareas', async (req, res) => {
   });
 
 
-/* TAREAS G*/
+/* TAREAS G*/ 
 
 app.post('/tareasg', async (req, res) => {
   try {
@@ -1878,6 +1878,7 @@ app.post('/tareasg', async (req, res) => {
     const [[{ max_fecha_entrega }]] = await pool.execute(
       "SELECT MAX(fecha_entrega) AS max_fecha_entrega FROM tbl_ccosto"
     );
+
     // Función para formatear fecha como YYYY/MM/DD
     function formatDate(date) {
       const d = new Date(date);
@@ -1887,7 +1888,7 @@ app.post('/tareasg', async (req, res) => {
       return `${year}/${month}/${day}`;
     }
 
-    // Construcción del array de tareas
+    // Construcción del array de tareas  getDateOnly
     const tasks = rows.map(row => {
       const start = new Date(row.fecha_orden);
       const end = new Date(row.fecha_entrega);
@@ -1922,50 +1923,66 @@ app.post('/tareasg', async (req, res) => {
 
 
     // Normalizamos las fechas
-    const fechaOrden = getDateOnly(row.fecha_orden);
-    const fechaEntrega = getDateOnly(row.fecha_entrega);
-    let fechaFin = null;
-    if (row.fecha_fin !== null && row.fecha_fin !== undefined) {
-        fechaFin = getDateOnly(row.fecha_fin);
-    }
 
-    let fechaInicio = null;
-    if (row.fecha_inicio !== null && row.fecha_inicio !== undefined) {
-        fechaInicio = getDateOnly(row.fecha_inicio);
+    const fechaOrden = getDateOnlyString(row.fecha_orden);
+    const fechaEntrega = getDateOnlyString(row.fecha_entrega);
+
+    console.log('***************************');  
+    console.log('fechaOrden:', fechaOrden);
+    console.log('fechaEntrega:', fechaEntrega);
+
+    let fechaFin = null;
+    if (row.fecha_fin) {
+        fechaFin = getDateOnlyString(row.fecha_fin);
     }
+    let fechaInicio = null;
+    if (row.fecha_inicio) {
+        fechaInicio = getDateOnlyString(row.fecha_inicio);
+    }
+    const hoy = getDateOnlyString(new Date());
+
+    console.log('fechaFin:', fechaFin);
+    console.log('fechaInicio:', fechaInicio);
+    console.log('hoy:', hoy);
 
     color = "#808080"; // color por defecto
-    const hoy = getDateOnly(new Date());
-    if (fechaFin !== null) {
-        if (fechaFin <= fechaEntrega) {
-            color = "#1E90FF"; // Azul - terminó antes
-        } else if (fechaFin.getTime() === fechaEntrega.getTime()) {
+
+    if (fechaFin) {
+        if (fechaFin < fechaEntrega) {
+            color = "#0d0129ff"; // Azul - terminó antes
+        } else if (fechaFin === fechaEntrega) {
             color = "#90EE90"; // Verde - terminó a tiempo
         } else if (fechaFin > fechaEntrega) {
-            color = "#FF6347"; // Rojo - terminó después
+            color = "#520f03ff"; // Rojo - terminó después
         }
     } else {
-        if (fechaInicio > fechaOrden) {
+        if (fechaInicio && fechaInicio > fechaOrden) {
             color = "#FFD700"; // Dorado - inició tarde
         } else if (hoy >= fechaOrden && hoy <= fechaEntrega) {
             color = "#90EE90"; // Verde - en curso a tiempo
         } else if (hoy > fechaEntrega) {
-            color = "#FF6347"; // Rojo - aún no finaliza y está vencida
+            color = "#520f03ff"; // Rojo - aún no finaliza y está vencida
         }
-    }
-
+    }  // start_date
+      
     return {
       task: row.idcc,
       text: row.descripcion || "Tarea sin descripción",
       start_date: formatDateAAAAMMDD(row.fecha_orden),
       end_date: formatDateAAAAMMDD(row.fecha_entrega),
       fin_date: row.fecha_fin ? formatDateAAAAMMDD(row.fecha_fin) : null,
+      ini_date: row.fecha_inicio ? formatDateAAAAMMDD(row.fecha_inicio) : null,
       duration,
       progress,
       color
-    };
+    };  
+    }); 
 
-  });
+    function getDateOnlyString(dateString) {
+      const date = new Date(dateString);
+      // Siempre extrae la parte de la fecha en formato YYYY-MM-DD sin importar zona horaria
+      return date.toISOString().slice(0, 10);
+    }
 
     // Enviar la respuesta al cliente  start_date
 

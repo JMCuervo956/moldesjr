@@ -21,25 +21,15 @@
 
    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f4f8;
-            zoom: 1; /* 80% del tamaño original - tamaño texto GLOBAL*/
-        }
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* evita scroll horizontal en todo el body */
+  }
 
-#gantt_here {
-    width: 100%;
-    height: 600px; /* Ajusta a lo que necesites */
-    margin-top: 20px;
-    overflow-x: auto;
-    overflow-y: auto;
-    white-space: nowrap;
-    background-color: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
+        html {
+            overflow-x: hidden;
+        }
 
 
         .activity-item {
@@ -291,7 +281,38 @@
         background-color: #4CAF50 !important;
         opacity: 0.8;
     }
-    
+
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Elimina scroll horizontal global */
+}
+
+
+  #gantt_container {
+    width: 100%;
+    max-width: 100vw; /* no mayor que el ancho de viewport */
+    overflow-x: auto; /* solo el contenedor hará scroll si es necesario */
+    box-sizing: border-box;
+    border: 1px solid #ccc; /* opcional para visualizar el contenedor */
+  }
+
+#gantt_here {
+    min-width: 1200px; /* O lo que el contenido necesite para no cortarse */
+    height: 500px;
+}
+
+        #gantt_here {
+            height: 600px; /* Ajusta a lo que necesites */
+            margin-top: 20px;
+            white-space: nowrap;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
 </style>        
 
 </head>
@@ -323,7 +344,48 @@
         </div>
     </div>
 
-    <div id="gantt_here"></div>
+    <div id="taskModal" style="display:none; position:fixed; top:20%; left:30%; width:40%; background:white; padding:20px; border:1px solid #ccc; z-index:1000;">
+        <div id="modalContent"></div>
+        <br>
+    <button 
+        onclick="closeModal()" 
+        style="
+            padding: 6px 12px;
+            font-size: 13px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        "
+        onmouseover="this.style.backgroundColor='#0056b3'"
+        onmouseout="this.style.backgroundColor='#007bff'"
+    >
+        Cerrar
+    </button>
+    </div>
+
+    <script>
+        function showModal(content) {
+            document.getElementById("modalContent").innerHTML = content;
+            document.getElementById("taskModal").style.display = "block";
+            if (task.ini_date) {
+                modalContent += `<div><strong>🟢 Fecha real de inicio:</strong> ${task.ini_date}</div>`;
+            }
+            if (task.fin_date) {
+                modalContent += `<div><strong>🔴 Fecha real de fin:</strong> ${task.fin_date}</div>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("taskModal").style.display = "none";
+        }
+    </script>
+
+    <div id="gantt_container" style="width: 100%; overflow-x: auto;">
+    <div id="gantt_here" style="min-width: 1200px;"></div>
+    </div>
 
     <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
     <div style="text-align: center; margin-top: 20px;" id="addTaskButtonContainer"></div>
@@ -340,7 +402,7 @@
         const otrabajo = "<%= otrabajo %>";
     </script>
 
-    <!-- GANTT PROCESO -->
+    <!-- GANTT PROCESO   start_date  -->   
     <script>
         const festivosColombia = {
           '2025-01-01':'Año Nuevo','2025-01-06':'Reyes Magos','2025-03-24':'San José',
@@ -365,12 +427,21 @@
             let adjustedEndDate = new Date(task.end_date);
             adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
 
+            let extra = '';
+            if (task.ini_date) {
+                extra += `<b>🟢 Fecha real inicio:</b> ${gantt.date.date_to_str("%d %M %Y")(new Date(task.ini_date))}<br>`;
+            }
+            if (task.fin_date) {
+                extra += `<b>🔴 Fecha real fin:</b> ${gantt.date.date_to_str("%d %M %Y")(new Date(task.fin_date))}<br>`;
+            }            
+
             return `
                 <b>Tarea:</b> ${task.task} días<br>
                 <b>${task.text}</b><br>
                 <b>Inicio:</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
                 <b>Finaliza:</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
                 <b>Duración:</b> ${task.duration} días<br>
+                ${extra}  
             `;
         };
 
@@ -400,7 +471,33 @@
                         return `<span style="font-size: 8px;">${task.text}</span>`;
                     }
                 },
-            { name: "duration", label: "<b>D</b>", align: "center", width: 30 },
+                {
+                name: "details",
+                label: "<b>🔍</b>",
+                align: "center",
+                width: 40,
+                template: function(task) {
+
+                return `<button 
+                    class="btn-show-details" 
+                    data-task-id="${task.id}" 
+                    style="
+                        font-size: 14px;
+                        padding: 2px 2px;
+                        background-color: #ffffff;
+                        border: 0px solid #ccc;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: background-color 0.2s ease;
+                    "
+                    onmouseover="this.style.backgroundColor='#e0e0e0'"
+                    onmouseout="this.style.backgroundColor='#f0f0f0'"
+                >
+                    📄
+                </button>`;
+
+                }
+            }
         ];
 
         gantt.locale = {
@@ -513,6 +610,7 @@
                 if (data && data.tasks && data.tasks.length > 0) {
                     maxTaskId = Math.max(...data.tasks.map(task => Number(task.id)));
                     maxTaskCode = Math.max(...data.tasks.map(task => Number(task.task)));
+                    
 
                     const today = new Date();
 
@@ -522,6 +620,13 @@
                     const end = parseDateNoTimezone(task.end_date);
                     const adjustedEndDate = new Date(end);
                     adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+                    // NUEVO: ini_date
+                    let adjustedIniDate = null;
+                    if (task.ini_date) {
+                        adjustedIniDate = parseDateNoTimezone(task.ini_date);
+                        adjustedIniDate.setDate(adjustedIniDate.getDate() + 1);
+                    }
 
                     let adjustedFinDate = null;
                     if (task.fin_date) {
@@ -548,7 +653,8 @@
                         text: task.text,
                         start_date: formatDateWithoutTimezone(start),         // <-- string
                         end_date: formatDateWithoutTimezone(adjustedEndDate), // <-- string
-                        fin_date: adjustedFinDate ? formatDateWithoutTimezone(adjustedFinDate) : null,
+                        fin_date: adjustedFinDate ? formatDateWithoutTimezone(adjustedFinDate) : null,  // <--nv
+                        ini_date: adjustedIniDate ? formatDateWithoutTimezone(adjustedIniDate) : null,  // <--nv
                         duration: task.duration,
                         color: task.color || '',
                         progress: progress
@@ -597,59 +703,84 @@
             }
         }
 
+        
+
         loadTasks();
 
-function parseDateNoTimezone(dateStr) {
-  // Si dateStr es tipo '2025-06-01' o ISO string
-  const [year, month, day] = dateStr.split('-');
-  return new Date(year, month - 1, day);
-}
 
-function formatDateWithoutTimezone(date) {
-  const year = date.getFullYear();
-  const month = ('0' + (date.getMonth() + 1)).slice(-2);
-  const day = ('0' + date.getDate()).slice(-2);
-  return `${year}-${month}-${day}`;
-}
+        
+        function formatDateWithoutTimezone(date) {
+        if (!date) return "";
+            // Extrae año, mes y día en la zona local (sin desfase)
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0
+            const d = String(date.getDate()).padStart(2, '0');
 
+            return `${y}-${m}-${d}`;
+            }
 
-
-
+        function parseDateNoTimezone(dateString) {
+            if (!dateString) return null;
+            const [year, month, day] = dateString.split("T")[0].split("-");
+            return new Date(year, month - 1, day);  // Mes es 0-based en Date
+            }
 
     </script>
 
-         <script>  // este
-            document.addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-                const target = e.target.closest(".gantt_cell[data-column-name='text']");
-                
-                const rowId = gantt.locate(e);
+<script> 
+document.addEventListener("click", function (e) {
+    if (e.target && e.target.classList.contains("btn-show-details")) {
+        const taskId = e.target.getAttribute("data-task-id");
+        const task = gantt.getTask(taskId);
 
-                const tooltip = document.getElementById('customTooltip');
-                tooltip.style.display = "none";
+        const formatDate = gantt.date.date_to_str("%d %M %Y");
 
-                if (target && rowId) {
-                    const task = gantt.getTask(rowId);
-                    let adjustedEndDate = new Date(task.end_date);
-                    adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
+        const adjustedEndDate = new Date(task.end_date);
+        adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
 
-                    tooltip.innerHTML = `
-                        <b>${task.text}</b><br>
-                        <b>Inicio ..... :</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
-                        <b>Finaliza ... :</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
-                        <b>Duración ... :</b> ${task.duration} días<br>
-                    `;
-                    tooltip.style.left = e.pageX + "px";
-                    tooltip.style.top = e.pageY + "px";
-                    tooltip.style.display = "block";
-                }
-            });
+        // Campos adicionales si existen
+        const iniDateFormatted = task.ini_date ? formatDate(new Date(task.ini_date)) : null;
+        const finDateFormatted = task.fin_date ? formatDate(new Date(task.fin_date)) : null;
 
-            document.addEventListener('click', function () {
-                document.getElementById('customTooltip').style.display = "none";
-            });
+        // Construir contenido del modal con campos opcionales
+        let modalContent = `
+            <div style="
+                font-family: Arial, sans-serif; 
+                font-size: 14px; 
+                line-height: 1.6; 
+                border: 2px solid #007bff; 
+                border-radius: 10px; 
+                padding: 20px; 
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); 
+                background-color: #ffffff;
+            ">
+                <div style="margin-bottom: 12px;"><strong>🆔 ID:</strong> ${task.id}</div>
+                <div style="margin-bottom: 12px;"><strong>📌 Actividad:</strong> ${task.text}</div>
+                <div style="margin-bottom: 12px;"><strong>⏳ Duración:</strong> ${task.duration} días</div>
+                <div style="margin-bottom: 12px;"><strong>📅 Inicio:</strong> ${formatDate(task.start_date)}</div>
+                <div style="margin-bottom: 12px;"><strong>🏁 Fin:</strong> ${formatDate(adjustedEndDate)}</div>
+        `;
 
-        </script>  
+        if (iniDateFormatted) {
+            modalContent += `<div style="margin-bottom: 12px;"><strong>🟢 Fecha real de inicio:</strong> ${iniDateFormatted}</div>`;
+        } else {
+            modalContent += `<div style="margin-bottom: 12px;"><strong>🟢 Fecha real de inicio:</strong> <span style="color: gray;">Sin dato</span></div>`;
+        }
+
+        if (finDateFormatted) {
+            modalContent += `<div style="margin-bottom: 12px;"><strong>🔴 Fecha real de fin:</strong> ${finDateFormatted}</div>`;
+        } else {
+            modalContent += `<div style="margin-bottom: 12px;"><strong>🔴 Fecha real de fin:</strong> <span style="color: gray;">Sin dato</span></div>`;
+        }
+
+
+        modalContent += `</div>`; // Cierra el div principal
+
+        showModal(modalContent);
+    }
+});
+</script>
+
 
 
 </body>
