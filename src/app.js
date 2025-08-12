@@ -402,9 +402,16 @@ app.post('/ccosto', async (req, res) => {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
         await conn.execute(
-          `INSERT INTO tbl_ccosto (idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais, ciudad, estado, comentarios)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega, fecFinal, cantidad, unidad, peso, pais, ciudad, estcco, comentarios?.trim()]
+          `INSERT INTO tbl_ccosto (
+            idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
+            cantidad, unidad, peso, pais, ciudad, comentarios,
+            estado, fecha_fin, fecha_inicio
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
+            cantidad, unidad, peso, pais, ciudad, comentarios,
+            estcco, fecFinal, fecha_inicio
+          ]
         );
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }

@@ -384,7 +384,8 @@ html, body {
     </script>
 
     <div id="gantt_container" style="width: 100%; overflow-x: auto;">
-    <div id="gantt_here" style="min-width: 1200px;"></div>
+        <div id="gantt_here" style="min-width: 1200px;"></div>
+        <div id="gantt_ini_date" style="height: 400px; width: 100%; margin-top: 40px;"></div>
     </div>
 
     <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
@@ -692,9 +693,141 @@ html, body {
                         const percent = Math.round(task.progress * 100);
                         return `<span style="font-size:8px; color: black;">${task.text} (${percent}%)</span>`;
                     };
+                    //   ini segundo gantt
 
+            const ganttDataOriginal = data.tasks.map(task => {
+                const start = parseDateNoTimezone(task.start_date);
+                const end = parseDateNoTimezone(task.end_date);
+                const adjustedEndDate = new Date(end);
+                adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+                let adjustedIniDate = null;
+                if (task.ini_date) {
+                    adjustedIniDate = parseDateNoTimezone(task.ini_date);
+                    adjustedIniDate.setDate(adjustedIniDate.getDate() + 1);
+                }
+
+                let adjustedFinDate = null;
+                if (task.fin_date) {
+                    adjustedFinDate = parseDateNoTimezone(task.fin_date);
+                    adjustedFinDate.setDate(adjustedFinDate.getDate() + 1);
+                }
+
+                let progress = 0;
+                const today = parseDateNoTimezone(new Date().toISOString());
+
+                if (today >= adjustedEndDate) {
+                    progress = 1;
+                } else if (today > start) {
+                    const totalDuration = adjustedEndDate - start;
+                    const elapsed = today - start;
+                    progress = elapsed / totalDuration;
+                    if (progress > 1) progress = 1;
+                    if (progress < 0) progress = 0;
+                }
+
+                return {
+                    id: task.task,
+                    task: task.task,
+                    text: task.text,
+                    start_date: formatDateWithoutTimezone(start),
+                    end_date: formatDateWithoutTimezone(adjustedEndDate),
+                    fin_date: adjustedFinDate ? formatDateWithoutTimezone(adjustedFinDate) : null,
+                    ini_date: adjustedIniDate ? formatDateWithoutTimezone(adjustedIniDate) : null,
+                    duration: task.duration,
+                    color: task.color || '',
+                    progress: progress
+                };
+            });
+
+                    // fin segundo gantt
+
+                    // Inicializa primer gantt
                     gantt.init("gantt_here");
                     gantt.parse({ data: ganttData, links: [] });
+
+                    // cont segundo gantt
+
+            // Fecha de hoy en formato 'YYYY-MM-DD'
+            const today2 = formatDateWithoutTimezone(new Date());
+
+            // Datos para segundo gantt (ini_date - hoy)
+            const ganttDataIniDate = ganttDataOriginal.map(task => {
+                if (task.ini_date) {
+                    let start = parseDateNoTimezone(task.ini_date);
+                    let end = parseDateNoTimezone(today2);
+                    const adjustedEndDate = new Date(end);
+                    adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+                    let progress = 0;
+                    const todayDate = parseDateNoTimezone(new Date().toISOString());
+
+                    if (todayDate >= adjustedEndDate) {
+                        progress = 1;
+                    } else if (todayDate > start) {
+                        const totalDuration = adjustedEndDate - start;
+                        const elapsed = todayDate - start;
+                        progress = elapsed / totalDuration;
+                        if (progress > 1) progress = 1;
+                        if (progress < 0) progress = 0;
+                    }
+
+                    return {
+                        id: task.id,
+                        task: task.task,
+                        text: task.text,
+                        start_date: task.ini_date,
+                        end_date: today2,
+                        duration: task.duration,
+                        color: task.color,
+                        progress: progress
+                    };
+                } else {
+                    return null;
+                }
+            }).filter(task => task !== null);
+
+            // Clona gantt para segundo contenedor
+            const ganttIniDate = gantt.clone();
+
+            ganttIniDate.plugins({ tooltip: false });
+
+
+ganttIniDate.config.xml_date = "%Y-%m-%d";
+ganttIniDate.config.drag_move = false;
+ganttIniDate.config.drag_resize = false;
+ganttIniDate.config.drag_links = false;
+ganttIniDate.config.show_progress = true;
+
+ganttIniDate.templates.task_class = function(start, end, task) {
+    return task.color ? `custom-task-color-${task.id}` : "";
+};
+ganttIniDate.templates.task_text = function(start, end, task) {
+    const percent = Math.round(task.progress * 100);
+    return `<span style="font-size:8px; color: black;">${task.text} (${percent}%)</span>`;
+};
+
+ganttDataIniDate.forEach(task => {
+    if (task.color) {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .gantt_task_line.custom-task-color-${task.id} {
+                background-color: #D3D3D3 !important;
+                border: 1px solid ${task.color} !important;
+            }
+            .gantt_task_line.custom-task-color-${task.id} .gantt_task_progress {
+                background-color: ${task.color} !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+});
+
+ganttIniDate.init("gantt_ini_date");
+ganttIniDate.parse({ data: ganttDataIniDate, links: [] });
+
+
+                    // end cont segundo gantt
                 } else {
                     console.log("No se encontraron tareas.");
                 }
