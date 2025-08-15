@@ -401,16 +401,17 @@ app.post('/ccosto', async (req, res) => {
       if (rows[0].count > 0) {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
+        const fechaHoraBogota = getBogotaDateTime();
         await conn.execute(
           `INSERT INTO tbl_ccosto (
             idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
             cantidad, unidad, peso, pais, ciudad, comentarios,
-            estado, fecha_fin, fecha_inicio
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            estado, fecha_fin, fecha_inicio, fecharg
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
             cantidad, unidad, peso, pais, ciudad, comentarios,
-            estcco, fecFinal, fecha_inicio
+            estcco, fecFinal, fecha_inicio, fechaHoraBogota
           ]
         );
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
@@ -1952,15 +1953,15 @@ app.post('/tareasg', async (req, res) => {
     console.log('fechaInicio:', fechaInicio);
     console.log('hoy:', hoy);
 
-    color = "#808080"; // color por defecto
+    color = "#423434ff"; // color por defecto
 
     if (fechaFin) {
         if (fechaFin < fechaEntrega) {
-            color = "#0d0129ff"; // Azul - terminó antes
+            color = "#208806ff"; // Azul - terminó antes
         } else if (fechaFin === fechaEntrega) {
             color = "#90EE90"; // Verde - terminó a tiempo
         } else if (fechaFin > fechaEntrega) {
-            color = "#520f03ff"; // Rojo - terminó después
+            color = "#e96149ff"; // Rojo - terminó después
         }
     } else {
         if (fechaInicio && fechaInicio > fechaOrden) {
@@ -1968,7 +1969,7 @@ app.post('/tareasg', async (req, res) => {
         } else if (hoy >= fechaOrden && hoy <= fechaEntrega) {
             color = "#90EE90"; // Verde - en curso a tiempo
         } else if (hoy > fechaEntrega) {
-            color = "#520f03ff"; // Rojo - aún no finaliza y está vencida
+            color = "#e96149ff"; // Rojo - aún no finaliza y está vencida
         }
     }  // start_date
       
