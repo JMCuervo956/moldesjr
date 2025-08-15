@@ -33,6 +33,9 @@ export const menuData2 = [
             link: "/inspasig",
             icon: "fas fa-folder-open",
           },
+
+       { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
+
           {
             title: "Seguimiento Auxiliares",
             link: "/inspaux",

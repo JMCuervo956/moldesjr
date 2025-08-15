@@ -300,13 +300,15 @@ app.get('/ccosto', async (req, res) => {
       conn.execute(` 
         SELECT a.*, b.cliente as clienteN,
           CASE
+              WHEN a.fecha_fin IS NOT NULL THEN c.cco_descrip
               WHEN ? < a.fecha_orden THEN 'Por Iniciar'
               WHEN ? >= a.fecha_orden AND ? <= a.fecha_entrega THEN 'En Progreso'
               WHEN ? > a.fecha_entrega THEN 'Atrasado'
               ELSE 'Sin Estado'
           END AS estado_actual
         FROM tbl_ccosto a
-        JOIN tbl_cliente b ON a.cliente = b.nit;
+        JOIN tbl_cliente b ON a.cliente = b.nit
+        LEFT JOIN tbl_estcco c ON a.estado = c.cco_idest;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_unidad'),
       conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),

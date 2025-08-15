@@ -6,29 +6,68 @@ export const login = async (req, res) => {
   const { unidad, user, pass } = req.body;
 
   try {
-    
-  const fechaHoraBogota = new Date(getBogotaDateTime()); // parseamos el string
-  const hora = fechaHoraBogota.getHours();
+  
+  const fechaHoraBogotaStr = getBogotaDateTime();
+  console.log(fechaHoraBogotaStr); // Ejemplo: 2025-08-14 22:32:00
+
+  // Convertir string a Date ajustado a Bogotá (para operaciones)
+  // Una forma simple es crear un objeto Date en UTC usando el string:
+  const fechaBogota = new Date(fechaHoraBogotaStr.replace(' ', 'T') + 'Z');
+
+  // Ahora puedes usar:
+  const hora = fechaBogota.getUTCHours();
+  const dia = fechaBogota.getUTCDay();
+
+  console.log('Hora:', hora);
+  console.log('Día:', dia);
+/*
+  const fechaISO = fechaHoraBogotaStr.toISOString().split('T')[0];
+  const [rowsf] = await pool.execute(
+    'SELECT 1 FROM festivos WHERE fecha = ? AND activo = 1',
+    [fechaISO]
+  );
+  const esFestivo = rowsf.length > 0;  
+  console.log(fechaISO);
+
+  if (esFestivo) {
+    await pool.execute(
+    `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+      VALUES (?, ?, ?)`,
+    [user, 97, fechaHoraBogotaStr]
+    );
+    console.log("Es un día festivo");
+    return res.json({ status: 'error', message: 'Día festivo, no se permite el acceso' });
+  }
+
+  const diaSemana = fechaHoraBogotaStr.getDay(); // 0 = Domingo, 6 = Sábado
+  if (diaSemana === 0 || diaSemana === 6) {
+    await pool.execute(
+    `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
+      VALUES (?, ?, ?)`,
+    [user, 98, fechaHoraBogotaStr]
+    );
+    return res.json({ status: 'error', message: 'Dia Fuera de Rango' });
+  }  
+
   await pool.execute(
   `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
     VALUES (?, ?, ?)`,
-  [user, 99, fechaHoraBogota]
+  [user, 99, fechaHoraBogotaStr]
 );
+*/
   if (hora >= 8 && hora < 18) {
     console.log("La hora está entre las 08:00 y las 18:00.");
   } else {
-    console.log("La hora está fuera del rango.");
     return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
   }
-    const [rows] = await pool.execute('SELECT * FROM users WHERE user = ?', [user]);
 
-    if (rows.length === 0) {
+  const [rows] = await pool.execute('SELECT * FROM users WHERE user = ?', [user]);
+
+  if (rows.length === 0) {
       return res.json({ status: 'error', message: 'Usuario no encontrado' });
     }
-
     const userRecord = rows[0];
     const passwordMatch = await bcryptjs.compare(pass, userRecord.pass);
-
     if (!passwordMatch) {
       return res.json({ status: 'error', message: 'Contraseña incorrecta' });
     }
@@ -49,16 +88,19 @@ export const login = async (req, res) => {
 };
 
 function getBogotaDateTime() {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const bogotaOffsetHours = -5;
-    const bogotaTime = new Date(utc + bogotaOffsetHours * 3600000);
-  
-    const yyyy = bogotaTime.getFullYear();
-    const mm = String(bogotaTime.getMonth() + 1).padStart(2, '0');
-    const dd = String(bogotaTime.getDate()).padStart(2, '0');
-    const hh = String(bogotaTime.getHours()).padStart(2, '0');
-    const min = String(bogotaTime.getMinutes()).padStart(2, '0');
-    const ss = String(bogotaTime.getSeconds()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const data = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+  return `${data.year}-${data.month}-${data.day} ${data.hour}:${data.minute}:${data.second}`;
 }
