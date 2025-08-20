@@ -8,8 +8,7 @@ export const login = async (req, res) => {
   try {
   
   const fechaHoraBogotaStr = getBogotaDateTime();
-  console.log(fechaHoraBogotaStr); // Ejemplo: 2025-08-14 22:32:00
-
+ 
   // Convertir string a Date ajustado a Bogotá (para operaciones)
   // Una forma simple es crear un objeto Date en UTC usando el string:
   const fechaBogota = new Date(fechaHoraBogotaStr.replace(' ', 'T') + 'Z');
@@ -18,8 +17,6 @@ export const login = async (req, res) => {
   const hora = fechaBogota.getUTCHours();
   const dia = fechaBogota.getUTCDay();
 
-  console.log('Hora:', hora);
-  console.log('Día:', dia);
 /*
   const fechaISO = fechaHoraBogotaStr.toISOString().split('T')[0];
   const [rowsf] = await pool.execute(
@@ -27,7 +24,6 @@ export const login = async (req, res) => {
     [fechaISO]
   );
   const esFestivo = rowsf.length > 0;  
-  console.log(fechaISO);
 
   if (esFestivo) {
     await pool.execute(
@@ -35,7 +31,6 @@ export const login = async (req, res) => {
       VALUES (?, ?, ?)`,
     [user, 97, fechaHoraBogotaStr]
     );
-    console.log("Es un día festivo");
     return res.json({ status: 'error', message: 'Día festivo, no se permite el acceso' });
   }
 
@@ -55,8 +50,8 @@ export const login = async (req, res) => {
   [user, 99, fechaHoraBogotaStr]
 );
 */
+
   if (hora >= 8 && hora < 24) {
-    console.log("La hora está entre las 08:00 y las 24:00.");
   } else {
     return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
   }

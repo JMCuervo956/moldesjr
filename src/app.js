@@ -3734,13 +3734,24 @@ app.post('/detalle-dia', async (req, res) => {
     await conn.commit();
     console.timeEnd('actualizacion-items');
 
+  if (req.body._redirectToFirma) {
+    // Si venía desde "Ir a Firma", redirige a la página de firma
+    return res.redirect(`/firma?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
+  }
+
+    req.session.mensaje = 'Cambios guardados correctamente';
+    return res.redirect('/inspasig')  
+  // Si solo era guardar, puedes volver al formulario o a otra página
+//  res.redirect(`/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
+/*
+  if (req.body._redirectToFirma) {
+    // Si venía desde "Ir a Firma", redirige a la página de firma
+    return res.redirect(`/firma?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
+  }
+    
     req.session.mensaje = 'Cambios guardados correctamente';
     return res.redirect('/inspasig')
-//    res.redirect(
-//      `/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(
-//        tip_func
-//      )}&doc_id=${encodeURIComponent(doc_id)}`
-//    );
+*/
   } catch (err) {
     await conn.rollback();
     console.error('Error actualizando:', err);
@@ -3850,6 +3861,8 @@ app.post('/detalle-diaux', async (req, res) => {
       for (const itemIndex in items) {
         const item = items[itemIndex];
         const { ccosto, no, opcion, ocompra, observacion, firma } = item;
+        const safeCcosto = ccosto === undefined || ccosto === '' ? null : ccosto;
+        console.log(safeCcosto);
 
         cambios.push(no);
 
@@ -3862,7 +3875,7 @@ app.post('/detalle-diaux', async (req, res) => {
             WHERE no = ? AND DATE(fecha_inspeccion) = ? AND func_doc = ? 
             `,
             [
-              ccosto,
+              safeCcosto,
               ocompra,
               observacion,
               no,
@@ -3916,7 +3929,7 @@ app.get('/inspasig', async (req, res) => {
                     FROM tbl_efuncional a
                     JOIN tbl_perfil b ON a.perfil = b.id
                     JOIN tbl_estados c ON a.estado = c.id
-                    WHERE a.perfil = 14
+                    WHERE a.perfil = 14 and a.estado=1
                     ORDER BY a.perfil, a.estado;
                 `),
                 pool.execute('SELECT * FROM tbl_tipodoc'),

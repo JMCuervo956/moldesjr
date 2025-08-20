@@ -172,28 +172,66 @@
             </table>
         <% }) %>
 
-        <div class="d-flex justify-content-end mt-3">
-          <a 
-            href="/firma?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
-            class="btn btn-warning"
-          >
-            Ir a Firma
-          </a>
-          
-            <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
-            <a 
-              href="/detalle-dia?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
-              class="btn btn-secondary"
-            >
-              Cancelar Cambios
-            </a>
-        </div>
+<div class="d-flex justify-content-end mt-3">
+
+  <!-- Botón "Ir a Firma" que guarda y luego redirige -->
+  <button 
+    type="button"
+    class="btn btn-warning"
+    onclick="guardarYRedirigirAFirma()"
+  >
+    Ir a Firma
+  </button>
+
+  <!-- Botón "Guardar Cambios" normal -->
+  <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
+
+  <!-- Botón "Cancelar Cambios" que redirige a detalle-dia -->
+  <a 
+    href="/detalle-dia?fecha=<%= encodeURIComponent(diaFormateadoRaw) %>&tip_func=<%= encodeURIComponent(tip_func) %>&doc_id=<%= encodeURIComponent(doc_id) %>" 
+    class="btn btn-secondary"
+  >
+    Cancelar Cambios
+  </a>
+
+</div>
+
 
         </form>
     </div>
 </div>
 </div>
 </div>
+
+<script>
+function guardarYRedirigirAFirma() {
+  const form = document.querySelector('form');
+
+  if (!form) {
+    alert('No se encontró el formulario.');
+    return;
+  }
+
+  // Crea un campo oculto que indique que debe redirigir a "firma"
+  const redirectInput = document.createElement('input');
+  redirectInput.type = 'hidden';
+  redirectInput.name = '_redirectToFirma';
+  redirectInput.value = '1';
+  form.appendChild(redirectInput);
+
+  // Cambia temporalmente la acción del formulario para incluir los parámetros
+  const originalAction = form.action;
+  const params = new URLSearchParams({
+    fecha: "<%= diaFormateadoRaw %>",
+    tip_func: "<%= tip_func %>",
+    doc_id: "<%= doc_id %>"
+  });
+
+  form.action = `/detalle-dia?${params.toString()}`;
+  form.submit();
+}
+</script>
+
 
 <script>
   document.querySelectorAll('.opcion-radio').forEach(radio => {

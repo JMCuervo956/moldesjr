@@ -154,6 +154,7 @@
                   <td style="font-size: 1rem;"><%= item.aspecto %></td>
                   <td class="text-center">
                   <select name="<%= prefix %>[ccosto]" class="form-control form-control-sm" style="width: 100%; font-size: 0.7rem;">
+                    <option value="">-- Seleccione una opción --</option>
                     <% ccost.forEach(p => { %>
                       <option value="<%= p.idcc %>" <%= String(p.idcc).trim() === String(item.ccosto).trim() ? 'selected' : '' %>>
                         <%= p.idcc %> - <%= p.descripcion %>
