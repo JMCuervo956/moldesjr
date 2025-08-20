@@ -27,6 +27,16 @@ export const menuData = [
       },      
     ]
   },
+      {
+        title: "Inspeccion",
+        icon: "fas fa-users icon-users",
+        subItems: [
+          { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
+          { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-folder-open" },
+          { title: "Cerrar e Historial", link: "/inspeccioncfg", icon: "fas fa-puzzle-piece" },
+        ]
+      },      
+
   {
     title: "Informes / Consultas",
     link: "/opciones",

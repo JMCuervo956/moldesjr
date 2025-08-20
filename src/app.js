@@ -1937,10 +1937,6 @@ app.post('/tareasg', async (req, res) => {
     const fechaOrden = getDateOnlyString(row.fecha_orden);
     const fechaEntrega = getDateOnlyString(row.fecha_entrega);
 
-    console.log('***************************');  
-    console.log('fechaOrden:', fechaOrden);
-    console.log('fechaEntrega:', fechaEntrega);
-
     let fechaFin = null;
     if (row.fecha_fin) {
         fechaFin = getDateOnlyString(row.fecha_fin);
@@ -1950,13 +1946,7 @@ app.post('/tareasg', async (req, res) => {
         fechaInicio = getDateOnlyString(row.fecha_inicio);
     }
     const hoy = getDateOnlyString(new Date());
-
-    console.log('fechaFin:', fechaFin);
-    console.log('fechaInicio:', fechaInicio);
-    console.log('hoy:', hoy);
-
     color = "#423434ff"; // color por defecto
-
     if (fechaFin) {
         if (fechaFin < fechaEntrega) {
             color = "#208806ff"; // Azul - terminó antes
@@ -3064,6 +3054,7 @@ app.get('/inspeccion', async (req, res) => {
   const { tip_func, doc_id } = req.query;
   const conn = await pool.getConnection();
   try {
+    
     const userUser = req.session.user;
     const userName = req.session.name;
     
@@ -3152,11 +3143,112 @@ app.get('/inspeccion', async (req, res) => {
 
   } catch (error) {
     console.error('Error obteniendo inspeccion:', error);
-    res.status(500).send('Error al obtener inspeccion');
+    res.status(500).send('Error al obtener inspeccion P');
   } finally {
     conn.release();
   }
 });
+
+// inspeccion individual
+
+app.get('/inspecindv', async (req, res) => {
+  const { tip_func, doc_id } = req.query;
+  const conn = await pool.getConnection();
+  try {
+    const userUser = req.session.user;
+    const userName = req.session.name;
+    
+    // Obtener todos los datos sin filtrar por semana
+    const [inspecc] = await conn.execute(`
+      SELECT 
+        b.id_bloque,
+        b.titulo,
+        i.no,
+        i.aspecto,
+        i.fecha_inspeccion,
+        i.si,
+        i.no_ ,
+        i.na,
+        i.observacion,
+        i.firma
+      FROM bloques b
+      JOIN items i ON b.id_bloque = i.id_bloque
+      where func_doc = ?
+      ORDER BY b.id_bloque, i.no, i.fecha_inspeccion;
+    `, [doc_id] );  
+
+    // Extraer fechas únicas reales desde los resultados SQL
+    const fechasUnicas = [...new Set(inspecc.map(row =>
+      new Date(row.fecha_inspeccion).toISOString().slice(0, 10)
+    ))].sort(); // ordena por fecha ascendente
+
+    // Crear array de días en formato { fecha, nombre }
+    const abreviaciones = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    const dias = fechasUnicas.map(fecha => {
+      const diaBogota = DateTime.fromISO(fecha, { zone: 'America/Bogota' });
+      const nombre = diaBogota.setLocale('es').toFormat('ccc'); // 'Vie', 'Lun', etc.
+      return {
+        fecha,
+        nombre
+      };
+    });
+    
+    // Agrupar por bloques
+    const bloquesAgrupados = [];
+
+    inspecc.forEach(row => {
+      let bloque = bloquesAgrupados.find(b => b.id_bloque === row.id_bloque);
+      if (!bloque) {
+        bloque = {
+          id_bloque: row.id_bloque,
+          titulo: row.titulo,
+          items: []
+        };
+        bloquesAgrupados.push(bloque);
+      }
+
+      let item = bloque.items.find(i => i.no === row.no);
+      if (!item) {
+        item = {
+          no: row.no,
+          aspecto: row.aspecto,
+          valores: {}
+        };
+        bloque.items.push(item);
+      }
+
+      const fechaStr = new Date(row.fecha_inspeccion).toISOString().slice(0, 10);
+      item.valores[fechaStr] = {
+        si: (row.si || '').trim().toUpperCase(),
+        no_: (row.no_ || '').trim().toUpperCase(),
+        na: (row.na || '').trim().toUpperCase(),
+        observacion: row.observacion || '',
+        firma: row.firma || ''
+      };
+    });
+
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+
+    res.render('inspecindv', {
+      inspecc: bloquesAgrupados,
+      dias,
+      tip_func,
+      doc_id,
+      user: userUser,
+      name: userName,
+      mensaje
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo inspeccion:', error);
+    res.status(500).send('Error al obtener inspeccion - inspecindv');
+  } finally {
+    conn.release();
+  }
+});
+
 
 // inspeccion_aux
 
@@ -3643,11 +3735,12 @@ app.post('/detalle-dia', async (req, res) => {
     console.timeEnd('actualizacion-items');
 
     req.session.mensaje = 'Cambios guardados correctamente';
-    res.redirect(
-      `/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(
-        tip_func
-      )}&doc_id=${encodeURIComponent(doc_id)}`
-    );
+    return res.redirect('/inspasig')
+//    res.redirect(
+//      `/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(
+//        tip_func
+//      )}&doc_id=${encodeURIComponent(doc_id)}`
+//    );
   } catch (err) {
     await conn.rollback();
     console.error('Error actualizando:', err);
@@ -4427,23 +4520,18 @@ app.get('/inspecotr', async (req, res) => {
       [ccost]
     ] = await Promise.all([
       conn.execute(`
-        SELECT 
-          a.idot, 
-          a.descripcion, 
-          b.identificador, 
-          a.proveedor, 
-          c.funcionario  
-        FROM tbl_otrabajo AS a
-        INNER JOIN tbl_dss AS b ON a.idot = b.idot
-        INNER JOIN tbl_efuncional AS c ON c.identificador = b.identificador
-        WHERE c.identificador = ?
-        ORDER BY a.idot;
+        SELECT a.ocompra as idot, c.descripcion, a.func_id, a.func_doc as identificador, b.funcionario
+        FROM items as a
+          INNER JOIN tbl_efuncional AS b ON b.identificador = a.func_doc
+          INNER JOIN tbl_ccosto as c on c.idcc=a.ocompra
+        WHERE func_doc = ?
+        GROUP BY idot, func_id, func_doc, b.funcionario, c.descripcion;
       `, [doc_id]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
-      conn.execute('SELECT * FROM tbl_ccosto')
+      conn.execute('SELECT idcc, descripcion FROM tbl_ccosto order by fecha_orden desc')
     ]); 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
@@ -4618,6 +4706,41 @@ app.post('/eliminar-items', async (req, res) => {
   }
 });
 
+
+/***** CREAR PLATILLA SOLDADOR *********************************/
+
+app.post('/crear-sdo', async (req, res) => {
+  const { fecha, doc_id,  centro_costo} = req.body;
+  const conn = await pool.getConnection();
+  try {
+    if (!fecha) {
+      req.session.mensaje = {
+        tipo: 'warning',
+        texto: '⚠️ Debes seleccionar una fecha.'
+      };
+      return res.redirect('/inspasig');
+    }
+    await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: '✅ Datos procesados'
+    };
+    return res.redirect('/inspasig');
+
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: '❌ Error procesando la solicitud.'
+    };
+    return res.redirect('/inspasig');
+  } finally {
+    conn.release();
+  }
+});
+
 /***** CREAR PLATILLA AUXILIAR *********************************/
 
 app.post('/crear-aux', async (req, res) => {
@@ -4659,7 +4782,6 @@ app.post('/crear-aux', async (req, res) => {
     conn.release();
   }
 });
-
 
 /*********************************************** */
 
@@ -5158,12 +5280,6 @@ if (row.firma_base64) {
           ]);
         }
 
-// aqui
-
-
-
-// aqui
-
         const docDefinition = {
           content,
           styles: {
@@ -5212,7 +5328,7 @@ if (row.firma_base64) {
           mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
         });
   }
-});     
+});
 
 app.get('/pendientes', async (req, res) => {
   const [rows] = await pool.query(`

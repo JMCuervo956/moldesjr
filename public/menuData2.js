@@ -6,7 +6,7 @@ export const menuData2 = [
     roles: ["Salir"],
   },
   {
-    title: "Centros de Costo",
+    title: "Centros de Costos",
     link: "/ccosto",
     icon: "fas fa-user-plus icon-envelope",
   },
@@ -24,29 +24,26 @@ export const menuData2 = [
         link: "/actividades",
         icon: "fas fa-history icon-history",
       },
+    ],
+  },
+  {
+    title: "Inspeccion",
+    icon: "fas fa-users icon-users",
+    subItems: [
       {
-        title: "Inspeccion",
-        icon: "fas fa-users icon-users",
-        subItems: [
-          {
-            title: "Seguimiento en Curso",
-            link: "/inspasig",
-            icon: "fas fa-folder-open",
-          },
-
-       { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
-
-          {
-            title: "Seguimiento Auxiliares",
-            link: "/inspaux",
-            icon: "fas fa-folder-open",
-          },
-          {
-            title: "Cerrar e Historial",
-            link: "/inspeccioncfg",
-            icon: "fas fa-puzzle-piece",
-          },
-        ],
+        title: "Seguimiento en Curso",
+        link: "/inspasig",
+        icon: "fas fa-folder-open",
+      },
+      {
+        title: "Seguimiento Auxiliares",
+        link: "/inspaux",
+        icon: "fas fa-folder-open",
+      },
+      {
+        title: "Cerrar e Historial",
+        link: "/inspeccioncfg",
+        icon: "fas fa-puzzle-piece",
       },
     ],
   },

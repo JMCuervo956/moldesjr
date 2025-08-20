@@ -1,7 +1,7 @@
 import { menuData } from './menuData.js';
 import { menuData2 } from './menuData2.js';
 
-const userRole = "josem"; // o el rol que tengas dinámico
+const userRole = "jcuervo"; // o el rol que tengas dinámico
 document.addEventListener("DOMContentLoaded", () => {
   const nav1 = document.getElementById("menu");
   const nav2 = document.getElementById("filteredMenu");
@@ -72,7 +72,6 @@ function filterMenuByModulos(menu, modulosPermitidos) {
       const subItems = item.subItems
         ? filterMenuByModulos(item.subItems, modulosPermitidos)
         : null;
-
       const tienePermiso = modulosPermitidos.includes(item.title);
 
       if (tienePermiso || (subItems && subItems.length > 0)) {
@@ -81,7 +80,6 @@ function filterMenuByModulos(menu, modulosPermitidos) {
           subItems: subItems && subItems.length > 0 ? subItems : undefined
         };
       }
-
       return null;
     })
     .filter(Boolean);

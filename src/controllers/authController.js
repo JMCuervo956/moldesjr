@@ -55,8 +55,8 @@ export const login = async (req, res) => {
   [user, 99, fechaHoraBogotaStr]
 );
 */
-  if (hora >= 8 && hora < 18) {
-    console.log("La hora está entre las 08:00 y las 18:00.");
+  if (hora >= 8 && hora < 24) {
+    console.log("La hora está entre las 08:00 y las 24:00.");
   } else {
     return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
   }

@@ -33,8 +33,6 @@ export async function handleFileUpload(event) {
     reader.readAsText(file);
 }
 
-
-
 // fileHandler.js
 
 export function handleFileUpload(event) {

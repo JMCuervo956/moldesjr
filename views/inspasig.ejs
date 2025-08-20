@@ -139,6 +139,7 @@
 
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
+  <!--  
             <% if (typeof mensaje !== 'undefined') { %>
                 <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
                     <%= mensaje.texto %>
@@ -147,7 +148,7 @@
                     </button>
                 </div>
             <% } %>
-
+  -->
             <div class="container mt-2">
                 <div class="content">
                     <div class="register-formAncho">       
@@ -173,8 +174,10 @@
                                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.identificador %></td>
                                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.funcionario %></td>
                                               <td class="text-center" style="padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                                                  <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %> &func=<%= encodeURIComponent(efuncional.funcionario) %>" 
-                                                  class="btn btn-success btn-sm btnind-hover-effect ms-2">...</a>                                            
+                                              <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
+                                                <a href="/inspecotr?tip_func=<%= encodeURIComponent(efuncional.tipo_id) %>&doc_id=<%= encodeURIComponent(efuncional.identificador) %> &func=<%= encodeURIComponent(efuncional.funcionario) %>" 
+                                                class="btn btn-success btn-sm btnind-hover-effect ms-2">...</a>                                            
+                                              </div>
                                               </td>
                                             </tr>
                                     <%   }) 
