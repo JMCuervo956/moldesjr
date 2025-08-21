@@ -5510,7 +5510,8 @@ app.post('/cambioctr', async (req, res) => {
 });
 
 
-// Puerto de escucha
+
+// Puerto de escucha salida
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
 });
