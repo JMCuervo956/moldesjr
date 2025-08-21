@@ -6,7 +6,7 @@ export const menuData2 = [
     roles: ["Salir"],
   },
   {
-    title: "Centros de Costos",
+    title: "Centros de Costo",  
     link: "/ccosto",
     icon: "fas fa-user-plus icon-envelope",
   },

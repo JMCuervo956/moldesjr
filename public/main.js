@@ -8,6 +8,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const permisos = window.permisosUsuario || [];
   const filteredMenu = filterMenuByModulos(menuData2, permisos);
 
+
+function getTitles(menu) {
+  let titles = [];
+  menu.forEach(item => {
+    titles.push(item.title);
+    if (item.subItems) {
+      titles = titles.concat(getTitles(item.subItems));
+    }
+  });
+  return titles;
+}
+
+const allTitles = getTitles(menuData2);
+const filteredTitles = getTitles(filteredMenu);
+
+const removidos = allTitles.filter(title => !filteredTitles.includes(title));
+
+//console.log("Items eliminados por el filtro:", removidos);
+
+
   const storedPath = JSON.parse(localStorage.getItem("menuPath") || "[]");
 
   function createMenu(items, currentPath = []) {
@@ -61,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (nav2) {
+//    console.log("Modulos permitidos:", permisos);
     const menu = createMenu(filteredMenu); // <-- usa el menú filtrado
     nav2.appendChild(menu);
   }

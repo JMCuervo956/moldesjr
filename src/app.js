@@ -3912,6 +3912,8 @@ app.post('/detalle-diaux', async (req, res) => {
 
 app.get('/inspasig', async (req, res) => {
     try {
+        const mensaje = req.session.mensaje;
+        delete req.session.mensaje; 
         if (req.session.loggedin) {
             const userUser = req.session.user;
             const userName = req.session.name;
@@ -4733,10 +4735,11 @@ app.post('/crear-sdo', async (req, res) => {
       return res.redirect('/inspasig');
     }
     await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
+    const mensaje = resultSets[resultSets.length - 1]?.mensaje || '✅ Proceso completado.';
 
     req.session.mensaje = {
       tipo: 'success',
-      texto: '✅ Datos procesados'
+      texto: mensaje
     };
     return res.redirect('/inspasig');
 
