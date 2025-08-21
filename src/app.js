@@ -3862,7 +3862,6 @@ app.post('/detalle-diaux', async (req, res) => {
         const item = items[itemIndex];
         const { ccosto, no, opcion, ocompra, observacion, firma } = item;
         const safeCcosto = ccosto === undefined || ccosto === '' ? null : ccosto;
-        console.log(safeCcosto);
 
         cambios.push(no);
 

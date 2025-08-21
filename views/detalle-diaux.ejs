@@ -87,7 +87,10 @@
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
-    <a href="/inspeccion_aux?doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <a href="/inspeccion_aux?doc_id=<%= encodeURIComponent(doc_id) %>" 
+       class="regresar-link" 
+       style="margin-left: 20px;"
+       >Regresar</a>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -163,7 +166,7 @@
                   </select>
                   </td>
                   <td class="text-center">
-                    <input type="number" name="<%= prefix %>[ocompra]" class="form-control form-control-sm" style="width: 100%; text-align: right;" value="<%= (item.ocompra != null && item.ocompra !== '') ? item.ocompra : 0 %>">
+                    <input type="number" name="<%= prefix %>[ocompra]" class="form-control form-control-sm" style="width: 100%; text-align: right;" value="<%= (item.ocompra != null && item.ocompra !== '') ? item.ocompra : 0 %>" min="0">
                   </td>
                   <td>
                     <input type="text" name="<%= prefix %>[observacion]" class="form-control form-control-sm" style="width: 100%;" value="<%= item.observacion %>">

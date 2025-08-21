@@ -359,16 +359,13 @@ td.observacion-cell {
     gap: 20px; /* Espacio entre botón y título */
   ">
     <a href="/inspaux?doc_id=<%= encodeURIComponent(doc_id) %>" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div id="datos-doc" style="margin-left: 20px; color: white;"></div>
+    
     <div  style="margin-left: 20px; color: white;"></div>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
   </div>
-
-<div class="info-card horizontal">
-  <p><strong>Documento ID:</strong> <span id="doc-id-display"></span> &nbsp; | &nbsp; 
-     <strong>Funcionario:</strong> <span id="func-display"></span></p>
-</div>
 
   <div id="activities" style="
     border: 2px solid #BA1A1A;
@@ -461,7 +458,7 @@ td.observacion-cell {
                         type="button"
                         class="btn btn-sm btn-dia text-white btn-ir-a-detalle"
                         data-fecha="<%= dia.fecha %>"
-                        data-doc-id="<%= doc_id %>"                        
+                        data-doc-id="<%= doc_id %>"
                         style="line-height: 1.2;"
                       >
                         <div style="font-size: 1.1rem; font-weight: bold;">
@@ -560,16 +557,19 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
 
 </script>
 
-<script>
+<script>  
+  const params = new URLSearchParams(window.location.search);
   document.querySelectorAll('.btn-ir-a-detalle').forEach(boton => {
     boton.addEventListener('click', function () {
+      console.log('Dataset completo:', this.dataset);
       const fecha = this.getAttribute('data-fecha');
       const doc_id = this.dataset.docId;
+      const func = params.get("func");
       if (fecha && doc_id) {
-        const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}`;
+        const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}&func=${encodeURIComponent(func)}`;
         window.location.href = url;
-      } else {
-        alert('Faltan datos para continuarsss.');
+        } else {
+          alert('Faltan datos para continuar.');
       }
     });
   });
@@ -642,12 +642,7 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
   });
 </script>
 
-
-
-
-
-
-  <%- include('partials/foot') %>
+<%- include('partials/foot') %>
   
 </body>
 </html>
