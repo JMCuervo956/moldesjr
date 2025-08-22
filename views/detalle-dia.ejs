@@ -206,7 +206,6 @@
 <script>
 function guardarYRedirigirAFirma() {
   const form = document.querySelector('form');
-
   if (!form) {
     alert('No se encontró el formulario.');
     return;
@@ -223,7 +222,6 @@ function guardarYRedirigirAFirma() {
   const originalAction = form.action;
   const params = new URLSearchParams({
     fecha: "<%= diaFormateadoRaw %>",
-    tip_func: "<%= tip_func %>",
     doc_id: "<%= doc_id %>"
   });
 

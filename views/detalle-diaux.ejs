@@ -180,6 +180,13 @@
         <% }) %>
         
         <div class="d-flex justify-content-end mt-3">
+  <button 
+    type="button"
+    class="btn btn-warning"
+    onclick="guardarYRedirigirAFirma()"
+  >
+    Ir a Firma
+  </button>
           
             <button type="submit" class="btn btn-primary me-2">Guardar Cambios</button>
             <a 
@@ -196,6 +203,35 @@
 
 </div>
 </div>
+
+<script>
+function guardarYRedirigirAFirma() {
+  const form = document.querySelector('form');
+  if (!form) {
+    alert('No se encontró el formulario.');
+    return;
+  }
+
+  // Crea un campo oculto que indique que debe redirigir a "firma"
+  const redirectInput = document.createElement('input');
+  redirectInput.type = 'hidden';
+  redirectInput.name = '_redirectToFirma';
+  redirectInput.value = '1';
+  form.appendChild(redirectInput);
+
+  // Cambia temporalmente la acción del formulario para incluir los parámetros
+  const originalAction = form.action;
+  const params = new URLSearchParams({
+    fecha: "<%= diaFormateadoRaw %>",
+    doc_id: "<%= doc_id %>"
+  });
+
+  form.action = `/detalle-diaux?${params.toString()}`;
+  form.submit();
+}
+</script>
+
+
 
 <script>
   document.querySelectorAll('.opcion-radio').forEach(radio => {

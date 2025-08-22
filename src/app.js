@@ -907,6 +907,16 @@ app.get('/inspeccioncfg', (req, res) => {
     });
 });
 
+app.get('/cerraraux', (req, res) => {
+    const idot = req.query.idot;
+    const mensaje = req.session.mensaje;
+    delete req.session.mensaje;
+    res.render('cerraraux', {
+      mensaje,
+      idot
+    });
+});
+
 app.get('/inspeccioncfg/mover', async (req, res) => {
   try {
 //      await pool.execute('DELETE FROM tbl_dss WHERE idot = ?', [idot]);
@@ -3840,6 +3850,7 @@ app.get('/detalle-diaux', async (req, res) => {
 });
 
 app.post('/detalle-diaux', async (req, res) => {
+  console.log('d aux');
   const { fecha, datos, tip_func, doc_id, firma } = req.body;
 
   if (!fecha || !datos) {
@@ -3888,18 +3899,26 @@ app.post('/detalle-diaux', async (req, res) => {
 
     // Ejecutar los updates por lotes de máximo 20
     await runInBatches(updateTasks, 20);
-
     await conn.commit();
     console.timeEnd('actualizacion-items');
 
-    req.session.mensaje = 'Cambios guardados correctamente';
-    res.redirect(
-      `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}`
-    );
+  if (req.body._redirectToFirma) {
+    // Si venía desde "Ir a Firma", redirige a la página de firma
+    return res.redirect(`/firmaux?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
+  }
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: '✅ Datos procesados'
+    };
+    return res.redirect('/inspaux')  
+
   } catch (err) {
-    await conn.rollback();
-    console.error('Error actualizando:', err);
-    res.status(500).send('Error al guardar los cambios');
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: '❌ Error procesando la solicitud.'
+    };
+    return res.redirect('/inspaux');    
   } finally {
     conn.release();
   }
@@ -5386,23 +5405,22 @@ app.get('/firma', (req, res) => {
 });
 
 app.post('/guardar-firma', async (req, res) => {
+  console.log('guarda firma');
+  console.log(req.body);
   const { tip_func, doc_id, fecha, firma } = req.body;
-
   try {
+    console.log('aaaaaaaaaaaaaaaaaaa');
     await pool.query(
       `INSERT INTO firmas (tip_func, cedula, fecha, firma_base64) VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE firma_base64 = VALUES(firma_base64)`,
       [tip_func, doc_id, fecha, firma]
     );
-
     res.redirect(`/firma?tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}&fecha=${encodeURIComponent(fecha)}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Error al guardar la firma.');
   }
 });
-
-
 
 app.get('/obtener-firma', async (req, res) => {
   const { tip_func, doc_id, fecha } = req.query;
@@ -5425,6 +5443,52 @@ app.get('/obtener-firma', async (req, res) => {
   }
 });
 
+// Firma Aux
+
+app.get('/firmaux', (req, res) => {
+  res.render('firmaux'); // Renderiza views/firma.ejs
+});
+
+app.post('/guardar-firmaux', async (req, res) => {
+  console.log('firmaaaaaaaaaaaaa');
+  const { tip_func, doc_id, fecha, firma } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO firmasaux (cedula, fecha, firma_base64) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE firma_base64 = VALUES(firma_base64)`,
+      [doc_id, fecha, firma]
+    );
+
+    res.redirect(`/firmaux?tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}&fecha=${encodeURIComponent(fecha)}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al guardar la firma.');
+  }
+});
+
+app.get('/obtener-firmaux', async (req, res) => {
+  const { tip_func, doc_id, fecha } = req.query;
+
+  try {
+    // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
+    const [rows] = await pool.query(
+      'SELECT firma_base64 FROM firmasaux WHERE cedula = ? AND fecha = ? LIMIT 1',
+      [doc_id, fecha]
+    );
+
+    if (rows.length > 0) {
+      res.json({ firmaBase64: rows[0].firma_base64 });
+    } else {
+      res.json({ firmaBase64: null });
+    }
+  } catch (err) {
+    console.error('Error al obtener la firma:', err);
+    res.status(500).json({ firmaBase64: null });
+  }
+});
+
+// firmas
 
 app.get('/firmas', async (req, res) => {
   try {
