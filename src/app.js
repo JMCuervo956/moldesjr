@@ -3748,24 +3748,18 @@ app.post('/detalle-dia', async (req, res) => {
     // Si venía desde "Ir a Firma", redirige a la página de firma
     return res.redirect(`/firma?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
   }
-
-    req.session.mensaje = 'Cambios guardados correctamente';
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: '✅ Datos procesados'
+    };
     return res.redirect('/inspasig')  
-  // Si solo era guardar, puedes volver al formulario o a otra página
-//  res.redirect(`/detalle-dia?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
-/*
-  if (req.body._redirectToFirma) {
-    // Si venía desde "Ir a Firma", redirige a la página de firma
-    return res.redirect(`/firma?fecha=${encodeURIComponent(fecha)}&tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}`);
-  }
-    
-    req.session.mensaje = 'Cambios guardados correctamente';
-    return res.redirect('/inspasig')
-*/
+
   } catch (err) {
-    await conn.rollback();
-    console.error('Error actualizando:', err);
-    res.status(500).send('Error al guardar los cambios');
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: '❌ Error procesando la solicitud.'
+    };
+
   } finally {
     conn.release();
   }
@@ -3956,11 +3950,7 @@ app.get('/inspasig', async (req, res) => {
                 pool.execute('SELECT * FROM tbl_estados'),
                 pool.execute('SELECT * FROM tbl_perfil')
             ]);
-
-            // Recuperar mensaje de sesión
-            const mensaje = req.session.mensaje;
-            delete req.session.mensaje;
-
+            console.log(mensaje);
             res.render('inspasig', {
                 efuncional: efuncionalRows,
                 tipodocl: tipodoclRows,
@@ -4753,18 +4743,24 @@ app.post('/crear-sdo', async (req, res) => {
       };
       return res.redirect('/inspasig');
     }
-    await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
-    const mensaje = resultSets[resultSets.length - 1]?.mensaje || '✅ Proceso completado.';
+   // await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
+
+   // const mensajeTexto = resultSets?.[resultSets.length - 1]?.mensaje || '✅ Proceso completado.';
+
+      const [resultSets] = await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
+
+      console.log('Resultado SP:', resultSets);
+
+      const mensajeTexto = resultSets?.[0]?.[0]?.mensaje || '✅ Proceso completado.';
 
     req.session.mensaje = {
       tipo: 'success',
-      texto: mensaje
+      texto: mensajeTexto
     };
     return res.redirect('/inspasig');
 
   } catch (error) {
     console.error('Error ejecutando SP:', error);
-
     req.session.mensaje = {
       tipo: 'danger',
       texto: '❌ Error procesando la solicitud.'
@@ -4775,7 +4771,7 @@ app.post('/crear-sdo', async (req, res) => {
   }
 });
 
-/***** CREAR PLATILLA AUXILIAR *********************************/
+/***** CREAR PLATILLA AUXILIAR ********************** resultSets ***********/
 
 app.post('/crear-aux', async (req, res) => {
   const { fecha_seleccionada, doc_id } = req.body;
@@ -4816,6 +4812,64 @@ app.post('/crear-aux', async (req, res) => {
     conn.release();
   }
 });
+
+app.post('/mover-itemsaux', async (req, res) => {
+  try {
+    const conn = await pool.getConnection();
+
+    const [countResult] = await conn.query('select count(*) AS total FROM items_aux');
+
+    // Si no hay registros, ejecuta SP
+    await conn.query('CALL sp_guardar_items_histaux()');
+
+    conn.release();
+
+    res.render('cerraraux', {
+      mensaje: {
+        tipo: 'success',
+        texto: `Procedimiento ejecutado con éxito.`
+      }
+    });
+  } catch (error) {
+    console.error('Error ejecutando SP:', error);
+    res.render('cerraraux', {
+      mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+    });
+  }
+});
+
+app.post('/eliminar-itemsaux', async (req, res) => {
+  try {
+    const conn = await pool.getConnection();
+
+    // Verifica si hay registros antes de eliminar
+    const [countResult] = await conn.query('SELECT COUNT(*) AS total FROM items_aux');
+    const total = countResult[0].total;
+
+    if (total === 0) {
+      conn.release();
+      return res.render('cerraraux', {
+        mensaje: { tipo: 'warning', texto: 'No existen registros para eliminar.' }
+      });
+    }
+
+    // Elimina registros
+    await conn.query('truncate table items_aux');
+    conn.release();
+
+    res.render('cerraraux', {
+      mensaje: { tipo: 'success', texto: `Se eliminaron correctamente ${total} registros.` }
+    });
+
+  } catch (error) { 
+    console.error('Error al eliminar registros aux:', error);
+    res.render('cerraraux', {
+      mensaje: { tipo: 'danger', texto: 'Error al intentar eliminar los registros aux.' }
+    });
+  }
+});
+
+
 
 /*********************************************** */
 

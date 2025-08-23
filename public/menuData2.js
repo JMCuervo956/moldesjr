@@ -12,7 +12,7 @@ export const menuData2 = [
   },
   {
     title: "Ordenes de trabajo",
-    icon: "fas fa-users icon-users",
+    icon: "fa-solid fa-briefcase icon-users",
     subItems: [
       {
         title: "Ordenes",
@@ -28,16 +28,11 @@ export const menuData2 = [
   },
   {
     title: "Inspeccion",
-    icon: "fas fa-users icon-users",
+    icon: "fa-solid fa-magnifying-glass icon-cogs",
     subItems: [
       {
         title: "Seguimiento en Curso",
         link: "/inspasig",
-        icon: "fas fa-folder-open",
-      },
-      {
-        title: "Seguimiento Auxiliares",
-        link: "/inspaux",
         icon: "fas fa-folder-open",
       },
       {
@@ -48,8 +43,18 @@ export const menuData2 = [
     ],
   },
   {
+    title: "Inspeccion Auxiliares",
+    icon: "fa-solid fa-binoculars icon-file-alt",
+    subItems: [
+      { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-folder-open" },
+      { title: "Cerrar", link: "/cerraraux", icon: "fas fa-puzzle-piece" },
+    ]
+  },      
+
+  {
     title: "Informes / Consultas",
     link: "/opciones",
-    icon: "fas fa-file-alt icon-file-alt",
+    icon: "fas fa-file-alt icon-home",
   },
 ];
+
