@@ -33,12 +33,12 @@ export const menuData2 = [
       {
         title: "Seguimiento en Curso",
         link: "/inspasig",
-        icon: "fas fa-folder-open",
+        icon: "fas fa-puzzle-piece",
       },
       {
         title: "Cerrar e Historial",
         link: "/inspeccioncfg",
-        icon: "fas fa-puzzle-piece",
+        icon: "fas fa-folder-open",
       },
     ],
   },
@@ -46,8 +46,8 @@ export const menuData2 = [
     title: "Inspeccion Auxiliares",
     icon: "fa-solid fa-binoculars icon-file-alt",
     subItems: [
-      { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-folder-open" },
-      { title: "Cerrar", link: "/cerraraux", icon: "fas fa-puzzle-piece" },
+      { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-puzzle-piece" },
+      { title: "Cerrar", link: "/cerraraux", icon: "fas fa-folder-open" },
     ]
   },      
 

@@ -562,6 +562,9 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
 </script>
 
 <script>  
+     
+
+
   const params = new URLSearchParams(window.location.search);
   document.querySelectorAll('.btn-ir-a-detalle').forEach(boton => {
     boton.addEventListener('click', function () {
@@ -569,12 +572,13 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
       const fecha = this.getAttribute('data-fecha');
       const doc_id = this.dataset.docId;
       const func = params.get("func");
+      console.log('aqui');
       if (fecha && doc_id) {
         const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}&func=${encodeURIComponent(func)}`;
         window.location.href = url;
         } else {
           alert('Faltan datos para continuar.');
-      }
+      }      
     });
   });
 </script>  
@@ -628,8 +632,13 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
     botones.forEach(boton => {
       const fechaStr = boton.dataset.fecha;
       const fechaBoton = new Date(fechaStr);
-      fechaBoton.setHours(0, 0, 0, 0);
 
+fechaBoton.setDate(fechaBoton.getDate() + 1);
+const opciones = { weekday: 'long', timeZone: 'America/Bogota' };
+const nombreDia = fechaBoton.toLocaleDateString('es-CO', opciones);
+console.log(nombreDia); // Ejemplo: "martes"
+
+      fechaBoton.setHours(0, 0, 0, 0);
       if (ahoraEnBogota > fechaBoton) {
         const divs = boton.querySelectorAll('div');
         const divFecha = Array.from(divs).find(div => div.textContent.trim() === fechaStr);

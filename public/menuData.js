@@ -22,16 +22,16 @@ export const menuData = [
     title: "Inspeccion",
     icon: "fa-solid fa-magnifying-glass icon-cogs",
     subItems: [
-      { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-folder-open" },
-      { title: "Cerrar e Historial", link: "/inspeccioncfg", icon: "fas fa-puzzle-piece" },
+      { title: "Seguimiento en Curso", link: "/inspasig", icon: "fas fa-puzzle-piece" },
+      { title: "Cerrar e Historial", link: "/inspeccioncfg", icon: "fas fa-folder-open" },
     ]
   },      
   {
     title: "Inspeccion Auxiliares",
     icon: "fa-solid fa-binoculars icon-file-alt",
     subItems: [
-      { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-folder-open" },
-      { title: "Cerrar", link: "/cerraraux", icon: "fas fa-puzzle-piece" },
+      { title: "Seguimiento Auxiliares", link: "/inspaux", icon: "fas fa-puzzle-piece" },
+      { title: "Cerrar", link: "/cerraraux", icon: "fas fa-folder-open" },
     ]
   },      
   {

@@ -3844,7 +3844,6 @@ app.get('/detalle-diaux', async (req, res) => {
 });
 
 app.post('/detalle-diaux', async (req, res) => {
-  console.log('d aux');
   const { fecha, datos, tip_func, doc_id, firma } = req.body;
 
   if (!fecha || !datos) {
@@ -3950,7 +3949,6 @@ app.get('/inspasig', async (req, res) => {
                 pool.execute('SELECT * FROM tbl_estados'),
                 pool.execute('SELECT * FROM tbl_perfil')
             ]);
-            console.log(mensaje);
             res.render('inspasig', {
                 efuncional: efuncionalRows,
                 tipodocl: tipodoclRows,
@@ -4749,8 +4747,6 @@ app.post('/crear-sdo', async (req, res) => {
 
       const [resultSets] = await conn.query('CALL sp_insertar_items_sdo(?, ?, ?, ?, ?)', [fecha, 5, 1, doc_id, centro_costo]);
 
-      console.log('Resultado SP:', resultSets);
-
       const mensajeTexto = resultSets?.[0]?.[0]?.mensaje || '✅ Proceso completado.';
 
     req.session.mensaje = {
@@ -5251,7 +5247,7 @@ app.post('/generar-pdfsem', async (req, res) => {
           FROM items a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
-          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
+          WHERE fecha_inspeccion >= ? AND fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fecha, fechaf, doc_id, tip_func]);
         const fonts = {
@@ -5459,11 +5455,8 @@ app.get('/firma', (req, res) => {
 });
 
 app.post('/guardar-firma', async (req, res) => {
-  console.log('guarda firma');
-  console.log(req.body);
   const { tip_func, doc_id, fecha, firma } = req.body;
   try {
-    console.log('aaaaaaaaaaaaaaaaaaa');
     await pool.query(
       `INSERT INTO firmas (tip_func, cedula, fecha, firma_base64) VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE firma_base64 = VALUES(firma_base64)`,
@@ -5481,6 +5474,8 @@ app.get('/obtener-firma', async (req, res) => {
 
   try {
     // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
+    console.log(doc_id);
+    console.log(fecha);
     const [rows] = await pool.query(
       'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? LIMIT 1',
       [doc_id, fecha]
@@ -5504,7 +5499,6 @@ app.get('/firmaux', (req, res) => {
 });
 
 app.post('/guardar-firmaux', async (req, res) => {
-  console.log('firmaaaaaaaaaaaaa');
   const { tip_func, doc_id, fecha, firma } = req.body;
 
   try {
@@ -5630,6 +5624,52 @@ app.post('/cambioctr', async (req, res) => {
   }
 });
 
+//                    H I S T O R I C O S                     //
+
+app.get('/inspasig_hist', async (req, res) => {
+    try {
+        const mensaje = req.session.mensaje;
+        delete req.session.mensaje; 
+        if (req.session.loggedin) {
+            const userUser = req.session.user;
+            const userName = req.session.name;
+
+            const [
+                [efuncionalRows], // resultado de SELECT con JOIN
+                [tipodoclRows],
+                [estadosRows],
+                [perfilfRows]
+            ] = await Promise.all([
+                pool.execute(` 
+                    SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+                           b.id AS idp, b.perfil AS perfilp, c.estado AS destado
+                    FROM tbl_efuncional a
+                    JOIN tbl_perfil b ON a.perfil = b.id
+                    JOIN tbl_estados c ON a.estado = c.id
+                    WHERE a.perfil = 14 and a.estado=1
+                    ORDER BY a.perfil, a.estado;
+                `),
+                pool.execute('SELECT * FROM tbl_tipodoc'),
+                pool.execute('SELECT * FROM tbl_estados'),
+                pool.execute('SELECT * FROM tbl_perfil')
+            ]);
+            res.render('inspasig', {
+                efuncional: efuncionalRows,
+                tipodocl: tipodoclRows,
+                estados: estadosRows,
+                perfilf: perfilfRows,
+                user: userUser,
+                name: userName,
+                mensaje
+            });
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        console.error('Error obteniendo funcional:', error.stack || error);
+        res.redirect('/');
+    }
+});
 
 
 // Puerto de escucha salida
