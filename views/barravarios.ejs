@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detalle Centro de Costo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      padding: 30px;
+      color: #333;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #2980b9;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #2980b9;
+      padding-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 35px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #ecf0f1;
+      color: #2c3e50;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: #f5f9ff;
+    }
+
+    .seccion {
+      margin-top: 50px;
+    }
+
+    .fecha-separador {
+      background-color: #3498db;
+      color: #fff;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .fecha-separador td {
+      padding: 10px;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+
+    a {
+      color: #2980b9;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .botones a {
+      display: inline-block;
+      margin-right: 20px;
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 5px;
+      transition: background-color 0.2s;
+    }
+
+    .botones a:hover {
+      background-color: #1c5980;
+    }
+
+    .pdf-reducido * {
+    font-size: 11px !important;
+    } 
+
+    .no-break * {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    }    
+
+    #tabla-pdf {
+    line-height: 1.2;
+    }    
+  </style>
+</head>
+<body>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="seccion botones">
+    <a href="/menuprc">Volver al menú</a>
+    <a href="/ccosto">Volver a Centro de Costos</a>
+    <button onclick="imprimirPDF()">Imprimir en PDF</button>
+
+  </div>
+
+  <div id="tabla-pdf" class="no-break">
+
+  <h1>Centro de Costo #<%= datosBD.cc %></h1>
+
+  <table>
+
+    <tr><th>Descripción</th><td><%= datosBD.descripcion %></td></tr>
+    <tr><th>Cliente</th><td><%= datosBD.ncliente %> (<%= datosBD.cliente %>)</td></tr>
+    <tr><th>Orden</th><td><%= datosBD.FechaOrden %></td></tr>
+    <tr><th>Entrega</th><td><%= datosBD.FechaEntrega %></td></tr>
+    <tr><th>Cantidad</th><td><%= datosBD.cantidad %></td></tr>
+    <tr><th>Peso</th><td><%= datosBD.peso %></td></tr>
+    <tr><th>Unidad</th><td><%= datosBD.nunidad %></td></tr>
+    <tr><th>Estado</th><td><%= datosBD.estado %></td></tr>
+    <tr><th>Comentarios</th><td><%= datosBD.comentarios %></td></tr>
+  </table>
+
+  <% if (otrabajo.length > 0) { %>
+    <div class="seccion">
+      <h2>Otros Trabajos</h2>
+      <table>
+        <tr><th>Descripción</th><th>Proveedor</th><th>Observación</th></tr>
+        <% otrabajo.forEach(o => { %>
+          <tr>
+            <td><%= o.descripcion %></td>
+            <td><%= o.proveedor %></td>
+            <td><%= o.observacion %></td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (dss.length > 0) { %>
+    <div class="seccion">
+      <h2>Identificadores DSS</h2>
+      <table>
+        <tr><th>Identificador</th></tr>
+        <% dss.forEach(d => { %>
+          <tr><td><%= d.identificador %></td></tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (piezas.length > 0) { %>
+    <div class="seccion">
+      <h2>Piezas</h2>
+      <table>
+        <tr><th>Nombre</th><th>Descripción</th><th>Cantidad</th></tr>
+        <% piezas.forEach(p => { %>
+          <tr>
+            <td><%= p.nombre %></td>
+            <td><%= p.descripcion %></td>
+            <td><%= p.cantidad %></td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (acabados.length > 0) { %>
+    <div class="seccion">
+      <h2>Acabados</h2>
+      <table>
+        <tr><th>Nombre</th><th>Descripción</th></tr>
+        <% acabados.forEach(a => { %>
+          <tr>
+            <td><%= a.nombre %></td>
+            <td><%= a.descripcion %></td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (actividades.length > 0) { %>
+    <div class="seccion">
+      <h2>Actividades</h2>
+      <table>
+        <tr><th>Task</th><th>Texto</th><th>Inicio</th><th>Duración</th></tr>
+        <% actividades.forEach(act => { %>
+          <tr>
+            <td><%= act.task %></td>
+            <td><%= act.text %></td>
+            <td><%= act.start_date %></td>
+            <td><%= act.duration %></td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <!--
+  <% if (items.length > 0) { %>
+    <div class="seccion">
+      <h2>Items de Inspección</h2>
+      <% let lastDate = null; %>
+      <table>
+        <thead>
+          <tr>
+            <th>Función</th>
+            <th>Bloque</th>
+            <th>OC</th>
+            <th>No</th>
+            <th>Aspecto</th>
+            <th>SI</th>
+            <th>NO</th>
+            <th>NA</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => { %>
+            <% if (lastDate !== item.fecha_inspeccion) { %>
+              <tr class="fecha-separador">
+                <td colspan="10">🗓 Inspecciones del <%= item.fecha_inspeccion %></td>
+              </tr>
+              <% lastDate = item.fecha_inspeccion; %>
+            <% } %>
+            <tr>
+              <td><%= item.func_doc %></td>
+              <td><%= item.id_bloque %></td>
+              <td><%= item.ocompra %></td>
+              <td><%= item.no %></td>
+              <td><%= item.aspecto %></td>
+              <td><%= item.si %></td>
+              <td><%= item.no_ %></td>
+              <td><%= item.na %></td>
+              <td><%= item.observacion %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+-->
+
+<script>
+function imprimirPDF() {
+  const tabla = document.getElementById("tabla-pdf");
+
+  // Agregar clase para reducir fuente
+  tabla.classList.add("pdf-reducido");
+
+  const opciones = {
+    margin: 10,
+    filename: 'detalle-centro-costo.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf()
+    .set(opciones)
+    .from(tabla)
+    .save()
+    .then(() => {
+      // Quitar clase luego de generar el PDF
+      tabla.classList.remove("pdf-reducido");
+    });
+}
+
+
+</script>  
+
+</body>
+</html>

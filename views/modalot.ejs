@@ -122,26 +122,7 @@
       background-color: #0056b3;
     }
 
-    .boton-regresar-fijo {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 10000;
-      background-color: #28a745;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-      transition: background-color 0.3s ease;
-    }
-
-    .boton-regresar-fijo:hover {
-      background-color: #1e7e34;
-    }
-
-    .imagen-fondo {
+     .imagen-fondo {
       position: fixed;
       top: 0;
       left: 0;
@@ -178,6 +159,32 @@
       font-weight: normal;
     }
 
+    .boton-contenedor {
+      display: flex;
+      gap: 20px;
+      margin-left: 3rem;
+      flex-wrap: wrap; /* Permite que pasen a otra línea si no hay espacio */
+    }  
+
+    .boton-regresa-fijo {
+      padding: 10px 20px;
+      text-decoration: none;
+      background-color: #134d05;
+      color: white;
+      border-radius: 4px;
+      white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    }
+
+    .boton-inicio-fijo {
+      padding: 10px 20px;
+      text-decoration: none;
+      background-color: #031047;
+      color: white;
+      border-radius: 4px;
+      white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    }
+
+
   </style>
 </head>
 <body>
@@ -192,6 +199,7 @@
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
+    <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Inicio</a>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
     </div>    
@@ -240,20 +248,23 @@
             <td colspan="2">${datos.comentarios}</td>
           </tr>
         </table>
-      `,
-      buttons: [
-        {
-          text: 'X',
-          onClick: () => window.location.href = '/otrabajo'
-        }
-      ],
-      onClose: () => window.location.href = '/otrabajo'
+        
+        <div style="margin-top: 32px; margin-bottom: 32px;">
+          <hr style="border: none; border-top: 1px solid #ccc;">
+          <hr style="border: none; border-top: 1px solid #ccc;">
+          <hr style="border: none; border-top: 1px solid #ccc;">
+        </div>        
+
+        <div class="boton-contenedor">
+          <a href="/menuprc" class="boton-inicio-fijo">Inicio</a>
+          <a href="/otrabajo" class="boton-regresa-fijo">Regresar</a>
+        </div>  
+      `
     });
 
     window.addEventListener('DOMContentLoaded', () => {
       modalot.open();
     });
   </script>
-  <a href="/otrabajo" class="boton-regresar-fijo">Regresar...</a>
 </body>
 </html>

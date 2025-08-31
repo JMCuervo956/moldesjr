@@ -308,7 +308,7 @@ app.get('/ccosto', async (req, res) => {
           END AS estado_actual
         FROM tbl_ccosto a
         JOIN tbl_cliente b ON a.cliente = b.nit
-        LEFT JOIN tbl_estcco c ON a.estado = c.cco_idest;
+        LEFT JOIN tbl_estcco c ON a.estado = c.cco_idest order by idcc desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_unidad'),
       conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),
@@ -424,7 +424,7 @@ app.post('/ccosto', async (req, res) => {
     const [ccosto] = await conn.execute(`
       SELECT a.*, b.cliente as clienteN
       FROM tbl_ccosto a
-      JOIN tbl_cliente b ON a.cliente = b.nit;
+      JOIN tbl_cliente b ON a.cliente = b.nit order by idcc desc;
     `);
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
@@ -495,12 +495,31 @@ app.get('/barraprogreso', async (req, res) => {
             //const id = req.params.id;
             const id = req.query.idcc;
             const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
-                FROM tbl_ccosto a
-                LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
-                WHERE idcc = ?
-            `, [id]);
+            select 
+            a.idcc,
+            a.fecha_entrega, a.descripcion as descco, a.cliente, a.fecha_orden, a.cantidad as cantcco, a.unidad, a.peso, a.pais, a.ciudad, 
+            a.comentarios, a.estado, a.fecha_fin, a.fecha_inicio,'tbl_otrabajo' as tr1, 
+            i.descripcion as desotr, i.proveedor, i.observacion as obsot, 'gestor' as tr2, 
+            j.identificador,'piezas' as tr3, 
+            d.nombre as nompieza, d.descripcion as despieza, d.cantidad,'acabados' as tr4, 
+            e.nombre as nomacabado, e.descripcion as desacabado,'actividad' as tr5, 
+            f.task, f.text, f.start_date, f.duration,'ispeccion' as tr6, 
+            g.func_doc, g.id_bloque, g.ocompra, g.fecha_inspeccion, g.no, 
+            g.aspecto, g.si, g.no_, g.na, g.observacion
+            from tbl_ccosto a
+            left join tbl_otrabajo i on a.idcc = i.idot
+            left join tbl_dss j on a.idcc = j.idot
+            left join tbl_piezas d on a.idcc = d.idpz
+            left join tbl_acabados e on a.idcc = e.idpz
+            left join tbl_actividad f on a.idcc = f.idot
+            left join items g on a.idcc = g.ocompra 
+            and (g.si<>'' or g.no_<>'' or g.na<>'' or g.observacion <>'') 
+            left JOIN tbl_cliente b ON a.cliente = b.nit
+            left JOIN tbl_unidad c ON a.unidad = c.id_unidad
+            WHERE a.idcc = ?
+              `, [id]);
+            console.log('data.............');  
+            console.log(rows[0]);  
             const row = rows[0]; // obtenemos la primera fila
             const data = {
             cc: row.idcc,
@@ -512,6 +531,7 @@ app.get('/barraprogreso', async (req, res) => {
             peso: row.peso,
             unidad: row.unidad,
             nunidad: row.nund,
+            estado: row.estado,
             comentarios: row.comentarios
                 ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
                 : '',
@@ -523,7 +543,12 @@ app.get('/barraprogreso', async (req, res) => {
                 : null,
             FechaFin: row.fecha_fin
                 ? row.fecha_fin.toISOString().split('T')[0]
-                : null
+                : null,
+
+            descripcion2: row.descripcion,
+            proveedor: row.proveedor,
+            observacion: row.observacion,
+               
             };
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
@@ -538,7 +563,169 @@ app.get('/barraprogreso', async (req, res) => {
         res.status(500).send('Error conectando a la base de datos.');
     }
 });
- 
+
+app.get('/barravarios', async (req, res) => {
+    if (!req.session.loggedin) return res.redirect('/?expired=1');
+
+    try {
+        const userUser = req.session.user;
+        const userName = req.session.name;
+        const id = req.query.idcc;
+
+        const [rows] = await pool.execute(`
+            SELECT 
+                a.idcc,
+                a.fecha_entrega, a.descripcion AS descco, a.cliente, a.fecha_orden, a.cantidad AS cantcco, 
+                a.unidad, a.peso, a.pais, a.ciudad, a.comentarios, a.estado, a.fecha_fin, a.fecha_inicio,
+                i.descripcion AS desotr, i.proveedor, i.observacion AS obsot,
+                j.identificador,
+                d.nombre AS nompieza, d.descripcion AS despieza, d.cantidad,
+                e.nombre AS nomacabado, e.descripcion AS desacabado,
+                f.task, f.text, f.start_date, f.duration,
+                g.func_doc, g.id_bloque, g.ocompra, g.fecha_inspeccion, g.no, 
+                g.aspecto, g.si, g.no_ AS no_, g.na, g.observacion
+            FROM tbl_ccosto a
+            LEFT JOIN tbl_otrabajo i ON a.idcc = i.idot
+            LEFT JOIN tbl_dss j ON a.idcc = j.idot
+            LEFT JOIN tbl_piezas d ON a.idcc = d.idpz
+            LEFT JOIN tbl_acabados e ON a.idcc = e.idpz
+            LEFT JOIN tbl_actividad f ON a.idcc = f.idot
+            LEFT JOIN items g ON a.idcc = g.ocompra 
+                AND (g.si <> '' OR g.no_ <> '' OR g.na <> '' OR g.observacion <> '') 
+            LEFT JOIN tbl_cliente b ON a.cliente = b.nit
+            LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
+            WHERE a.idcc = ?
+        `, [id]);
+
+        if (!rows.length) return res.send('No hay datos');
+
+        const row = rows[0];
+        const data = {
+            cc: row.idcc,
+            descripcion: row.descco,
+            oc: row.ocompra,
+            cliente: row.cliente,
+            ncliente: row.ncliente,
+            cantidad: row.cantcco,
+            peso: row.peso,
+            unidad: row.unidad,
+            nunidad: row.nunidad,
+            estado: row.estado,
+            comentarios: row.comentarios
+                ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
+                : '',
+            FechaOrden: row.fecha_orden ? row.fecha_orden.toISOString().split('T')[0] : null,
+            FechaEntrega: row.fecha_entrega ? row.fecha_entrega.toISOString().split('T')[0] : null,
+            FechaFin: row.fecha_fin ? row.fecha_fin.toISOString().split('T')[0] : null,
+            proveedor: row.proveedor,
+            observacion: row.obsot
+        };
+
+        const piezas = [];
+        const acabados = [];
+        const actividades = [];
+        const items = [];
+        const dss = [];
+        const otrabajo = [];
+
+        for (const r of rows) {
+            // Piezas
+            if (r.nompieza && !piezas.some(p => p.nombre === r.nompieza && p.descripcion === r.despieza)) {
+                piezas.push({
+                    nombre: r.nompieza,
+                    descripcion: r.despieza,
+                    cantidad: r.cantidad
+                });
+            }
+
+            // Acabados
+            if (r.nomacabado && !acabados.some(a => a.nombre === r.nomacabado && a.descripcion === r.desacabado)) {
+                acabados.push({
+                    nombre: r.nomacabado,
+                    descripcion: r.desacabado
+                });
+            }
+
+            // Actividades
+            if (r.task && !actividades.some(f => f.task === r.task)) {
+                actividades.push({
+                    task: r.task,
+                    text: r.text,
+                    start_date: r.start_date?.toISOString().split('T')[0] || '',
+                    duration: r.duration
+                });
+            }
+
+            // Items de inspección
+            // Items de inspección (sin duplicar por fecha + no + aspecto + respuesta)
+            if (r.si || r.no_ || r.na || r.observacion) {
+                const fecha = r.fecha_inspeccion?.toISOString().split('T')[0] || '';
+                
+                // Solo insertamos si NO existe ya un registro exacto
+                const exists = items.some(i =>
+                    i.fecha_inspeccion === fecha &&
+                    i.no === r.no &&
+                    i.aspecto === r.aspecto &&
+                    i.si === r.si &&
+                    i.no_ === r.no_ &&
+                    i.na === r.na &&
+                    i.observacion === r.observacion
+                );
+
+                if (!exists) {
+                    items.push({
+                        func_doc: r.func_doc,
+                        id_bloque: r.id_bloque,
+                        ocompra: r.ocompra,
+                        fecha_inspeccion: fecha,
+                        no: r.no,
+                        aspecto: r.aspecto,
+                        si: r.si,
+                        no_: r.no_,
+                        na: r.na,
+                        observacion: r.observacion
+                    });
+                }
+            }
+
+            // DSS
+            if (r.identificador && !dss.some(d => d.identificador === r.identificador)) {
+                dss.push({ identificador: r.identificador });
+            }
+            
+            // Otros trabajos
+            if (r.desotr && !otrabajo.some(o => o.descripcion === r.desotr)) {
+                otrabajo.push({
+                    descripcion: r.desotr,
+                    proveedor: r.proveedor,
+                    observacion: r.obsot
+                });
+            }
+        }
+
+        const mensaje = req.session.mensaje;
+        delete req.session.mensaje;
+
+        res.render('barravarios', {
+            datosBD: data,
+            piezas,
+            acabados,
+            items,
+            actividades,
+            otrabajo,
+            dss,
+            user: userUser,
+            name: userName
+        });
+
+    } catch (error) {
+        console.error('Error real:', error);
+        res.status(500).send('Error conectando a la base de datos.');
+    }
+});
+
+
+
 app.get('/modal', async (req, res) => {
     if (!req.session.loggedin) return res.redirect('/?expired=1');
     try {
@@ -655,7 +842,7 @@ app.get('/otrabajo', async (req, res) => {
           END AS estado_actual
         FROM tbl_otrabajo a
         LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -760,7 +947,7 @@ app.post('/otrabajo', async (req, res) => {
           END AS estado_actual
         FROM tbl_otrabajo a
         LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc;
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -1791,16 +1978,16 @@ app.get('/progresogral', async (req, res) => {
             const userUser = req.session.user;
             const userName = req.session.name;
             const [rows] = await pool.execute(`
-                SELECT a.*, b.cliente as client,c.unidad as nund
+                SELECT a.idcc, a.descripcion, a.ocompra, a.cliente, a.fecha_orden, a.fecha_entrega, a.cantidad, a.unidad, a.peso, a.pais, 
+                a.ciudad, a.comentarios,a.estado,a.fecha_fin,a.fecha_inicio as fchini,a.fecharg, b.cliente as client,c.unidad as nund
                 FROM tbl_ccosto a
                 LEFT JOIN tbl_cliente b ON a.cliente = b.nit
-                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad 
+                LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad order by a.idcc desc
             `);
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
             res.render('progresogral', { user: userUser, name: userName, datosBD: rows });
-
         } else {
             res.redirect('/');
         }
@@ -1809,6 +1996,7 @@ app.get('/progresogral', async (req, res) => {
         res.status(500).send('Error conectando a la base de datos.');
     }
 });
+
 
 /* PROGRESO  BARRA LINEAL **********************************************************/
 
@@ -5210,6 +5398,234 @@ app.post('/generar-pdf', async (req, res) => {
         });
   }
 }); 
+
+
+// pdf total
+
+app.post('/generar-pdftot', async (req, res) => {
+  let conn;
+  try {
+        const { fecha, doc_id, func, tip_func } = req.body;
+        if (!fecha) {
+          // Redirige con mensaje de error
+          return res.render('inspeccion', {
+            mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+          });
+        }
+        const fecha2 =  new Date (fecha);
+        fecha2.setDate(fecha2.getDate()+5);
+        const fechaf = fecha2.toISOString().split('T')[0];
+
+        conn = await pool.getConnection();
+        
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const totalRegistros = countResult[0].totalRegistros;
+        if (totalRegistros === 0) {
+          conn.release();
+          return res.render('inspeccion', {
+            mensaje: {  
+              tipo: 'danger',
+              texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+            }
+          });
+        }    
+
+        // Suponiendo que 'fecha' viene en formato 'YYYY-MM-DD' (de tu formulario)
+        const [year, month, day] = fecha.split('-');
+        const fechaInicial = new Date(year, month - 1, day);
+
+        // Crear la fecha final sumando 5 días
+        const fechaFinal = new Date(fechaInicial);
+        fechaFinal.setDate(fechaFinal.getDate() + 5);
+
+        // Formatear fechas en 'YYYY-MM-DD' (sin zona horaria)
+        function formatDate(date) {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+
+        const fechaISO = formatDate(fechaInicial);  // Ej: "2025-07-22"
+        const fechafISO = formatDate(fechaFinal);   // Ej: "2025-07-27"
+
+        // Ahora la consulta con parámetros sin comillas:
+        const [rows] = await pool.query(`
+          SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion, c.firma_base64
+          FROM items_hist a
+          LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
+          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? 
+          ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+        `, [fechaISO, fechafISO]);
+
+        const fonts = {
+          Roboto: {
+            normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+            bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+            italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+          }
+        };
+        const printer = new PdfPrinter(fonts);
+        const content = [];
+
+        let lastFuncionario = '';
+        let lastFecha = '';
+        let currentTableBody = null;
+        for (const row of rows) {
+          const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+          const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+          // Nuevo grupo de funcionario y centro de costo
+
+
+          // Nueva fecha de inspección
+
+          if (fechaKey !== lastFecha) {
+            if (lastFecha !== '') {
+              content.push({ text: '', pageBreak: 'before' });
+            }
+
+            // Mostrar Funcionario y Centro de Costo en cada página por día
+            content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+            content.push({ text: `Centro de Costo: ${row.ocompra}` });
+            content.push({ text: '\n' });
+
+            // Fecha
+            content.push({
+              text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+              style: 'fecha'
+            });
+            
+            currentTableBody = [
+              [
+                { text: 'Id', style: 'tableHeader' },
+                { text: 'Aspecto', style: 'tableHeader' },
+                { text: 'SI', style: 'tableHeader' },
+                { text: 'NO', style: 'tableHeader' },
+                { text: 'NA', style: 'tableHeader' },
+                { text: 'Observación', style: 'tableHeader' }
+              ]
+            ];
+
+            content.push({
+              table: {
+                headerRows: 1,
+                widths: ['auto', '*', 'auto', 'auto', 'auto', '*'],
+                body: currentTableBody
+              },
+              layout: {
+                hLineWidth: function () {
+                  return 0.5;
+                },
+                vLineWidth: function () {
+                  return 0.5;
+                },
+                hLineColor: function () {
+                  return '#aaa';
+                },
+                vLineColor: function () {
+                  return '#aaa';
+                },
+                paddingLeft: function () {
+                  return 5;
+                },
+                paddingRight: function () {
+                  return 5;
+                }
+              }
+            });
+
+// Aquí insertas la firma y texto antes del cambio de página
+if (row.firma_base64) {
+  let firmaImg = row.firma_base64;
+  if (!firmaImg.startsWith('data:image')) {
+    firmaImg = `data:image/png;base64,${firmaImg}`;
+  }
+
+  // Firma
+  content.push({
+    image: firmaImg,
+    width: 120,
+    height: 50,
+    margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
+  });
+
+  // Línea + Aceptado
+  content.push({
+    text: '________________________\nAceptado',
+    alignment: 'left',
+    margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
+    fontSize: 10
+});
+}
+
+
+            lastFecha = fechaKey;
+          }
+
+          // Fila de datos
+          currentTableBody.push([
+            row.no,
+            row.aspecto,
+            row.si || '',
+            row.no_ || '',
+            row.na || '',
+            row.observacion || ''            
+          ]);
+        }
+
+        const docDefinition = {
+          content,
+          styles: {
+            header: {
+              bold: true,
+              fontSize: 12,
+              margin: [0, 10, 0, 5]
+            },
+            fecha: {
+              bold: true,
+              fontSize: 11,
+              margin: [0, 10, 0, 5]
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 11,
+              color: 'black'
+            }
+          },
+          defaultStyle: {
+            fontSize: 10
+          },
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          pageMargins: [40, 60, 40, 40],
+          footer: function(currentPage, pageCount) {
+            return {
+              text: `Página ${currentPage} de ${pageCount}`,
+              alignment: 'right',
+              margin: [0, 0, 40, 20],
+              fontSize: 9
+            };
+          }
+        };
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+        
+        conn.release();
+  } catch (error) {
+        if (conn) conn.release();
+        console.error('Error ejecutando SP:', error);
+        res.render('inspeccioncfg', {
+          mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+        });
+  }
+});  
 
 
 // PDF SEMANA 

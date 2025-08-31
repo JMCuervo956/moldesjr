@@ -320,6 +320,7 @@
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
+     <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Inicio</a>
     <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
@@ -335,6 +336,7 @@
         </button>
       </div>
     <% } %>
+
   
   <div class="register-formAlt">
           <div>
@@ -343,7 +345,6 @@
           <div class="contenedor-botones"> 
             <!-- Contenido desplazable -->
                     <a href="/ccostocc" class="modern-btn btn-verde">C.Costo</a>
-                    <a href="/ccostofch" class="modern-btn btn-azul">Fechas</a>
                     <a href="/users_consulta" class="modern-btn btn-amarillo">Usuarios</a>
                     <a href="/progresogral" class="modern-btn btn-rojo">Progreso</a>
                     <a href="/progresogralT?idot=1792&descripcion=C Costo" class="modern-btn btn-azul">Gantt</a>
@@ -352,7 +353,6 @@
                     <a href="/pendientesh" class="modern-btn btn-verde">Pendiente Historico</a>
                     <a href="/inspdia" class="modern-btn btn-azul">Insp. Dia</a>
                     <a href="/cambioctr" class="modern-btn btn-azul">Cambio Contraseña</a>
-
           </div>
           <br>
           <div>
@@ -375,13 +375,15 @@
                 <td colspan="3">
                   <div class="btns-row">
                     <button type="submit" class="btn btn-success btn-table">Generar PDF</button>
-                    <a href="#" id="btn-excel" class="modern-btn btn-verde" role="button" tabindex="0">📥 Excel</a>
+<!--                    <a href="#" id="btn-excel" class="modern-btn btn-verde" role="button" tabindex="0">📥 Excel</a> -->
+                    <button type="button" id="btn-pdftot" class="btn btn-primary btn-table"> PDF Total</button>
 
                   </div>
                 </td>
               </tr>
             </table>
           </form>
+
 
   </div>
 
@@ -430,6 +432,30 @@
         setTimeout(() => alerta.remove(), 500);
       }, 1500); // 3 segundos
     }
+  });
+</script>
+
+<script>
+  document.getElementById("btn-pdftot").addEventListener("click", function () {
+    const fecha = document.getElementById("fecha").value;
+    if (!fecha) {
+      alert("Por favor, selecciona una fecha.");
+      return;
+    }
+
+    // Crear y enviar formulario dinámico
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/generar-pdftot";
+
+    const inputFecha = document.createElement("input");
+    inputFecha.type = "hidden";
+    inputFecha.name = "fecha";
+    inputFecha.value = fecha;
+
+    form.appendChild(inputFecha);
+    document.body.appendChild(form);
+    form.submit();
   });
 </script>
 

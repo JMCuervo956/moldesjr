@@ -51,7 +51,7 @@ export const login = async (req, res) => {
 );
 */
 
-  if (hora >= 7 && hora < 24) {
+  if (hora >= 7 && hora < 18) {
   } else {
     return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
   }

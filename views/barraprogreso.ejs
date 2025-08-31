@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Progreso con Días y Finalización</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     body {
@@ -159,13 +158,50 @@
       border-bottom: none;
     }
 
+.boton-contenedor {
+  display: flex;
+  gap: 20px;
+  margin-left: 3rem;
+  flex-wrap: wrap; /* Permite que pasen a otra línea si no hay espacio */
+}      
+
+.boton-regresa-fijo {
+  padding: 10px 20px;
+  text-decoration: none;
+  background-color: #134d05;
+  color: white;
+  border-radius: 4px;
+  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+}
+
+.boton-inicio-fijo {
+  padding: 10px 20px;
+  text-decoration: none;
+  background-color: #031047;
+  color: white;
+  border-radius: 4px;
+  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+}
 
 </style>
 </head>
 <body>
-  <div class="ms-5">
-    <a href="/ccosto" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar...</a>
+  <div id="activities" style="
+    border: 2px solid #f0f8ff;
+    padding: 4px;
+    border-radius: 6px;
+    background-color: #aa2323;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre botón y título */
+  ">
+    <div style="margin-left: auto; padding-right: 20px;">
+      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+    </div>    
   </div>
+  <br>
 
   <div class="register-formAncho">
     <div class="estado-mes">
@@ -179,7 +215,6 @@
         <div id="barra-progreso" class="barra progreso"></div>
       </div>
     </div>
-
 
     <div class="fechas">
       <div id="fecha-inicio"></div>
@@ -200,50 +235,76 @@
     const html = `
     <hr>
     <hr>
-    <table class="modal-table" style="margin-top: 30px;">
-      <tr class="resaltado">
-        <td><strong>Centro de Costo:</strong></td>
-        <td colspan="2">${datosBD.cc}</td>
-      </tr>
-      <tr>
-        <td><strong>Descripción:</strong></td>
-        <td colspan="2">${datosBD.descripcion}</td>
-      </tr>
-      <tr><td colspan="3" style="height: 16px;"></td></tr>
-      <tr>
-        <td class="sin-negrilla">Cliente:</td>
-        <td colspan="2">${datosBD.cliente}</td>
-      </tr>
-      <tr>
-        <td></td>
-        <td class="col" style="color: blue;">${datosBD.ncliente}</td>
-      </tr>
-      <tr>
-        <td class="sin-negrilla">Fecha Orden:</td>
-        <td class="col">${datosBD.FechaOrden}</td>
-      </tr>
-      <tr>
-        <td class="sin-negrilla">Fecha Entrega:</td>
-        <td class="col">${datosBD.FechaEntrega}</td>
-      </tr>
-      <tr>
-        <td class="sin-negrilla">Cantidad:</td>
-        <td class="col">${datosBD.cantidad}</td>
-      </tr>
-      <tr>
-        <td class="sin-negrilla">Peso:</td>
-        <td class="col">${datosBD.peso}</td>
-      </tr>
-      <tr>
-        <td class="sin-negrilla">Unidad:</td>
-        <td class="col">${datosBD.nunidad}</td>
-      </tr>
-      <tr><td colspan="3" style="height: 16px;"></td></tr>
-      <tr>
-        <td><strong>Observación:</strong></td>
-        <td colspan="2">${datosBD.comentarios}</td>
-      </tr>
-    </table>
+
+    <div id="tabla-pdf">    
+        <table class="modal-table" style="margin-top: 30px;">
+            <tr class="resaltado">
+              <td><strong>Centro de Costo:</strong></td>
+              <td colspan="2">${datosBD.cc}</td>
+            </tr>
+            <tr>
+              <td><strong>Descripción:</strong></td>
+              <td colspan="2">${datosBD.descripcion}</td>
+            </tr>
+            <tr><td colspan="3" style="height: 16px;"></td></tr>
+            <tr>
+              <td class="sin-negrilla">Cliente:</td>
+              <td colspan="2">${datosBD.cliente}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td class="col" style="color: blue;">${datosBD.ncliente}</td>
+            </tr>
+            <tr>
+              <td class="sin-negrilla">Fecha Orden:</td>
+              <td class="col">${datosBD.FechaOrden}</td>
+            </tr>
+            <tr>
+              <td class="sin-negrilla">Fecha Entrega:</td>
+              <td class="col">${datosBD.FechaEntrega}</td>
+            </tr>
+            <tr>
+              <td class="sin-negrilla">Cantidad:</td>
+              <td class="col">${datosBD.cantidad}</td>
+            </tr>
+            <tr>
+              <td class="sin-negrilla">Peso:</td>
+              <td class="col">${datosBD.peso}</td>
+            </tr>
+            <tr>
+              <td class="sin-negrilla">Unidad:</td>
+              <td class="col">${datosBD.nunidad}</td>
+            </tr>
+            <tr><td colspan="3" style="height: 16px;"></td></tr>
+            <tr>
+              <td><strong>Observación:</strong></td>
+              <td colspan="2">${datosBD.comentarios}</td>
+            </tr>
+
+            <tr>
+              <td><strong>estado:</strong></td>
+              <td colspan="2">${datosBD.estado}</td>
+            </tr>
+
+            
+
+        </table>
+    </div>
+
+    <button onclick="imprimirPDF()">Imprimir en PDF</button>
+
+    <div style="margin-top: 32px; margin-bottom: 32px;">
+      <hr style="border: none; border-top: 1px solid #ccc;">
+      <hr style="border: none; border-top: 1px solid #ccc;">
+      <hr style="border: none; border-top: 1px solid #ccc;">
+      <hr style="border: none; border-top: 1px solid #ccc;">
+    </div>
+
+    <div class="boton-contenedor">
+      <a href="/menuprc" class="boton-inicio-fijo">Inicio</a>
+      <a href="/ccosto" class="boton-regresa-fijo">Regresar</a>
+  </div>  
+
   `;
   document.getElementById('datos-centro-costo').innerHTML = html;
 </script>
@@ -449,5 +510,22 @@
     // Evento scroll para actualizar meses visibles
     barraScrollWrap.addEventListener('scroll', actualizarMesesVisibles);
   </script>
+
+<script>
+  function imprimirPDF() {
+    const tabla = document.getElementById("tabla-pdf");
+
+    const opciones = {
+      margin:       10,
+      filename:     'tabla.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opciones).from(tabla).save();
+  }
+</script>
+
 </body>
 </html>

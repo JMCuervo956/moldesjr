@@ -103,6 +103,7 @@
     align-items: center;
     gap: 20px; /* Espacio entre botón y título */
   ">
+    <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Inicio</a>
     <a href="/opciones" class="regresar-link" style="margin-left: 20px;">Regresar</a>
     <div style="margin-left: auto; padding-right: 20px;">
       <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
@@ -110,9 +111,13 @@
   </div>  
   <div id="contenedor-ordenes"></div>
   <!-- Inyección de datos desde backend -->
-  <script> const datosBD = <%- JSON.stringify(datosBD) %>; </script>
 
   <script>
+    const datosBD = <%- JSON.stringify(datosBD) %>;
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
     const nombresMeses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const nombresDias = ['L','M','Mi','J','V','S','D'];
     const festivosColombia = {
@@ -130,38 +135,93 @@
     }
     function formatYMD(d) { return d.toISOString().slice(0,10); }
 
-    function calcularEstadoYProgreso(o,e,f=null) {
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-      const ord = crearFechaLocal(o), ent = crearFechaLocal(e),
-            entFin = new Date(ent.getFullYear(),ent.getMonth(),ent.getDate(),23,59,59,999),
-            fin = f ? crearFechaLocal(f) : null;
-      if(fin) fin.setHours(23,59,59,999);
-      const hm = hoy.getTime(), om=ord.getTime(), em=entFin.getTime(), fm=fin?.getTime();
-      let estado='', color='gray', pct=0;
-      if(!fin){
-        if(om>hm){estado='Por iniciar';color='gray';}
-        else if(hm<=em){estado='En proceso';color='green';}
-        else{estado='En retraso';color='red';}
-        const tot=em-om; pct=tot>0?((hm-om)/tot)*100:100;
-      } else {
-        if(fm<em){estado='Finalizada antes de tiempo';color='blue';}
-        else if(fm===em){estado='Finalizada en tiempo';color='green';}
-        else{estado='Entrega atrasada';color='red';}
-        pct=100;
-      }
-      pct = Math.min(100, Math.max(0, pct));
-      return {estado,color,pct,fechaOrden:ord,fechaEntrega:ent,hoy,fechaFin:fin};
+/* colores */    
+function calcularEstadoYProgreso(o, e, f = null, inicio = null) {
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const ord = crearFechaLocal(o),
+        ent = crearFechaLocal(e),
+        entFin = new Date(ent.getFullYear(), ent.getMonth(), ent.getDate(), 23, 59, 59, 999),
+        fin = f ? crearFechaLocal(f) : null,
+        ini = inicio ? crearFechaLocal(inicio) : null;
+
+  if (fin) fin.setHours(23, 59, 59, 999);
+
+  const hm = hoy.getTime(),  // hoy
+        om = ord.getTime(),  // orden
+        em = entFin.getTime(), // entrega
+        fm = fin?.getTime(),  // finalización
+        im = ini?.getTime();  // inicio
+
+  let estado = '', color = 'gray', pct = 0;
+
+  // ✅ Si hay inicio y es posterior a la orden, marcar como inicio con retraso
+  if (!fin) {
+    if (im && im > om) {
+      estado = 'Inicio con retraso';
+      color = 'orange'; // CAMBIO: naranja
+    } else if (om > hm) {
+      estado = 'Por iniciar';
+      color = 'gray';
+    } else if (hm <= em) {
+      estado = 'En proceso';
+      color = 'green';
+    } else {
+      estado = 'En retraso';
+      color = 'red';
     }
 
+    const tot = em - om;
+    pct = tot > 0 ? ((hm - om) / tot) * 100 : 100;
+
+  } else {
+    if (fm < em) {
+      estado = 'Finalizada antes de tiempo';
+      color = 'blue';
+    } else if (fm === em) {
+      estado = 'Finalizada en tiempo';
+      color = 'green';
+    } else {
+      estado = 'Entrega atrasada';
+      color = 'red';
+    }
+    pct = 100;
+  }
+
+  pct = Math.min(100, Math.max(0, pct));
+
+  return {
+    estado,
+    color,
+    pct,
+    fechaOrden: ord,
+    fechaEntrega: ent,
+    hoy,
+    fechaFin: fin,
+    fchini: ini
+  };
+}
+
+/* colores */    
+
     const contenedor = document.getElementById('contenedor-ordenes');
-    if(!datosBD || datosBD.length===0){
+
+    if (!contenedor) {
+      console.error('❌ El div con id "contenedor-ordenes" no existe en el DOM.');
+      return;
+    }
+
+    console.log('✅ Script cargado');
+    console.log('Total registros:', datosBD.length);
+
+    if(!datosBD || datosBD.length === 0){
       contenedor.innerHTML = '<p>No hay órdenes para mostrar.</p>';
     } else {
       datosBD.forEach(datos => {
-        const res = calcularEstadoYProgreso(datos.fecha_orden, datos.fecha_entrega, datos.fecha_fin);
+        try {
+
+        const res = calcularEstadoYProgreso(datos.fecha_orden, datos.fecha_entrega, datos.fecha_fin, datos.fchini);
         const ordDiv = document.createElement('div');
         ordDiv.className = 'orden-container';
-
 
         const estadoMesDiv = document.createElement('div');
         estadoMesDiv.className = 'estado-mes';
@@ -191,21 +251,37 @@
         scroll.appendChild(contBarra);
         ordDiv.appendChild(scroll);
 
+       
+        function formatYMD(fecha) {
+          if (!(fecha instanceof Date)) {
+            fecha = new Date(fecha);
+          }
+          const yyyy = fecha.getFullYear();
+          const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dd = String(fecha.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+
+
         const fechasDiv = document.createElement('div');
         fechasDiv.className = 'fechas';
-        [ ['Inicio',res.fechaOrden], ['Hoy',res.hoy], ['Entrega',res.fechaEntrega] ]
-          .forEach(([n,fd]) => {
-            const el = document.createElement('div');
-            el.textContent = `${n}: ${formatYMD(fd)}`;
-            fechasDiv.appendChild(el);
-          });
-        if(res.fechaFin){
+        [
+          ['Inicio', res.fechaOrden],
+          ['Inicio Real', res.fchini],
+          ['Hoy', res.hoy],
+          ['Entrega', res.fechaEntrega]
+        ].forEach(([n, fd]) => {
+          const el = document.createElement('div');
+          el.textContent = `${n}: ${formatYMD(fd)}`;
+          fechasDiv.appendChild(el);
+        });
+
+        if (res.fechaFin) {
           const eff = document.createElement('div');
-          eff.className = 'fechas-secundarias';  
+          eff.className = 'fechas-secundarias';
           eff.textContent = `Finalización: ${formatYMD(res.fechaFin)}`;
           fechasDiv.appendChild(eff);
         }
-
 
         ordDiv.appendChild(fechasDiv);
         contenedor.appendChild(ordDiv);
@@ -267,8 +343,15 @@
         }
         updMes();
         scroll.addEventListener('scroll', updMes);
+      } catch (err) {
+          console.error('Error procesando registro:', datos, err);
+      }
       });
+      // Al final, puedes verificar cuántos se crearon
+      console.log('Ordenes creadas:', document.querySelectorAll('.orden-container').length);
+
     }
+    }); // 👈 Este cierra el addEventListener return 
   </script>
 </body>
 </html>
