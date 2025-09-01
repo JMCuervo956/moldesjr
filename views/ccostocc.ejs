@@ -159,7 +159,6 @@
                           <th class="text-center">Descripción</th>
                           <th class="text-center">Cliente</th>
                           <th>Observaciones</th>
-                          <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -187,15 +186,6 @@
                                 <%= ccosto.comentarios ? ccosto.comentarios.trim().replace(/\n+/g, '\n') : '' %>
                               </td>
 
-                              <td class="text-center" style="width: 200px; padding: 2px 4px; font-size: 12px; vertical-align: middle;">
-                                <a 
-                                href="/modalcc?idcc=<%= ccosto.idcc %>" 
-                                class="btn btn-primary btn-sm" 
-                                style="padding: 2px 4px; font-size: 11px; line-height: 1;">
-                                Consultar
-                              </a>
-                              
-                              </td>
                             </tr>
                           <% }) %>
                         <% } else { %>

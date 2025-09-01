@@ -339,6 +339,7 @@
                 </button>
               </div>
              
+
               <div class="modal-body">
                 <input type="hidden" name="editando" id="editando" value="false">
 
@@ -574,31 +575,44 @@
 
   <!-- AJAX para ciudad -->
 
-  <script>
-    document.getElementById('pais').addEventListener('change', function () {
-      const paisSeleccionado = this.value;
-      const ciudadSelect = document.getElementById('ciudad');
-  
-      // Limpia las opciones anteriores
-      ciudadSelect.innerHTML = '<option value="">Seleccione Ciudad</option>';
-  
-      if (paisSeleccionado) {
-        fetch(`/ciudades/${paisSeleccionado}`)
-          .then(response => response.json())
-          .then(data => {
-            data.forEach(ciudad => {
-              const option = document.createElement('option');
-              option.value = ciudad.iso_ciudad;
-              option.textContent = ciudad.nombre;
-              ciudadSelect.appendChild(option);
-            });
-          })
-          .catch(err => {
-            console.error('Error al cargar ciudades:', err);
+<script>
+  window.ciudadEnEdicion = null;
+
+  document.getElementById('pais').addEventListener('change', function () {
+    const paisSeleccionado = this.value;
+    const ciudadSelect = document.getElementById('ciudad');
+
+    ciudadSelect.innerHTML = '<option value="">Seleccione Ciudad</option>';
+
+    if (paisSeleccionado) {
+      fetch(`/ciudades/${paisSeleccionado}`)
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(ciudad => {
+            // Ajusta aquí según la propiedad correcta que te devuelve la API
+            const ciudadId = ciudad.iso_ciudad || ciudad.id; 
+            const option = document.createElement('option');
+            option.value = ciudadId.toString();
+            option.textContent = ciudad.nombre;
+            ciudadSelect.appendChild(option);
           });
-      }
-    });
-  </script>
+
+          if (window.ciudadEnEdicion) {
+            ciudadSelect.value = window.ciudadEnEdicion;
+            const found = [...ciudadSelect.options].some(opt => opt.value === window.ciudadEnEdicion);
+            if (!found) {
+              console.warn('La ciudad no se encontró entre las opciones:', window.ciudadEnEdicion);
+            }
+            window.ciudadEnEdicion = null;
+          }
+        })
+        .catch(err => {
+          console.error('Error al cargar ciudades:', err);
+        });
+    }
+  });
+</script>
+
   
   <!-- JavaScript para enfocar el campo Nit cuando se abra el modal -->
 <script>
@@ -667,14 +681,12 @@
         fechaIniput.value = formatFecha(ccosto.fecha_inicio);
       }      
 
-      // Dispara el cambio para cargar las ciudades del país
+      // Guardamos la ciudad deseada para seleccionarla cuando se carguen
+      window.ciudadEnEdicion = ccosto.ciudad;
+
+      // Disparamos el cambio para que se carguen las ciudades del país
       const selectPais = document.getElementById('pais');
       selectPais.dispatchEvent(new Event('change'));
-
-      // Espera unos milisegundos para que el AJAX cargue y luego selecciona la ciudad
-      setTimeout(() => {
-        document.getElementById('ciudad').value = ccosto.ciudad;
-      }, 300);
 
       document.getElementById('comentarios').value = ccosto.comentarios;
 
@@ -802,6 +814,22 @@ function filtrarTabla() {
   }
 }
   </script>
+
+<script>
+  // Obtener la fecha de hoy + 1 día
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  // Formatearla a yyyy-mm-dd
+  const yyyy = tomorrow.getFullYear();
+  const mm = String(tomorrow.getMonth() + 1).padStart(2, '0'); // Meses desde 0
+  const dd = String(tomorrow.getDate()).padStart(2, '0');
+  const maxDate = `${yyyy}-${mm}-${dd}`;
+
+  // Asignar al input
+  document.getElementById('fecha_fin').max = maxDate;
+</script>
 
 <!-- Scripts requeridos -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

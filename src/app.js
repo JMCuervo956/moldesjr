@@ -1595,7 +1595,7 @@ app.get('/actividades', async (req, res) => {
       pool.execute(`
         SELECT a.*, b.funcionario AS clienteN
         FROM tbl_otrabajo a
-        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador order by idot desc
       `),
       pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       pool.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -1736,18 +1736,10 @@ app.get('/ccostocc', async (req, res) => {
   try {
     const userUser = req.session.user;
     const userName = req.session.name;
-/*    const [permisos] = await conn.execute(
-      'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
-      [userUser, 'Centros de Costo']
-    );
-    if (permisos.length === 0) {
-      return; // simplemente no hace nada más
-    }
-*/      
     const [ccosto] = await conn.execute(`
       SELECT a.*, b.cliente as clienteN
       FROM tbl_ccosto a
-      JOIN tbl_cliente b ON a.cliente = b.nit;
+      JOIN tbl_cliente b ON a.cliente = b.nit  order by idcc desc;
     `);
     const [unidadT] = await conn.execute('SELECT * FROM tbl_unidad');
     const [clienteT] = await conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente');
@@ -2226,6 +2218,7 @@ app.get('/ccostoexp', async (req, res) => {
           LEFT JOIN tbl_cliente b ON a.cliente = b.nit 
           LEFT JOIN tbl_paises c ON a.pais = c.iso_pais
           LEFT JOIN tbl_ciudad d ON a.ciudad = d.iso_ciudad
+          order by a.idcc desc
         `),
         pool.execute('SELECT * FROM tbl_unidad'),
         pool.execute('SELECT * FROM tbl_cliente ORDER BY cliente')
@@ -4730,7 +4723,7 @@ app.get('/inspecotr', async (req, res) => {
           INNER JOIN tbl_efuncional AS b ON b.identificador = a.func_doc
           INNER JOIN tbl_ccosto as c on c.idcc=a.ocompra
         WHERE func_doc = ?
-        GROUP BY idot, func_id, func_doc, b.funcionario, c.descripcion;
+        GROUP BY idot, func_id, func_doc, b.funcionario, c.descripcion order by idot desc;
       `, [doc_id]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -6080,6 +6073,133 @@ app.get('/inspasig_hist', async (req, res) => {
         res.redirect('/');
     }
 });
+
+// Proveedores
+
+  /***   CODIGOS  *****************************************************************************************************/
+
+app.get('/proveedor', async (req, res) => {
+    try {
+        if (!req.session.loggedin) {
+            return res.redirect('/?expired=1');
+        }
+
+        const userUser = req.session.user;
+        const userName = req.session.name;
+
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_proveedor ORDER BY nit`);
+
+        // ✅ Manejo seguro del mensaje de sesión
+        const mensaje = req.session.mensaje || null;
+        delete req.session.mensaje; // Limpieza después de usar
+        res.render('proveedor', {
+            codigos,
+            user: userUser,
+            name: userName,
+            mensaje
+        });
+    } catch (error) {
+        console.error('Error al obtener codigos', error);
+        res.status(500).send('Error al obtener codigos');
+    }
+});
+
+app.post('/proveedor', async (req, res) => {	
+    try {
+        const { codigo, descripcion, editando } = req.body;
+        let mensaje;
+       
+        if (editando === "true") {
+            // Actualizar 
+            await pool.execute(
+                `UPDATE tbl_proveedor SET nombre = ? WHERE nit = ?`,	
+                [descripcion, codigo]
+            );
+
+            mensaje = {
+                tipo: 'success',
+                texto: 'Cambio Actualizado exitosamente.'
+            };
+        } else {
+            // Verificar si ya existe
+            const [rows] = await pool.execute('SELECT COUNT(*) AS count FROM tbl_proveedor WHERE nit = ?',
+                [codigo]
+            );
+
+            if (rows[0].count > 0) {
+                mensaje = {
+                    tipo: 'danger',
+                    texto: 'Ya existe Proveedor.'
+                };
+            } else {
+                // Insertar nuevo proveedor
+                await pool.execute(
+                    `INSERT INTO tbl_proveedor (nit, nombre) VALUES (?, ?)`,
+                    [codigo, descripcion]
+                );
+
+                mensaje = {
+                    tipo: 'success',
+                    texto: 'Guardado exitosamente.'
+                };
+            }
+        }
+
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_proveedor order by nit`);
+        res.render('proveedor', {
+            mensaje,
+            codigos
+        });
+
+    } catch (error) {
+
+        console.error('Error guardando: ', error);
+        const [codigos] = await pool.execute(`SELECT * FROM tbl_proveedor order by nit`);
+
+        res.status(500).render('codigos', {
+            mensaje: {
+                tipo: 'danger',
+                texto: 'Error al procesar proveedor.'
+            },
+            codigos
+        });
+    }
+});
+
+app.post('/proveedor/delete/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.execute('DELETE FROM tbl_proveedor WHERE nit = ?', [id]);
+
+    req.session.mensaje = {
+      tipo: 'success',
+      texto: 'Eliminado exitosamente.'
+    };
+  } catch (err) {
+    let texto = 'Error al eliminar.';
+    if (err.message.includes('foreign key constraint fails')) {
+      texto = 'No se puede eliminar, tiene elementos asociados.';
+    }
+
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto
+    };
+  }
+
+  const mensaje = req.session.mensaje;
+  delete req.session.mensaje;
+
+  const [codigos] = await pool.execute('SELECT * FROM tbl_proveedor ORDER BY nit');
+
+  res.render('proveedor', {
+    codigos,
+    user: req.session.user,
+    name: req.session.name,
+    mensaje
+  });
+});  
 
 
 // Puerto de escucha salida

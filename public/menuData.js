@@ -48,7 +48,7 @@ export const menuData = [
       { title: "Ciudades", link: "/ciudades", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Clientes", link: "/clientes", icon: "fas fa-users-cog icon-users-cog" },
       { title: "Equipo Funcional", link: "/efuncional", icon: "fas fa-users-cog icon-users-cog" },
-      { title: "Estados Centro de Costo", link: "/codigos", icon: "fas fa-users-cog icon-users-cog" },
+      { title: "Proveedor", link: "/proveedor", icon: "fas fa-users-cog icon-users-cog" },
     ]
   }
 ];
