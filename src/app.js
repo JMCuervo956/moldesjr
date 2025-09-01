@@ -516,8 +516,6 @@ app.get('/barraprogreso', async (req, res) => {
             left JOIN tbl_unidad c ON a.unidad = c.id_unidad
             WHERE a.idcc = ?
               `, [id]);
-            console.log('data.............');  
-            console.log(rows[0]);  
             const row = rows[0]; // obtenemos la primera fila
             const data = {
             cc: row.idcc,
@@ -813,10 +811,8 @@ app.get('/otrabajo', async (req, res) => {
             canDelete: permiso.can_delete == 1,
             canView: permiso.can_view == 1
           };
-          console.log(permiso);
         } else {
           // Si es admin, tal vez le asignas permisos máximos
-          console.log(userUser);
           canView = canCreate = canEdit = canDelete = 1;
         }
     //
@@ -3525,7 +3521,7 @@ app.get('/inspeccion_aux', async (req, res) => {
 
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
-
+    const { diasverif } = req.session.param;
     res.render('inspeccion_aux', {
       inspecc: bloquesAgrupados,
       dias,
@@ -3533,7 +3529,8 @@ app.get('/inspeccion_aux', async (req, res) => {
       doc_id,
       user: userUser,
       name: userName,
-      mensaje
+      mensaje,
+      diasverif
     });
 
   } catch (error) {
@@ -5889,8 +5886,6 @@ app.get('/obtener-firma', async (req, res) => {
 
   try {
     // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
-    console.log(doc_id);
-    console.log(fecha);
     const [rows] = await pool.query(
       'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? LIMIT 1',
       [doc_id, fecha]

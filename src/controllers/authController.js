@@ -37,7 +37,8 @@ export const login = async (req, res) => {
       const param = paramRows[0];
       req.session.param = {
         horaini: param.id_horaini,
-        horafin: param.id_horafin
+        horafin: param.id_horafin,
+        diasverif: param.id_diasverif
       };      
     };
 
@@ -45,11 +46,7 @@ export const login = async (req, res) => {
   const hora = fechaBogota.getUTCHours();
   const dia = fechaBogota.getUTCDay();
 
-    console.log('aqui horas');
-    const { horaini, horafin } = req.session.param || {};
-    console.log(horaini);
-    console.log(horafin);
-    console.log('end horas');
+  const { horaini, horafin, diasverif } = req.session.param || {};
       
   if (hora >= 7 && hora < horafin) {
   } else {

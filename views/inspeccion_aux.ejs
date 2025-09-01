@@ -563,9 +563,6 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
 </script>
 
 <script>  
-     
-
-
   const params = new URLSearchParams(window.location.search);
   document.querySelectorAll('.btn-ir-a-detalle').forEach(boton => {
     boton.addEventListener('click', function () {
@@ -575,8 +572,8 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
       const func = params.get("func");
       console.log('aqui');
       if (fecha && doc_id) {
-        const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}&func=${encodeURIComponent(func)}`;
-        window.location.href = url;
+          const url = `/detalle-diaux?fecha=${encodeURIComponent(fecha)}&doc_id=${encodeURIComponent(doc_id)}&func=${encodeURIComponent(func)}`;
+          window.location.href = url;
         } else {
           alert('Faltan datos para continuar.');
       }      
@@ -585,6 +582,8 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
 </script>  
 
 <script>
+    const diasverif = <%= diasverif %>;
+
   document.addEventListener('DOMContentLoaded', function () {
     // Extraer los parámetros de la URL
     const params = new URLSearchParams(window.location.search);
@@ -633,11 +632,11 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
     botones.forEach(boton => {
       const fechaStr = boton.dataset.fecha;
       const fechaBoton = new Date(fechaStr);
-
-fechaBoton.setDate(fechaBoton.getDate() + 1);
-const opciones = { weekday: 'long', timeZone: 'America/Bogota' };
-const nombreDia = fechaBoton.toLocaleDateString('es-CO', opciones);
-console.log(nombreDia); // Ejemplo: "martes"
+      console.log(diasverif);
+      fechaBoton.setDate(fechaBoton.getDate() + diasverif);
+      const opciones = { weekday: 'long', timeZone: 'America/Bogota' };
+      const nombreDia = fechaBoton.toLocaleDateString('es-CO', opciones);
+      console.log(nombreDia); // Ejemplo: "martes"
 
       fechaBoton.setHours(0, 0, 0, 0);
       if (ahoraEnBogota > fechaBoton) {
@@ -652,7 +651,9 @@ console.log(nombreDia); // Ejemplo: "martes"
         boton.style.pointerEvents = 'none';
         boton.title = 'Fecha vencida';
       }
+
     });
+
   });
 </script>
 
