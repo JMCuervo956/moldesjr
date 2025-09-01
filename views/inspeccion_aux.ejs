@@ -634,7 +634,7 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
       const fechaStr = boton.dataset.fecha;
       const fechaBoton = new Date(fechaStr);
 
-fechaBoton.setDate(fechaBoton.getDate() + 10);
+fechaBoton.setDate(fechaBoton.getDate() + 1);
 const opciones = { weekday: 'long', timeZone: 'America/Bogota' };
 const nombreDia = fechaBoton.toLocaleDateString('es-CO', opciones);
 console.log(nombreDia); // Ejemplo: "martes"

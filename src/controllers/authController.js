@@ -1,4 +1,3 @@
-// src/controllers/authController.js
 import bcryptjs from 'bcryptjs';
 import { pool } from '../db.js';
 
@@ -9,52 +8,7 @@ export const login = async (req, res) => {
   
   const fechaHoraBogotaStr = getBogotaDateTime();
  
-  // Convertir string a Date ajustado a Bogotá (para operaciones)
-  // Una forma simple es crear un objeto Date en UTC usando el string:
   const fechaBogota = new Date(fechaHoraBogotaStr.replace(' ', 'T') + 'Z');
-
-  // Ahora puedes usar:
-  const hora = fechaBogota.getUTCHours();
-  const dia = fechaBogota.getUTCDay();
-
-/*
-  const fechaISO = fechaHoraBogotaStr.toISOString().split('T')[0];
-  const [rowsf] = await pool.execute(
-    'SELECT 1 FROM festivos WHERE fecha = ? AND activo = 1',
-    [fechaISO]
-  );
-  const esFestivo = rowsf.length > 0;  
-
-  if (esFestivo) {
-    await pool.execute(
-    `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-      VALUES (?, ?, ?)`,
-    [user, 97, fechaHoraBogotaStr]
-    );
-    return res.json({ status: 'error', message: 'Día festivo, no se permite el acceso' });
-  }
-
-  const diaSemana = fechaHoraBogotaStr.getDay(); // 0 = Domingo, 6 = Sábado
-  if (diaSemana === 0 || diaSemana === 6) {
-    await pool.execute(
-    `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-      VALUES (?, ?, ?)`,
-    [user, 98, fechaHoraBogotaStr]
-    );
-    return res.json({ status: 'error', message: 'Dia Fuera de Rango' });
-  }  
-
-  await pool.execute(
-  `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
-    VALUES (?, ?, ?)`,
-  [user, 99, fechaHoraBogotaStr]
-);
-*/
-
-  if (hora >= 7 && hora < 18) {
-  } else {
-    return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
-  }
 
   const [rows] = await pool.execute('SELECT * FROM users WHERE user = ?', [user]);
 
@@ -75,6 +29,34 @@ export const login = async (req, res) => {
     req.session.numprop = userRecord.numprop;
     req.session.username = user;
 
+    // parametros
+
+    const [paramRows] = await pool.execute('SELECT * FROM tbl_parametro');
+
+    if (paramRows.length > 0) {
+      const param = paramRows[0];
+      req.session.param = {
+        horaini: param.id_horaini,
+        horafin: param.id_horafin
+      };      
+    };
+
+  // Ahora puedes usar:
+  const hora = fechaBogota.getUTCHours();
+  const dia = fechaBogota.getUTCDay();
+
+    console.log('aqui horas');
+    const { horaini, horafin } = req.session.param || {};
+    console.log(horaini);
+    console.log(horafin);
+    console.log('end horas');
+      
+  if (hora >= 7 && hora < horafin) {
+  } else {
+    return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
+  }
+
+    
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
   } catch (error) {
     console.error('Error en login:', error);

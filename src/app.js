@@ -200,21 +200,19 @@ app.get('/menuprc', requireSession, async (req, res) => {
       'SELECT module FROM users_add WHERE user_code = ?  and (can_view>0 or can_create>0 or can_edit>0 or can_delete>0)',
       [user]
     );
-    const modulosPermitidos = rows.map(row => row.module); // array de strings
+    const modulosPermitidos = rows.map(row => row.module);
     res.render('menuprc', { user, name, rol, userUser, modulos: modulosPermitidos });
+
   } catch (error) {
     console.error('Error en /menuprc:', error.message);
 
-    // ✅ Mensaje en sesión con objeto completo (tipo + texto)
     req.session.mensaje = {
       texto: 'Ocurrió un error al cargar el menú principal. Intente nuevamente.',
       tipo: 'danger'
     };
 
-    // ✅ Redirección segura
     res.redirect('/menuprc');
 
-    // 🔴 ¡NO pongas res.status().send() después de redirigir!
   }
 });
 
@@ -284,7 +282,7 @@ app.get('/ccosto', async (req, res) => {
       if (permisos.length === 0) {
         return; // no hace nada si no tiene permisos
       }
-      // Aquí va el código si sí tiene permisos
+      // Aquí va el código si tiene permisos
       const permiso = permisos[0];
       canView = permiso.can_view;
       canCreate = permiso.can_create == 1; // true si es 1 o '1', false si es 0 o '0'
@@ -815,9 +813,10 @@ app.get('/otrabajo', async (req, res) => {
             canDelete: permiso.can_delete == 1,
             canView: permiso.can_view == 1
           };
-          
+          console.log(permiso);
         } else {
           // Si es admin, tal vez le asignas permisos máximos
+          console.log(userUser);
           canView = canCreate = canEdit = canDelete = 1;
         }
     //
@@ -848,7 +847,7 @@ app.get('/otrabajo', async (req, res) => {
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
-      conn.execute('SELECT * FROM tbl_ccosto')
+      conn.execute('SELECT * FROM tbl_ccosto'),
     ]);
 
     const mensaje = req.session.mensaje;
