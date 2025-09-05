@@ -5285,7 +5285,7 @@ app.post('/generar-pdf', async (req, res) => {
         // Ahora la consulta con parámetros sin comillas:
         const [rows] = await pool.query(`
           SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
-                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion, c.firma_base64
           FROM items_hist a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
