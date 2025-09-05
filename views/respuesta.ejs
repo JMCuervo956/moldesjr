@@ -18,23 +18,16 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
     
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f4f8;
-            zoom: 1; /* 80% del tamaño original - tamaño texto GLOBAL*/
-        }
 
-        #gantt_here {
-            width: 100%;
-            height: 600px;  /* ALTURA GANTT tamaño texto GLOBAL*/
-            margin-top: 20px;
-            overflow-x: auto;
-            white-space: nowrap;
-            background-color: #ffffff;
-            border-radius: 8px;
-        }
+#gantt_here {
+    width: 98%;
+    height: 600px;  /* ALTURA GANTT tamaño texto GLOBAL */
+    margin: 0 auto;  /* Centra horizontalmente */
+    overflow-x: auto;
+    white-space: nowrap;
+    background-color: #ffffff;
+    border-radius: 8px;
+}
 
         .activity-item {
             font-size: 11px;
@@ -59,28 +52,32 @@
             background-color: #f0f8ff;
         }
 
-        /* Estilos para el modal */
         #addTaskModal {
-            display: none; /* Inicialmente oculto */
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro para el modal */
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
             z-index: 9999;
+            display: none;              /* 👈 NECESARIO para centrar vertical y horizontal */
             justify-content: center;
             align-items: center;
+            overflow: auto;             /* 👈 Permite scroll si el modal se desborda */
         }
 
         .modal-content {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
-            max-width: 500px;
             width: 90%;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+
+            max-height: 90vh;           /* 👈 Controla el alto relativo a la pantalla */
+            overflow-y: auto;           /* 👈 Scroll interno si el contenido se desborda */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
+
 
         .modal-header {
             font-size: 18px;
@@ -263,24 +260,24 @@
             color: #f5a623;
         }
 
+        #main-container > div {
+    margin: 0;
+    padding: 0;
+}
+
+
+
         #gantt_container {
-            height: 340px;  /* Ajusta según tu necesidad */
-            overflow-y: auto;
-            overflow-x: auto;
-            border: 1px solid #ccc;
-            margin-top: 20px;
+            margin-top: 0px;
         }
 
-        #gantt_here {
-            height: 100%;
-            min-width: 1000px; /* Opcional: para evitar corte horizontal */
-        }
+
 
 </style>        
 
 </head>
 <body>
-   
+    <div id="main-container"> <!-- Esto envuelve el Gantt y otros bloques -->
         <div id="customTooltip" class="gantt_tooltip"></div>
         <BR>        
         <!-- 2 Regreso -->
@@ -288,25 +285,8 @@
             <!-- tamaño texto - titulo de orden */ -->
             <div class="ms-5">
                  <a href="/menuprc" class="btn btn-primary btn-sm btnind-hover-effect ms-2" style="margin-left: 20px;">Inicio</a>
-                <a href="/actividades" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>
-            </div>
-        </div>
+                <a href="/actividades" class="btn btn-success btn-sm btnind-hover-effect ms-2">Regresar</a>  &nbsp;-&nbsp;
 
-        <!-- 3 Centro: Título centrado -->
-        <div class="flex-grow-1 text-center">
-            <h3 class="mb-2 fw-semibold d-inline-block position-relative"
-                style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-                <p style="font-size: 18px; margin: 0;">
-                    Orden: 
-                    <span style="color: #007bff; font-weight: bold;"><%= otrabajo %></span> — 
-                    <span style="color: #5a0505; font-weight: bold;"><%= descripcion %></span>
-                </p>
-                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
-            </h3>
-        </div>
-
-                <!-- 4 Botón para activar el modal (solo visible si userIdAct == 1) -->
-        <div style="text-align: center; margin-top: 20px;" id="addTaskButtonContainer">
             <button 
                 class="btn btn-primary btn-sm" 
                 id="openModalButton" 
@@ -324,8 +304,24 @@
                 class="btn btn-danger btn-sm" 
                 onclick="location.href='/reseli?idot=<%= encodeURIComponent(otrabajo) %>&descripcion=<%= encodeURIComponent(descripcion) %>'">
                 Eliminar
-            </button>
+            </button>   &nbsp;-&nbsp;
+
+        <!-- 3 Centro: Título centrado -->
+            <h3 class="mb-2 fw-semibold d-inline-block position-relative"
+                style="letter-spacing: 1px; color: #2c3e50; font-size: 1.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                <p style="font-size: 14px; margin: 0;">
+                    Orden: 
+                    <span style="color: #007bff; font-weight: bold;"><%= otrabajo %></span> — 
+                    <span style="color: #5a0505; font-weight: bold;"><%= descripcion %></span>
+                </p>
+                <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+            </h3>
         </div>
+        </div>
+
+
+
+
 
 <div id="gantt_container">
 
@@ -357,7 +353,13 @@
                     
                     <label for="taskDuration">Duración (días):</label>
                     <input type="number" id="taskDuration" min="1" name="taskDuration" required placeholder="Ingrese la duración en días">
-                    
+
+                    <label for="taskStartReal">Fecha Real de inicio:</label>
+                    <input type="date" id="taskStartReal" name="taskStartReal">
+
+                    <label for="taskStartFin">Fecha Fin:</label>
+                    <input type="date" id="taskStartFin" name="taskStartFin">
+
                     <button type="submit" id="addTaskButton">Agregar Tarea</button>
 
                     <div class="form-feedback" id="formFeedback"></div>
@@ -410,13 +412,36 @@
                         return task.task;
                     }
                 },
-                { name: "text", label: "<span style='font-size: 14px;'><b>Actividad</b></span>", align: "left", width: 250 },
-                { name: "start_date", label: "<b>Inicio</b>", align: "left", width: 100,
+                { name: "text", label: '<span style="font-size:12px; font-weight:bold;">Actividad</span>', align: "left", width: 150 },
+                { name: "start_date", label: "<b>Inicio</b>",  align: "left", width: 80,
                         template: function(task) {
-                        return `<span style="color: #0000ff; font-weight: bold;">${gantt.date.date_to_str("%d-%m-%Y")(task.start_date)}</span>`;
+                        return `<span style="color: #0000ff; font-weight: bold; font-size: 10px;">${gantt.date.date_to_str("%d-%m-%Y")(task.start_date)}</span>`;
                     }
-                 },
-                { name: "duration", label: "<b>D</b>", align: "center", width: 30 },
+                },
+                { 
+                    name: "fecha_inicio", label: "<b>Inicio Real</b>", label: '<span style="font-size:12px; font-weight:bold;">Real</span>', align: "left", width: 80,
+                    template: function(task) {
+                        return task.fecha_inicio 
+                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_inicio)}</span>`
+                            : `<span style="color: #888888;">N/A</span>`;
+                    }
+                },
+                { 
+                    name: "fecha_fin", label: "<b>Fecha Fin</b>", label: '<span style="font-size:12px; font-weight:bold;">Fin</span>', align: "left", width: 80,
+                    template: function(task) {
+                        return task.fecha_fin 
+                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_fin)}</span>`
+                            : `<span style="color: #888888;">N/A</span>`;
+                    }
+                },
+                { 
+                    name: "termina", label: "<b>Termina</b>", label: '<span style="font-size:12px; font-weight:bold;">Termina</span>', align: "left", width: 80,
+                    template: function(task) {
+                        return task.termina 
+                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.termina)}</span>`
+                            : `<span style="color: #888888;">N/A</span>`;
+                    }
+                },                
                 
             ];
 
@@ -592,18 +617,22 @@
                         // Calcula máximos
                         maxTaskId = Math.max(...data.tasks.map(task => task.id));
                         maxTaskCode = Math.max(...data.tasks.map(task => task.task));
-                        const ganttData = data.tasks.map(task => {
-                            return {
-                                id: task.id,
-                                task: task.task,
-                                text: task.text,
-                                start_date: new Date(task.start_date).toISOString().split('T')[0],    
-                                duration: task.duration,
-                                progress: task.progress,
-                                type: task.type,
-                                color: task.color || '',
-                            };
-                        });
+
+                    const ganttData = data.tasks.map(task => {
+                        return {
+                            id: task.id,
+                            task: task.task,
+                            text: task.text,
+                            start_date: new Date(task.start_date),
+                            fecha_inicio: task.fecha_inicio ? new Date(task.fecha_inicio) : null,
+                            fecha_fin: task.fecha_fin ? new Date(task.fecha_fin) : null,
+                            termina: task.termina ? new Date(task.termina) : null,
+                            duration: task.duration,
+                            progress: task.progress,
+                            type: task.type,
+                            color: task.color || '',
+                        };
+                    });                        
 
                         // Cambiar el tamaño de letra del texto dentro de la barra de tareas --- tamaño texto barraS
                         gantt.templates.task_text = function(start, end, task) {
@@ -655,7 +684,8 @@
                 const name = document.getElementById("taskName").value.trim();
                 const startDate = document.getElementById("taskStartDate").value;
                 const duration = document.getElementById("taskDuration").value;
-
+                const StartReal = document.getElementById("taskStartReal").value;
+                const StartFin = document.getElementById("taskStartFin").value;
                 if (!name || !startDate || !duration || parseInt(duration) < 1) {
                     formFeedback.textContent = "Por favor, complete todos los campos correctamente.";
                     formFeedback.style.color = "red";
@@ -713,6 +743,6 @@
                 document.getElementById('customTooltip').style.display = "none";
             });
         </script>  
-
+    </div>
 </body>
 </html>

@@ -587,12 +587,11 @@ app.get('/barravarios', async (req, res) => {
             LEFT JOIN tbl_acabados e ON a.idcc = e.idpz
             LEFT JOIN tbl_actividad f ON a.idcc = f.idot
             LEFT JOIN items g ON a.idcc = g.ocompra 
-                AND (g.si <> '' OR g.no_ <> '' OR g.na <> '' OR g.observacion <> '') 
+                AND (g.no_ <> '' OR g.na <> '' OR g.observacion <> '') 
             LEFT JOIN tbl_cliente b ON a.cliente = b.nit
             LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
             WHERE a.idcc = ?
         `, [id]);
-
         if (!rows.length) return res.send('No hay datos');
 
         const row = rows[0];
@@ -718,7 +717,7 @@ app.get('/barravarios', async (req, res) => {
         console.error('Error real:', error);
         res.status(500).send('Error conectando a la base de datos.');
     }
-});
+}); 
 
 
 
@@ -1413,7 +1412,13 @@ app.post('/piezas', async (req, res) => {
 
         // Obtener actualizados
         const idot = req.body.codigo;
-        const [piezas] = await pool.execute(`SELECT * FROM tbl_piezas order by id`);
+        const [piezas] = await pool.execute(
+          `
+          Select *
+          FROM tbl_piezas
+          where idpz = ?
+          order by id;
+          `, [idot]);        
         res.render('piezas', {
             idot,
             mensaje,
@@ -1642,7 +1647,7 @@ app.get('/respuesta', async (req, res) => {
 
 app.post('/respuesta', async (req, res) => {
   try {
-    let { idot, taskname, taskStartDate, taskDuration, descripcion } = req.body;
+    let { idot, taskname, taskStartDate, taskDuration, descripcion, taskStartReal, taskStartFin } = req.body;
 
     if (!idot || (typeof idot !== 'string' && typeof idot !== 'number')) {
       return res.status(400).send('IDOT inválido');
@@ -1668,12 +1673,12 @@ app.post('/respuesta', async (req, res) => {
     // Ejecutar las dos inserciones en paralelo
     await Promise.all([
       pool.execute(
-        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [ultid, ulttask, idot, `${taskname} (Planificada)`, taskStartDate, taskDuration, 1, 'Principal']
+        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [ultid, ulttask, idot, `${taskname} (Planificada)`, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 1, 'Principal']
       ),
       pool.execute(
-        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [ultid + 1, ulttask, idot, taskname, taskStartDate, taskDuration, 0, 'Real']
+        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [ultid + 1, ulttask, idot, taskname, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 0, 'Real']
       )
     ]);
 
@@ -2018,6 +2023,7 @@ app.get('/progresogralT', async (req, res) => {
 
 /*  tareas */
 
+
 app.post('/tareas', async (req, res) => {
     try {
       // Realizamos la consulta a la base de datos
@@ -2028,8 +2034,33 @@ app.post('/tareas', async (req, res) => {
         tasks: rows.map((row, index) => {
         // Asignamos un color basado en el tipo (row.type)
         let color = "#32CD32"; // Valor predeterminado 
+
+        if (row.fecha_inicio > row.start_date) {
+          color = "#FFD700";
+        }        
+
+        // Asegura que start_date sea una instancia Date
+        const startDate = new Date(row.start_date);
+        let fechaFormateada = formatoFechaYYYYMMDD(startDate);
+        let hoy = getHoyBogota();
+        let { date: fechaIniDate, formatted: fechaIniFormateada } = formatearFechaBogota(row.fecha_inicio);
+        let { date: fechaFinDate, formatted: fechaFinFormateada } = formatearFechaBogota(row.fecha_fin);
+
+        console.log('aaaaaaaaaaaaa');
+        console.log("Fecha start:", fechaFormateada);  // ✅ "2025/09/04"
+        console.log(hoy);  // "2025/09/03"
+        console.log("Fecha Ini:", fechaIniFormateada);
+        console.log("Fecha fin:", fechaFinFormateada);
+        console.log('bbbbbbbbbbbbbb');
+
+        const fchterm = sumarDias(fechaFormateada, row.duration-1);
+        console.log("Fecha termina:", fchterm);
+        if (fechaFinFormateada === null && fchterm < hoy) {
+            color = "#FF6347";
+        }       
+
         if (row.type === "Principal") {
-          color = "#0000FF";  // Verde para tareas planificadas  0000FF
+          color = "#0000FF";  // Verde para tareas planificadas  0000FF       row.duration
         } else if (row.type === "in-progress") {
           color = "#FFD700";  // Amarillo para tareas en progreso
         } else if (row.type === "completed") {
@@ -2042,9 +2073,12 @@ app.post('/tareas', async (req, res) => {
           task: row.task || 1, // Ajusta esto según el nombre de la columna en tu base de datos
           text: row.text || "Tarea sin descripción", // Ajusta según el nombre de la columna
           start_date: row.start_date || "2025-02-12", // Ajusta según el nombre de la columna
+          fecha_inicio: row.fecha_inicio || null, // Ajusta según el nombre de la columna
+          fecha_fin: row.fecha_fin || null, // Ajusta según el nombre de la columna
           duration: row.duration || 6, // Ajusta según el nombre de la columna
           progress: row.progress || 0, // Ajusta según el nombre de la columna
           type: row.type, // O ajusta según lo que corresponda en tu base de datos
+          termina: fchterm,
           color: color
           //color: row.color || "#32CD32" // Ajusta según el nombre de la columna, si tienes uno
         };  
@@ -4198,7 +4232,7 @@ app.get('/respmod', async (req, res) => {
   const descripcion = req.query.descripcion;
 
   const [acti] = await pool.execute(
-    `SELECT id, task, text, duration, start_date FROM tbl_actividad WHERE type = 'Principal' AND idot = ?`,
+    `SELECT id, task, text, duration, start_date, fecha_inicio, fecha_fin FROM tbl_actividad WHERE type = 'Principal' AND idot = ?`,
     [idot]
   );
   const mensaje = req.session.mensaje;
@@ -4206,12 +4240,24 @@ app.get('/respmod', async (req, res) => {
 });
 
 app.post('/modificar-actividad', async(req, res) => {
-  const { id, task, text, start_date, duration, idot, descripcion } = req.body;  
+  let {
+  id,
+  task,
+  text,
+  start_date,
+  duration,
+  idot,
+  descripcion,
+  fecha_inicio,
+  fecha_fin
+  } = req.body;  
+  fecha_inicio = fecha_inicio === '' ? null : fecha_inicio;
+  fecha_fin = fecha_fin === '' ? null : fecha_fin;
   try {
     // actualiza una actividad específica
     await pool.execute(
-      `UPDATE tbl_actividad SET text = ?, start_date = ?, duration = ? WHERE idot = ? and task = ?`,
-      [text, start_date, duration, idot, task]
+      `UPDATE tbl_actividad SET text = ?, start_date = ?, fecha_inicio = ?, fecha_fin = ?,  duration = ? WHERE idot = ? and task = ?`,
+      [text, start_date, fecha_inicio, fecha_fin, duration, idot, task]
     );
 
     req.session.mensaje = {
@@ -5242,6 +5288,7 @@ app.post('/generar-pdf', async (req, res) => {
                 a.no, a.aspecto, a.si, a.no_, a.na, a.observacion
           FROM items_hist a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
           WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fechaISO, fechafISO, doc_id, tip_func]);
@@ -5324,6 +5371,30 @@ app.post('/generar-pdf', async (req, res) => {
               }
             });
 
+// Aquí insertas la firma y texto antes del cambio de página
+if (row.firma_base64) {
+  let firmaImg = row.firma_base64;
+  if (!firmaImg.startsWith('data:image')) {
+    firmaImg = `data:image/png;base64,${firmaImg}`;
+  }
+
+  // Firma
+  content.push({
+    image: firmaImg,
+    width: 120,
+    height: 50,
+    margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
+  });
+
+  // Línea + Aceptado
+  content.push({
+    text: '________________________\nAceptado',
+    alignment: 'left',
+    margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
+    fontSize: 10
+});
+}
+
             lastFecha = fechaKey;
           }
 
@@ -5386,8 +5457,7 @@ app.post('/generar-pdf', async (req, res) => {
           mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
         });
   }
-}); 
-
+});
 
 // pdf total
 
@@ -5732,29 +5802,30 @@ app.post('/generar-pdfsem', async (req, res) => {
                 }
               }
             });
-// ⬇️ Aquí insertas la firma y texto antes del cambio de página
-if (row.firma_base64) {
-  let firmaImg = row.firma_base64;
-  if (!firmaImg.startsWith('data:image')) {
-    firmaImg = `data:image/png;base64,${firmaImg}`;
-  }
 
-  // Firma
-  content.push({
-    image: firmaImg,
-    width: 120,
-    height: 50,
-    margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
-  });
+            // ⬇️ Aquí insertas la firma y texto antes del cambio de página
+            if (row.firma_base64) {
+              let firmaImg = row.firma_base64;
+              if (!firmaImg.startsWith('data:image')) {
+                firmaImg = `data:image/png;base64,${firmaImg}`;
+              }
 
-  // Línea + Aceptado
-  content.push({
-    text: '________________________\nAceptado',
-    alignment: 'left',
-    margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
-    fontSize: 10
-});
-}
+              // Firma
+              content.push({
+                image: firmaImg,
+                width: 120,
+                height: 50,
+                margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
+              });
+
+              // Línea + Aceptado
+              content.push({
+                text: '________________________\nAceptado',
+                alignment: 'left',
+                margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
+                fontSize: 10
+            });
+            }
             lastFecha = fechaKey;
           }
 
@@ -5818,6 +5889,207 @@ if (row.firma_base64) {
         });
   }
 });
+
+app.post('/generar-pdfsemT', async (req, res) => {
+  let conn;
+  try {
+        const { fecha, doc_id, func, tip_func } = req.body;
+        if (!fecha) {
+          // Redirige con mensaje de error
+          return res.render('inspeccion', {
+            mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+          });
+        }
+        const fechaf = '2100-01-01'; // Límite superior arbitrario muy lejano
+
+        conn = await pool.getConnection();
+        
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const totalRegistros = countResult[0].totalRegistros;
+        if (totalRegistros === 0) {
+          conn.release();
+          return res.render('inspeccion', {
+            mensaje: {  
+              tipo: 'danger',
+              texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
+            }
+          });
+        }    
+        const [rows] = await pool.query(`
+          SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
+                a.no, a.aspecto, a.si, a.no_, a.na, a.observacion, c.firma_base64
+          FROM items a
+          LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+          LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
+          WHERE fecha_inspeccion >= ? AND fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
+          ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+        `, [fecha, fechaf, doc_id, tip_func]);
+        const fonts = {
+          Roboto: {
+            normal: path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'),
+            bold: path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'),
+            italics: path.join(__dirname, 'fonts', 'Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, 'fonts', 'Roboto-BoldItalic.ttf'),
+          }
+        };
+        const printer = new PdfPrinter(fonts);
+        const content = [];
+
+        let lastFuncionario = '';
+        let lastFecha = '';
+        let currentTableBody = null;
+        for (const row of rows) {
+          const funcionarioKey = `${row.func_doc}|${row.ocompra}`;
+          const fechaKey = new Date(row.fecha_inspeccion).toISOString().slice(0, 10); // formato 'YYYY-MM-DD'
+
+          // Nuevo grupo de funcionario y centro de costo
+
+
+          // Nueva fecha de inspección
+
+          if (fechaKey !== lastFecha) {
+            if (lastFecha !== '') {
+              content.push({ text: '', pageBreak: 'before' });
+            }
+
+            // Mostrar Funcionario y Centro de Costo en cada página por día
+            content.push({ text: `Funcionario: ${row.funcionario} (${row.func_doc})`, style: 'header' });
+            content.push({ text: `Centro de Costo: ${row.ocompra}` });
+            content.push({ text: '\n' });
+
+            // Fecha
+            content.push({
+              text: `Fecha inspección: ${new Date(row.fecha_inspeccion).toLocaleDateString('es-CO')}`,
+              style: 'fecha'
+            });
+            
+            currentTableBody = [
+              [
+                { text: 'Id', style: 'tableHeader' },
+                { text: 'Aspecto', style: 'tableHeader' },
+                { text: 'SI', style: 'tableHeader' },
+                { text: 'NO', style: 'tableHeader' },
+                { text: 'NA', style: 'tableHeader' },
+                { text: 'Observación', style: 'tableHeader' }
+              ]
+            ];
+
+            content.push({
+              table: {
+                headerRows: 1,
+                widths: ['auto', '*', 'auto', 'auto', 'auto', '*'],
+                body: currentTableBody
+              },
+              layout: {
+                hLineWidth: function () {
+                  return 0.5;
+                },
+                vLineWidth: function () {
+                  return 0.5;
+                },
+                hLineColor: function () {
+                  return '#aaa';
+                },
+                vLineColor: function () {
+                  return '#aaa';
+                },
+                paddingLeft: function () {
+                  return 5;
+                },
+                paddingRight: function () {
+                  return 5;
+                }
+              }
+            });
+            
+            // ⬇️ Aquí insertas la firma y texto antes del cambio de página
+            if (row.firma_base64) {
+              let firmaImg = row.firma_base64;
+              if (!firmaImg.startsWith('data:image')) {
+                firmaImg = `data:image/png;base64,${firmaImg}`;
+              }
+
+              // Firma
+              content.push({
+                image: firmaImg,
+                width: 120,
+                height: 50,
+                margin: [0, 20, 0, 0]  // ⬅️ margen inferior muy pequeño
+              });
+
+              // Línea + Aceptado
+              content.push({
+                text: '________________________\nAceptado',
+                alignment: 'left',
+                margin: [0, 0, 0, 0],  // ⬅️ margen superior muy pequeño
+                fontSize: 10
+            });
+            }
+            lastFecha = fechaKey;
+          }
+
+          // Fila de datos
+          currentTableBody.push([
+            row.no,
+            row.aspecto,
+            row.si || '',
+            row.no_ || '',
+            row.na || '',
+            row.observacion || ''            
+          ]);
+        }
+
+        const docDefinition = {
+          content,
+          styles: {
+            header: {
+              bold: true,
+              fontSize: 12,
+              margin: [0, 10, 0, 5]
+            },
+            fecha: {
+              bold: true,
+              fontSize: 11,
+              margin: [0, 10, 0, 5]
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 11,
+              color: 'black'
+            }
+          },
+          defaultStyle: {
+            fontSize: 10
+          },
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          pageMargins: [40, 60, 40, 40],
+          footer: function(currentPage, pageCount) {
+            return {
+              text: `Página ${currentPage} de ${pageCount}`,
+              alignment: 'right',
+              margin: [0, 0, 40, 20],
+              fontSize: 9
+            };
+          }
+        };
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=informe.pdf');
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+        
+        conn.release();
+  } catch (error) {
+        if (conn) conn.release();
+        console.error('Error ejecutando SP:', error);
+        res.render('inspeccioncfg', {
+          mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
+        });
+  }
+});
+
+/** **/
 
 app.get('/pendientes', async (req, res) => {
   const [rows] = await pool.query(`
@@ -6201,6 +6473,83 @@ app.post('/proveedor/delete/:id', async (req, res) => {
   });
 });  
 
+function getHoyBogota() {
+  const opciones = {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  };
+
+  const formatter = new Intl.DateTimeFormat('es-CO', opciones);
+  const fecha = formatter.format(new Date()); // Esto da DD/MM/YYYY
+  const [dia, mes, anio] = fecha.split('/');
+
+  return `${anio}/${mes}/${dia}`;  // YYYY/MM/DD
+}
+
+function calcularFechaFormateadaBogota(startDateInput, dias) {
+  if (!startDateInput) return null;
+
+  // Convertimos a Date
+  const fechaUTC = new Date(startDateInput);
+  if (isNaN(fechaUTC.getTime())) return null;
+
+  // Convertir a Bogotá sin adelantar día
+  const fechaBogota = new Date(
+    fechaUTC.toLocaleString('en-US', { timeZone: 'America/Bogota' })
+  );
+
+  // Forzar la hora a 00:00:00 en Bogotá para evitar adelantos por hora
+  fechaBogota.setHours(0, 0, 0, 0);
+
+  // Sumar los días
+  fechaBogota.setDate(fechaBogota.getDate() + dias);
+
+  // Formatear como YYYY/MM/DD
+  const year = fechaBogota.getFullYear();
+  const month = String(fechaBogota.getMonth() + 1).padStart(2, '0');
+  const day = String(fechaBogota.getDate()).padStart(2, '0');
+
+  return `${year}/${month}/${day}`;
+}
+
+function formatearFechaBogota(fechaInput) {
+  if (!fechaInput) return { date: null, formatted: null };
+
+  const fecha = new Date(fechaInput);
+  if (isNaN(fecha.getTime())) return { date: null, formatted: null };
+
+  // Ajuste a zona horaria Bogotá
+  const fechaBogota = new Date(
+    fecha.toLocaleString('en-US', { timeZone: 'America/Bogota' })
+  );
+
+  // Formato YYYY/MM/DD
+  const year = fechaBogota.getFullYear();
+  const month = String(fechaBogota.getMonth() + 1).padStart(2, '0');
+  const day = String(fechaBogota.getDate()).padStart(2, '0');
+
+  const formatted = `${year}/${month}/${day}`;
+
+  return { date: fechaBogota, formatted };
+}
+
+function formatoFechaYYYYMMDD(fecha) {
+  // Asegura que la fecha sea un objeto Date válido
+  const dateObj = new Date(fecha);
+  if (isNaN(dateObj.getTime())) return null;
+
+  const iso = dateObj.toISOString();  // Ej: "2025-09-04T05:00:00.000Z"
+  return `${iso.slice(0, 4)}/${iso.slice(5, 7)}/${iso.slice(8, 10)}`;
+}
+
+function sumarDias(fechaStr, dias) {
+  const [year, month, day] = fechaStr.split('/').map(Number);
+  const fecha = new Date(year, month - 1, day);
+  fecha.setDate(fecha.getDate() + dias);
+  return formatoFechaYYYYMMDD(fecha); // ya definida antes
+}
 
 // Puerto de escucha salida
 server.listen(PORT, '0.0.0.0', () => {

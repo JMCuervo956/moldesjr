@@ -366,6 +366,17 @@
             <input type="number" class="form-control" id="duracionActividad" name="duration" min="1" required>
           </div>
 
+          <div class="mb-3">
+            <label for="fechaInicio" class="form-label">Fecha Inicio Real</label>
+            <input type="date" class="form-control" id="fechaInicio" name="fecha_inicio">
+          </div>
+
+          <div class="mb-3">
+            <label for="fechaFinal" class="form-label">Fecha Final</label>
+            <input type="date" class="form-control" id="fechaFinal" name="fecha_fin">
+          </div>
+
+
           <input type="hidden" id="idActividad" name="id">
           <input type="hidden" name="idot" value="<%= idot %>">
           <input type="hidden" name="descripcion" value="<%= descripcion %>">
@@ -404,10 +415,27 @@
             const d = new Date(fecha);
             fecha = d.toISOString().split('T')[0]; // Asegura el formato YYYY-MM-DD
           }
+          let fechaR = actividad.fecha_inicio;
+          if (fechaR) {
+            const d = new Date(fechaR);
+            fechaR = d.toISOString().split('T')[0]; // Asegura el formato YYYY-MM-DD
+          }
+          let fechaI = actividad.fecha_fin;
+          if (fechaI) {
+            const d = new Date(fechaI);
+            fechaI = d.toISOString().split('T')[0]; // Asegura el formato YYYY-MM-DD
+          }
+
+
           const task = actividad.task;
           // Llena los campos del formulario
           document.getElementById('descripcionActividad').value = actividad.text;
           document.getElementById('fechaActividad').value = fecha || '';
+          document.getElementById('fechaInicio').value = fechaR || '';
+          document.getElementById('fechaFinal').value = fechaI || '';
+
+          fechaInicio
+          fechaFinal
           document.getElementById('duracionActividad').value = actividad.duration;
           document.getElementById('idActividad').value = actividad.id; // Asegúrate de tener el id
           document.getElementById('taskActividad').value = actividad.task || '';
@@ -420,6 +448,9 @@
         function guardarCambios() {
           const text = document.getElementById('descripcionActividad').value;
           const start_date = document.getElementById('fechaActividad').value;
+          const fecha_inicio = document.getElementById('fechaInicio').value;
+          const fecha_fin = document.getElementById('fechaFinal').value;
+
           const duration = document.getElementById('duracionActividad').value;
           const id = document.getElementById('idActividad').value;
           const task = document.getElementById('taskActividad').value;
