@@ -632,7 +632,6 @@ document.querySelectorAll('.btn-show-observacion').forEach(btn => {
     botones.forEach(boton => {
       const fechaStr = boton.dataset.fecha;
       const fechaBoton = new Date(fechaStr);
-      console.log(diasverif);
       fechaBoton.setDate(fechaBoton.getDate() + diasverif);
       const opciones = { weekday: 'long', timeZone: 'America/Bogota' };
       const nombreDia = fechaBoton.toLocaleDateString('es-CO', opciones);

@@ -375,8 +375,10 @@
                 <td colspan="3">
                   <div class="btns-row">
                     <button type="submit" class="btn btn-success btn-table">Generar PDF</button>
-<!--                    <a href="#" id="btn-excel" class="modern-btn btn-verde" role="button" tabindex="0">📥 Excel</a> -->
+
                     <button type="button" id="btn-pdftot" class="btn btn-primary btn-table"> PDF Total</button>
+
+                    <button type="button" id="btn-pdftots" class="btn btn-primary btn-table"> PDF Semana</button>
 
                   </div>
                 </td>
@@ -459,6 +461,45 @@
   });
 </script>
 
+<script>
+  document.getElementById("btn-pdftots").addEventListener("click", function () {
+    const fecha = document.getElementById("fecha").value;
+    const docId = document.getElementById("doc-id").value;
+    const tipFunc = document.getElementById("tip-func").value;
+
+    if (!fecha || !docId || !tipFunc) {
+      alert("Por favor, completa todos los campos (Fecha, Documento y Orden).");
+      return;
+    }
+
+    // Crear y enviar formulario dinámico
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/generar-pdfsemT";
+
+    const inputFecha = document.createElement("input");
+    inputFecha.type = "hidden";
+    inputFecha.name = "fecha";
+    inputFecha.value = fecha;
+
+    const inputDocId = document.createElement("input");
+    inputDocId.type = "hidden";
+    inputDocId.name = "doc_id";
+    inputDocId.value = docId;
+    form.appendChild(inputDocId);
+
+    const inputTipFunc = document.createElement("input");
+    inputTipFunc.type = "hidden";
+    inputTipFunc.name = "tip_func";
+    inputTipFunc.value = tipFunc;
+    form.appendChild(inputTipFunc);
+
+    
+    form.appendChild(inputFecha);
+    document.body.appendChild(form);
+    form.submit();
+  });
+</script>
   
 </body>
 </html>

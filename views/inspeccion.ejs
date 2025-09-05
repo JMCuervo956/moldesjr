@@ -337,7 +337,6 @@ td.sticky-col-2 {
   });
 </script>  
 
-
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const botones = document.querySelectorAll('.btn-ir-a-detalle');
@@ -353,12 +352,26 @@ td.sticky-col-2 {
     ahoraEnBogota.setHours(0, 0, 0, 0);
 
     botones.forEach(boton => {
+
+//  - normal inicial      
       const fechaStr = boton.dataset.fecha;
       const fechaBoton = new Date(fechaStr);
       fechaBoton.setHours(0, 0, 0, 0);
-
       if (ahoraEnBogota > fechaBoton) {
-        // Buscar el div que contiene la fecha dentro del botón
+      // activar boton de dia
+
+//  - la semana
+//        const ayer = new Date();
+//        ayer.setDate(ayer.getDate() - 1);
+
+//        // Normaliza la fecha a las 00:00 para evitar errores por hora
+//        ayer.setHours(0, 0, 0, 0);
+//        fechaBoton.setHours(0, 0, 0, 0);
+//        // Desactiva fechas anteriores a AYER
+//        if (fechaBoton < ayer) {        
+
+
+              // Marcar visualmente
         const divs = boton.querySelectorAll('div');
         const divFecha = Array.from(divs).find(div => div.textContent.trim() === fechaStr);
 

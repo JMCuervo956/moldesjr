@@ -98,6 +98,10 @@
     outline: none;
   }
 
+  .reducir-espacio {
+    margin-bottom: 0px !important;
+  }
+
     </style>
 
 </head>
@@ -168,7 +172,6 @@
                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.tipo_id %></td>
                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.identificador %></td>
                               <td class="text-center" style="padding: 2px 4px; font-size: 14px; vertical-align: middle;"><%= efuncional.funcionario %></td>
-
                               <%
                               const estado = efuncional.destado;
                               const esBloqueado = estado === "Bloqueado";
@@ -243,20 +246,14 @@
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
             <form action="/efuncional" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
-              <div class="modal-header" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
-                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar</h5>
-                <div>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </div>
+              <div class="modal-header" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3; padding-top: 0.3rem; padding-bottom: 0.3rem;">
+                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.1rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
               </div>
-
               <div class="modal-body">
 
                 <input type="hidden" name="editando" id="editando" value="false">
 
-                <div class="form-row">
+                <div class="form-row reducir-espacio">
                   <label for="tipo_id">Tipo Documento</label>
                   <!-- tipo_id visible -->
                   <select class="form-control form-control-sm" name="tipo_id_visible" id="tipo_id_visible" required>
@@ -267,8 +264,8 @@
                   </select>
                 </div>
 
-                <div class="form-row">
-                  <label for="documento">Numero Documento</label>
+                <div class="form-row reducir-espacio">
+                  <label for="documento">Documento</label>
                   <!-- documento visible -->
                   <input type="text" 
                     class="form-control form-control-sm input-con-sombra" 
@@ -284,8 +281,7 @@
                 <input type="hidden" id="tipo_id" name="tipo_id">
                 <input type="hidden" id="documento" name="documento">
 
-
-                <div class="form-row">
+                <div class="form-row reducir-espacio">
                   <label for="funcionario">Funcionario</label>
                   <input type="text" 
                   class="form-control form-control-sm input-con-sombra" 
@@ -295,7 +291,7 @@
                   required>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row reducir-espacio">
                   <label for="perfil">Perfil</label>
                   <select class="form-control form-control-sm" name="perfil" id="perfil" required>
                     <option value="">Seleccione perfil.........</option>
@@ -305,7 +301,7 @@
                   </select>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row reducir-espacio">
                   <label for="estado">Estado</label>
                   <select class="form-control form-control-sm" name="estado" id="estado" required>
                     <option value="">Seleccione Estado.........</option>
@@ -314,7 +310,96 @@
                     <% }) %>
                   </select>
                 </div>
-                               
+
+                <div class="form-row reducir-espacio">
+                  <label for="correo">Correo</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="correo" 
+                  id="correo" 
+                  maxlength="100">
+                </div>
+
+                <div class="form-row reducir-espacio">
+                  <label for="telefono">Telefono</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="telefono" 
+                  id="telefono" 
+                  maxlength="50">
+                </div>
+
+                <div class="form-row reducir-espacio">
+                  <label for="fecha_nac">Fecha Nacimiento</label>
+                  <input type="date" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="fecha_nac" 
+                  id="fecha_nac">
+                </div>
+
+                <div class="form-row reducir-espacio">
+                  <label for="genero">Genero</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="genero" 
+                  id="genero" 
+                  maxlength="15">
+                </div>                
+
+                <div class="form-row reducir-espacio">
+                  <label for="direccion">Dirección</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="direccion" 
+                  id="direccion" 
+                  maxlength="150">
+                </div>                
+
+                <div class="form-row reducir-espacio">
+                  <label for="estado">Ciudad</label>
+                  <select class="form-control form-control-sm" name="ciudad" id="ciudad" required>
+                    <option value="">Seleccione Ciudad</option>
+                    <% ciudadf.forEach(p => { %>
+                      <option value="<%= p.iso_ciudad %>"><%= p.nombre %></option>
+                    <% }) %>
+                  </select>
+                </div>                
+
+                <div class="form-row reducir-espacio">
+                  <label for="fecha_ingreso">Fecha Ingreso</label>
+                  <input type="date" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="fecha_ingreso" 
+                  id="fecha_ingreso">
+                </div>                
+
+                <div class="form-row reducir-espacio">
+                  <label for="eps">EPS</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="eps" 
+                  id="eps" 
+                  maxlength="100">
+                </div>   
+
+                <div class="form-row reducir-espacio">
+                  <label for="arl">ARL</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="arl" 
+                  id="arl" 
+                  maxlength="100">
+                </div>   
+
+                <div class="form-row reducir-espacio">
+                  <label for="tipo_contrato">Tipo Contrato</label>
+                  <input type="text" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="tipo_contrato" 
+                  id="tipo_contrato" 
+                  maxlength="30">
+                </div>   
+                
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
@@ -323,6 +408,7 @@
             </form>
           </div>
         </div>
+        
       </div>
 
   <%- include('partials/footer') %>
@@ -402,6 +488,16 @@
       document.getElementById('funcionario').value = efuncional.funcionario;
       document.getElementById('perfil').value = efuncional.perfil;
       document.getElementById('estado').value = efuncional.estado;
+      document.getElementById('correo').value = efuncional.email;
+      document.getElementById('telefono').value = efuncional.telefono;
+      document.getElementById('fecha_nac').value = formatFecha(efuncional.fecha_nac);
+      document.getElementById('genero').value = efuncional.genero;
+      document.getElementById('direccion').value = efuncional.direccion;
+      document.getElementById('ciudad').value = efuncional.ciudad;
+      document.getElementById('fecha_ingreso').value = formatFecha(efuncional.fecha_ingreso) ;
+      document.getElementById('eps').value = efuncional.eps;
+      document.getElementById('arl').value = efuncional.arl;
+      document.getElementById('tipo_contrato').value = efuncional.tipo_contrato;
     }
 
     function limpiarFormularioCiudad() {
@@ -410,6 +506,16 @@
       document.getElementById('funcionario').value = "";
       document.getElementById('perfil').value = "";
       document.getElementById('estado').value = "";
+      document.getElementById('correo').value = "";
+      document.getElementById('telefono').value = "";
+      document.getElementById('fecha_nac').value = "";
+      document.getElementById('genero').value = "";
+      document.getElementById('direccion').value = "";
+      document.getElementById('ciudad').value = "";
+      document.getElementById('fecha_ingreso').value = "";
+      document.getElementById('eps').value = "";
+      document.getElementById('arl').value = "";
+      document.getElementById('tipo_contrato').value = "";
       document.getElementById('editando').value = "false";
       // Indicar que no está en modo edición
       document.getElementById('editando').value = "false";
@@ -432,6 +538,17 @@
       document.getElementById('confirmarEliminarLink').href = `/efuncional/delete/${id}/${nombre}`;
       $('#modalConfirmarEliminar').modal('show');
     }
+
+    function formatFecha(fechaTexto) {
+        if (!fechaTexto || isNaN(Date.parse(fechaTexto))) {
+            return '';
+        }
+        const fecha = new Date(fechaTexto);
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }    
 
     // Auto cerrar la alerta luego de 5 segundos
     window.onload = function () {

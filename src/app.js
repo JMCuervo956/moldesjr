@@ -201,7 +201,26 @@ app.get('/menuprc', requireSession, async (req, res) => {
       [user]
     );
     const modulosPermitidos = rows.map(row => row.module);
-    res.render('menuprc', { user, name, rol, userUser, modulos: modulosPermitidos });
+
+    const desdeLogin = req.session.reciénLogueado;
+    req.session.reciénLogueado = false;
+
+    const usuariosConPermiso = ['admin', 'moldes', 'pjose'];
+    let cumpleaneros = [];
+    if (desdeLogin && usuariosConPermiso.includes(user)) {
+      const hoy = new Date(fechaHoraBogota);
+      const mes = hoy.getMonth() + 1;
+      const dia = hoy.getDate();
+
+      const [cumples] = await pool.execute(
+        `SELECT funcionario, email FROM tbl_efuncional 
+         WHERE DAY(fecha_nac) = ? AND MONTH(fecha_nac) = ? AND estado = 1`,
+        [dia, mes]
+      );
+      cumpleaneros = cumples;
+    }
+
+    res.render('menuprc', { user, name, rol, userUser, modulos: modulosPermitidos, cumpleaneros });
 
   } catch (error) {
     console.error('Error en /menuprc:', error.message);
@@ -210,9 +229,7 @@ app.get('/menuprc', requireSession, async (req, res) => {
       texto: 'Ocurrió un error al cargar el menú principal. Intente nuevamente.',
       tipo: 'danger'
     };
-
     res.redirect('/menuprc');
-
   }
 });
 
@@ -2045,16 +2062,7 @@ app.post('/tareas', async (req, res) => {
         let hoy = getHoyBogota();
         let { date: fechaIniDate, formatted: fechaIniFormateada } = formatearFechaBogota(row.fecha_inicio);
         let { date: fechaFinDate, formatted: fechaFinFormateada } = formatearFechaBogota(row.fecha_fin);
-
-        console.log('aaaaaaaaaaaaa');
-        console.log("Fecha start:", fechaFormateada);  // ✅ "2025/09/04"
-        console.log(hoy);  // "2025/09/03"
-        console.log("Fecha Ini:", fechaIniFormateada);
-        console.log("Fecha fin:", fechaFinFormateada);
-        console.log('bbbbbbbbbbbbbb');
-
         const fchterm = sumarDias(fechaFormateada, row.duration-1);
-        console.log("Fecha termina:", fchterm);
         if (fechaFinFormateada === null && fchterm < hoy) {
             color = "#FF6347";
         }       
@@ -2850,10 +2858,11 @@ app.get('/efuncional', async (req, res) => {
             const userUser = req.session.user;
             const userName = req.session.name;
 
-            const [[efuncional], [tipodocl], [estados], [perfilf]] = await Promise.all([
+            const [[efuncional], [tipodocl], [estados], [perfilf], [ciudadf]] = await Promise.all([
             pool.execute(` 
-                SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
-                        b.id as idp, b.perfil as perfilp, c.estado as destado
+                SELECT a.tipo_id,a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, a.email,
+                       a.telefono, a.fecha_nac, a.genero, a.direccion, a.ciudad, a.fecha_ingreso, a.eps, a.arl, a.tipo_contrato,
+                       b.id as idp, b.perfil as perfilp, c.estado as destado
                 FROM tbl_efuncional a
                 JOIN tbl_perfil b ON a.perfil = b.id
                 JOIN tbl_estados c ON a.estado = c.id
@@ -2861,14 +2870,15 @@ app.get('/efuncional', async (req, res) => {
             `),
             pool.execute('SELECT * FROM tbl_tipodoc'),
             pool.execute('SELECT * FROM tbl_estados'),
-            pool.execute('SELECT * FROM tbl_perfil')
+            pool.execute('SELECT * FROM tbl_perfil'),
+            pool.execute('SELECT * FROM tbl_ciudad')
             ]);
             
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
 
-            res.render('efuncional', { efuncional, tipodocl, estados, perfilf, user: userUser, name: userName, mensaje });
+            res.render('efuncional', { efuncional, tipodocl, estados, perfilf, ciudadf, user: userUser, name: userName, mensaje });
         } else {
             res.redirect('/');
         }
@@ -2881,7 +2891,7 @@ app.get('/efuncional', async (req, res) => {
 // Crear o actualizar funcional
 app.post('/efuncional', async (req, res) => {
   try {
-    const { tipo_id, documento, funcionario, perfil, estado, editando } = req.body;
+    const { tipo_id, documento, funcionario, perfil, correo, telefono, fecha_nac, genero, direccion, ciudad, fecha_ingreso, eps, arl, tipo_contrato, estado, editando } = req.body;
 
     const userUser = req.session.user;
     const userName = req.session.name;
@@ -2889,11 +2899,14 @@ app.post('/efuncional', async (req, res) => {
 
     if (editando === "true") {
       // Actualizar
+      const fechaNacVal = fecha_nac ? fecha_nac : null;
+      const fechaIngresoVal = fecha_ingreso ? fecha_ingreso : null;
       await pool.execute(
-        `UPDATE tbl_efuncional SET funcionario = ?, perfil = ?, estado = ? WHERE tipo_id = ? AND identificador = ?`,
-        [funcionario, perfil, estado, tipo_id, documento]
+        `UPDATE tbl_efuncional SET funcionario = ?, perfil = ?, estado = ?, email = ?, 
+         telefono = ?, fecha_nac = ?, genero = ?, direccion = ?, ciudad = ?, fecha_ingreso = ?, eps = ?, arl = ?, tipo_contrato = ? 
+         WHERE tipo_id = ? AND identificador = ?`,
+        [funcionario, perfil, estado, correo, telefono, fechaNacVal, genero, direccion, ciudad, fechaIngresoVal, eps, arl, tipo_contrato, tipo_id, documento]
       );
-
       mensaje = {
         tipo: 'success',
         texto: 'Funcional actualizado exitosamente.'
@@ -2912,11 +2925,14 @@ app.post('/efuncional', async (req, res) => {
         };
       } else {
         // Insertar nuevo
-        await pool.execute(
-          `INSERT INTO tbl_efuncional (tipo_id, identificador, funcionario, perfil, estado)
-           VALUES (?, ?, ?, ?, ?)`,
-          [tipo_id, documento, funcionario, perfil, estado]
-        );
+      const fechaNacVal = fecha_nac ? fecha_nac : null;
+      const fechaIngresoVal = fecha_ingreso ? fecha_ingreso : null;
+      await pool.execute(
+        `INSERT INTO tbl_efuncional (tipo_id, identificador, funcionario, email, perfil, estado,
+          telefono, fecha_nac, genero, direccion, ciudad, fecha_ingreso, eps, arl, tipo_contrato)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [tipo_id, documento, funcionario, correo, perfil, estado, telefono, fechaNacVal, genero, direccion, ciudad, fechaIngresoVal, eps, arl, tipo_contrato]
+      );
 
         mensaje = {
           tipo: 'success',
@@ -2930,10 +2946,12 @@ app.post('/efuncional', async (req, res) => {
       [efuncionalRows],
       [tipodoclRows],
       [estadosRows],
-      [perfilfRows]
+      [perfilfRows],
+      [ciudadfRows]
     ] = await Promise.all([
       pool.execute(`
-        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, a.email,
+               a.telefono, a.fecha_nac, a.genero, a.direccion, a.ciudad, a.fecha_ingreso, a.eps, a.arl, a.tipo_contrato,
                b.id AS idp, b.perfil AS perfilp, c.estado AS destado
         FROM tbl_efuncional a
         JOIN tbl_perfil b ON a.perfil = b.id
@@ -2942,7 +2960,8 @@ app.post('/efuncional', async (req, res) => {
       `),
       pool.execute('SELECT * FROM tbl_tipodoc'),
       pool.execute('SELECT * FROM tbl_estados'),
-      pool.execute('SELECT * FROM tbl_perfil')
+      pool.execute('SELECT * FROM tbl_perfil'),
+      pool.execute('SELECT * FROM tbl_ciudad')
     ]);
 
     res.render('efuncional', {
@@ -2951,6 +2970,7 @@ app.post('/efuncional', async (req, res) => {
       tipodocl: tipodoclRows,
       estados: estadosRows,
       perfilf: perfilfRows,
+      ciudadf: ciudadfRows,
       user: userUser,
       name: userName
     });
@@ -2962,10 +2982,12 @@ app.post('/efuncional', async (req, res) => {
       [efuncionalRows],
       [tipodoclRows],
       [estadosRows],
-      [perfilfRows]
+      [perfilfRows],
+      [ciudadfRows]
     ] = await Promise.all([
       pool.execute(`
-        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, 
+        SELECT a.tipo_id, a.identificador, a.funcionario, a.perfil, a.fechaini, a.estado, a.fechaest, a.email,
+               a.telefono, a.fecha_nac, a.genero, a.direccion, a.ciudad, a.fecha_ingreso, a.eps, a.arl, a.tipo_contrato,
                b.id AS idp, b.perfil AS perfilp, c.estado AS destado
         FROM tbl_efuncional a
         JOIN tbl_perfil b ON a.perfil = b.id
@@ -2974,18 +2996,20 @@ app.post('/efuncional', async (req, res) => {
       `),
       pool.execute('SELECT * FROM tbl_tipodoc'),
       pool.execute('SELECT * FROM tbl_estados'),
-      pool.execute('SELECT * FROM tbl_perfil')
+      pool.execute('SELECT * FROM tbl_perfil'),
+      pool.execute('SELECT * FROM tbl_ciudad')
     ]);
 
     res.status(500).render('efuncional', {
       mensaje: {
         tipo: 'danger',
-        texto: 'Error al procesar la solicitud.'
+        texto: 'Error al procesar la solicitud efuncional'
       },
       efuncional: efuncionalRows,
       tipodocl: tipodoclRows,
       estados: estadosRows,
       perfilf: perfilfRows,
+      ciudadf: ciudadfRows,
       user: req.session.user || '',
       name: req.session.name || ''
     });
@@ -5893,11 +5917,10 @@ app.post('/generar-pdfsem', async (req, res) => {
 app.post('/generar-pdfsemT', async (req, res) => {
   let conn;
   try {
-        const { fecha, doc_id, func, tip_func } = req.body;
-        if (!fecha) {
-          // Redirige con mensaje de error
+        const { fecha, doc_id, tip_func } = req.body;
+        if (!fecha || !doc_id || !tip_func) {
           return res.render('inspeccion', {
-            mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
+            mensaje: { tipo: 'danger', texto: 'Debes completar todos los campos del formulario.' }
           });
         }
         const fechaf = '2100-01-01'; // Límite superior arbitrario muy lejano

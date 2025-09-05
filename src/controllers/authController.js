@@ -20,7 +20,7 @@ export const login = async (req, res) => {
     if (!passwordMatch) {
       return res.json({ status: 'error', message: 'Contraseña incorrecta' });
     }
-
+    req.session.reciénLogueado = true;
     req.session.loggedin = true;
     req.session.user = userRecord.user;
     req.session.name = userRecord.name;

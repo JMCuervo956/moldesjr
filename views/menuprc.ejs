@@ -311,6 +311,21 @@
     <a href="/" class="modern-btn btn-azul">Salir</a>
   </div>
 
+<% if (cumpleaneros && cumpleaneros.length > 0) { %>
+<!-- Modal de cumpleaños -->
+<div id="cumpleModal" class="modal" style="display: block; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+  <div class="modal-content" style="margin: 15% auto; padding: 20px; background: white; border-radius: 10px; width: 50%; text-align: center;">
+    <h2>🎉 ¡Feliz Cumpleaños!</h2>
+    <p>Hoy están de cumpleaños:</p>
+    <ul>
+      <% cumpleaneros.forEach(c => { %>
+        <li><strong><%= c.funcionario %></strong> - <%= c.email %></li>
+      <% }); %>
+    </ul>
+    <button onclick="document.getElementById('cumpleModal').style.display='none'">Cerrar</button>
+  </div>
+</div>
+<% } %>
 
     <div class="content">
       <div style="display: inline;">
