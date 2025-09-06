@@ -205,7 +205,7 @@ app.get('/menuprc', requireSession, async (req, res) => {
     const desdeLogin = req.session.reciénLogueado;
     req.session.reciénLogueado = false;
 
-    const usuariosConPermiso = ['admin', 'moldes', 'pjose'];
+    const usuariosConPermiso = ['admin', 'jmoldes'];
     let cumpleaneros = [];
     if (desdeLogin && usuariosConPermiso.includes(user)) {
       const hoy = new Date(fechaHoraBogota);
