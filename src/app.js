@@ -207,7 +207,7 @@ app.get('/menuprc', requireSession, async (req, res) => {
 
     const usuariosConPermiso = ['admin', 'jmoldes'];
     let cumpleaneros = [];
-    if (desdeLogin && usuariosConPermiso.includes(user)) {
+    if (desdeLogin) {
       const hoy = new Date(fechaHoraBogota);
       const mes = hoy.getMonth() + 1;
       const dia = hoy.getDate();
