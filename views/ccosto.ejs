@@ -631,17 +631,6 @@
       });
     });
   </script>
-  <script>
-    function copiarDatosFormulariossss() {
-      
-      const idccVisible = document.getElementById('idcc_visible');
-      const idccOculto = document.getElementById('idcc');
-
-      idccOculto.value = idccVisible.value;
-
-      return true; // permite el envío del formulario
-    }
-  </script>
 
 <script>
   function copiarDatosFormulario() {
@@ -729,17 +718,6 @@
 
       toggleBotonesModal('modificar');
 
-    }
-
-    function formatFecha1111111111(fechaTexto) {
-        if (!fechaTexto || isNaN(Date.parse(fechaTexto))) {
-            return '';
-        }
-        const fecha = new Date(fechaTexto);
-        const year = fecha.getFullYear();
-        const month = String(fecha.getMonth() + 1).padStart(2, '0');
-        const day = String(fecha.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
     }
 
     function formatFecha(fecha) {

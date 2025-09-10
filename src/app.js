@@ -357,35 +357,18 @@ app.get('/ccosto', async (req, res) => {
 
 app.post('/ccosto', async (req, res) => {
   const conn = await pool.getConnection();
-  console.log('logggggggggggggggggggggggggggggggg');
-  console.log(req.body);
 
-// control null /////////////////////////////////////////////////////
-
-function normalizarFecha(valor) {
-  return valor?.trim() ? valor : null;
-}
-
-
-
-// ////////////////////////////////////////////////////////////////
+  function normalizarFecha(valor) {
+    return valor?.trim() ? valor : null;
+  }
 
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
     fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais,
     ciudad, estcco, comentarios, editando
   } = req.body;
-const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin);
-const fecFinal = isValidDate ? fecha_fin : null;
-
-const datos = {
-  fecha_orden:   normalizarFecha(req.body.fecha_orden),
-  fecha_entrega: normalizarFecha(req.body.fecha_entrega),
-  fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
-  fecha_fin:     normalizarFecha(req.body.fecha_fin),
-};
-
-console.log(datos);
+  const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin);
+  const fecFinal = isValidDate ? fecha_fin : null;
 
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
@@ -430,7 +413,7 @@ console.log(datos);
       fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
       fecha_fin:     normalizarFecha(req.body.fecha_fin),
     };
-    console.log(datos);
+    
     let mensaje;
     if (editando === "true") {
         await conn.execute(
@@ -447,7 +430,6 @@ console.log(datos);
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
         const fechaHoraBogota = getBogotaDateTime();
-        console.log('11111111111111111111111111');
         await conn.execute(
           `INSERT INTO tbl_ccosto (
             idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
@@ -460,8 +442,6 @@ console.log(datos);
             estcco, fecFinal, fecha_inicio, fechaHoraBogota
           ]
         );
-        console.log('2222222222222222222222222222');
-
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }
     }
@@ -4018,12 +3998,6 @@ app.post('/detalle-dia', async (req, res) => {
       tipo: 'success',
       texto: '✅ Datos procesados'
     };
-    // validar si registro firma
-    console.log('valida firma');
-    console.log(tip_func);
-    console.log(doc_id);
-    console.log(fecha);
-    console.log('firmas');
     
     // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
     const [rows] = await pool.query(
