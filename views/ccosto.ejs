@@ -731,7 +731,7 @@
 
     }
 
-    function formatFecha(fechaTexto) {
+    function formatFecha1111111111(fechaTexto) {
         if (!fechaTexto || isNaN(Date.parse(fechaTexto))) {
             return '';
         }
@@ -741,6 +741,26 @@
         const day = String(fecha.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
+
+    function formatFecha(fecha) {
+      if (!fecha) return '';
+
+      // Si ya es string en formato YYYY-MM-DD, úsalo tal cual
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
+
+      // Si es un objeto Date o string con tiempo, crea fecha local para evitar desfase
+      const dateObj = new Date(fecha);
+
+      if (isNaN(dateObj)) return '';
+
+      // Extraer partes en horario local (no UTC)
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    }
+
 
     function limpiarFormularioCiudad() {
       document.getElementById('idcc_visible').disabled = false;
