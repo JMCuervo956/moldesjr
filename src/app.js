@@ -386,9 +386,9 @@ const datos = {
 };
 
 console.log(datos);
+
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
-
   try {
 
     // Consulta segura de permisos
@@ -430,7 +430,7 @@ console.log(datos);
       fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
       fecha_fin:     normalizarFecha(req.body.fecha_fin),
     };
-
+    console.log(datos);
     let mensaje;
     if (editando === "true") {
         await conn.execute(
