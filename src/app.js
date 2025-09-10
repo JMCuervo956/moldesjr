@@ -3938,7 +3938,6 @@ async function runInBatches(tasks, batchSize = 20) {
 
 app.post('/detalle-dia', async (req, res) => {
   const { fecha, datos, tip_func, doc_id, firma } = req.body;
-
   if (!fecha || !datos) {
     return res.status(400).send('Datos incompletos');
   }
@@ -3947,7 +3946,6 @@ app.post('/detalle-dia', async (req, res) => {
   await conn.beginTransaction();
 
   console.time('actualizacion-items');
-
   try {
     const cambios = [];
     const updateTasks = [];
@@ -3983,7 +3981,6 @@ app.post('/detalle-dia', async (req, res) => {
         );
       }
     }
-
     // Ejecutar los updates por lotes de máximo 20
     await runInBatches(updateTasks, 20);
 
@@ -3997,9 +3994,22 @@ app.post('/detalle-dia', async (req, res) => {
     req.session.mensaje = {
       tipo: 'success',
       texto: '✅ Datos procesados'
+  };
+
+    return res.redirect('/inspasig')  
+
+  } catch (err) {
+    req.session.mensaje = {
+      tipo: 'danger',
+      texto: '❌ Error procesando la solicitud.'
     };
-    
-    // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
+
+  } finally {
+    conn.release();
+  }
+
+/*
+  // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
     const [rows] = await pool.query(
       'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? AND tip_func = ? LIMIT 1',
       [doc_id, fecha, tip_func]
@@ -4019,21 +4029,23 @@ app.post('/detalle-dia', async (req, res) => {
       };
     }
     */
-
+/*
 const firmaVaciaData = firmaVaciaBase64.split(',')[1];
 const firmaData = firma_base64.split(',')[1];
-
+*/
+/*
 const firmaEsValida = (
   typeof firma_base64 === 'string' &&
   firma_base64.startsWith('data:image/png;base64,') &&
   firmaData.length > 100 &&
   !firmaData.startsWith(firmaVaciaData.slice(0, 200))
 );
-
-if (rows.length > 0 && firmaEsValida) {
+*/
+/*
+if (rows.length > 0) {
   req.session.mensaje = {
     tipo: 'success',
-    texto: '✅ Firma Registrada y Datos procesados'
+    texto: '✅ Datos procesados'
   };
 } else {
   req.session.mensaje = {
@@ -4041,10 +4053,8 @@ if (rows.length > 0 && firmaEsValida) {
     texto: '⚠️ Firma en blanco o NO Registrada'
   };
 }
-
-
-    return res.redirect('/inspasig')  
-  } catch (err) {
+  return res.redirect('/inspasig')  
+} catch (err) {
     req.session.mensaje = {
       tipo: 'danger',
       texto: '❌ Error procesando la solicitud.'
@@ -4053,6 +4063,7 @@ if (rows.length > 0 && firmaEsValida) {
   } finally {
     conn.release();
   }
+*/
 });
 
 
