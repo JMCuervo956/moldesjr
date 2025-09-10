@@ -424,6 +424,13 @@ console.log(datos);
       });
     }
 
+    const datos = {
+      fecha_orden:   normalizarFecha(req.body.fecha_orden),
+      fecha_entrega: normalizarFecha(req.body.fecha_entrega),
+      fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
+      fecha_fin:     normalizarFecha(req.body.fecha_fin),
+    };
+
     let mensaje;
     if (editando === "true") {
         await conn.execute(
