@@ -357,6 +357,25 @@ app.get('/ccosto', async (req, res) => {
 
 app.post('/ccosto', async (req, res) => {
   const conn = await pool.getConnection();
+  console.log('logggggggggggggggggggggggggggggggg');
+  console.log(req.body);
+
+// control null /////////////////////////////////////////////////////
+
+function normalizarFecha(valor) {
+  return valor?.trim() ? valor : null;
+}
+
+const datos = {
+  fecha_orden:   normalizarFecha(req.body.fecha_orden),
+  fecha_entrega: normalizarFecha(req.body.fecha_entrega),
+  fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
+  fecha_fin:     normalizarFecha(req.body.fecha_fin),
+  // ...otros campos
+};
+
+// ////////////////////////////////////////////////////////////////
+
   const {
     idcc, descripcion, ocompra, cliente, fecha_orden,
     fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais,
@@ -364,11 +383,11 @@ app.post('/ccosto', async (req, res) => {
   } = req.body;
   const isValidDate = fecha_fin && /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin) && !isNaN(Date.parse(fecha_fin));
   const fecFinal = isValidDate ? fecha_fin : null;
+
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
 
   try {
-
 
     // Consulta segura de permisos
     if (userUser !== 'admin') {
@@ -419,6 +438,7 @@ app.post('/ccosto', async (req, res) => {
         mensaje = { tipo: 'danger', texto: 'Ya existe Centro de Costo' };
       } else {
         const fechaHoraBogota = getBogotaDateTime();
+        console.log('11111111111111111111111111');
         await conn.execute(
           `INSERT INTO tbl_ccosto (
             idcc, descripcion, ocompra, cliente, fecha_orden, fecha_entrega,
@@ -431,6 +451,8 @@ app.post('/ccosto', async (req, res) => {
             estcco, fecFinal, fecha_inicio, fechaHoraBogota
           ]
         );
+        console.log('2222222222222222222222222222');
+
         mensaje = { tipo: 'success', texto: `Centro de Costo guardado exitosamente: ${idcc}` };
       }
     }
@@ -3987,8 +4009,58 @@ app.post('/detalle-dia', async (req, res) => {
       tipo: 'success',
       texto: '✅ Datos procesados'
     };
-    return res.redirect('/inspasig')  
+    // validar si registro firma
+    console.log('valida firma');
+    console.log(tip_func);
+    console.log(doc_id);
+    console.log(fecha);
+    console.log('firmas');
+    
+    // Consulta la firma de la tabla, filtrando por doc_id (cedula) y fecha (y tip_func si lo necesitas)
+    const [rows] = await pool.query(
+      'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? AND tip_func = ? LIMIT 1',
+      [doc_id, fecha, tip_func]
+    );
 
+    /*
+    if (rows.length > 0 
+    ) {
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: '✅ Firma Registrada y Datos procesados '
+      };
+    } else {
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: '❌ Firma NO Registrada'
+      };
+    }
+    */
+
+const firmaVaciaData = firmaVaciaBase64.split(',')[1];
+const firmaData = firma_base64.split(',')[1];
+
+const firmaEsValida = (
+  typeof firma_base64 === 'string' &&
+  firma_base64.startsWith('data:image/png;base64,') &&
+  firmaData.length > 100 &&
+  !firmaData.startsWith(firmaVaciaData.slice(0, 200))
+);
+
+if (rows.length > 0 && firmaEsValida) {
+  req.session.mensaje = {
+    tipo: 'success',
+    texto: '✅ Firma Registrada y Datos procesados'
+  };
+} else {
+  req.session.mensaje = {
+    tipo: 'warning',
+    texto: '⚠️ Firma en blanco o NO Registrada'
+  };
+}
+
+
+    return res.redirect('/inspasig')  
   } catch (err) {
     req.session.mensaje = {
       tipo: 'danger',
@@ -5532,6 +5604,18 @@ app.post('/generar-pdftot', async (req, res) => {
         const fechaISO = formatDate(fechaInicial);  // Ej: "2025-07-22"
         const fechafISO = formatDate(fechaFinal);   // Ej: "2025-07-27"
 
+        // temporal
+        await pool.query(`DROP TABLE IF EXISTS tmpitm`);
+        await pool.query(
+            `
+            create table tmpitm as
+            SELECT func_doc, ocompra, fecha_inspeccion, COUNT(*) as total
+            FROM items_hist
+            WHERE (si = 'x' OR no_ = 'x' OR na = 'x')
+              OR (observacion IS NOT NULL AND TRIM(observacion) != '')
+            group by func_doc,ocompra,fecha_inspeccion;      
+            `);
+
         // Ahora la consulta con parámetros sin comillas:
         const [rows] = await pool.query(`
           SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
@@ -5539,7 +5623,8 @@ app.post('/generar-pdftot', async (req, res) => {
           FROM items_hist a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
-          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? 
+          INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
+          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion < ? 
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fechaISO, fechafISO]);
 

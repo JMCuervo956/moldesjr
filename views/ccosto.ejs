@@ -325,7 +325,7 @@
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg" role="document">
             <form action="/ccosto" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
-
+    
             <input type="hidden" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
             <input type="hidden" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
             <input type="hidden" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
@@ -631,7 +631,127 @@
       });
     });
   </script>
-  
+  <script>
+    function copiarDatosFormulariossss() {
+      
+      const idccVisible = document.getElementById('idcc_visible');
+      const idccOculto = document.getElementById('idcc');
+
+      idccOculto.value = idccVisible.value;
+
+      return true; // permite el envío del formulario
+    }
+  </script>
+
+<script>
+      function copiarDatosFormulario() {
+        // Obtener la fecha del input
+        const fechaInput = document.getElementById('fecha_fin');
+        const fechaValor = fechaInput.value;
+
+        // Validar el formato correcto YYYY-MM-DD
+        const esFechaValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaValor);
+
+        // 💡 Corregir el problema de zona horaria agregando T00:00:00
+        if (esFechaValida) {
+          const fechaLocal = new Date(`${fechaValor}T00:00:00`);
+          // Validar que sea fecha válida (por si acaso)
+          if (!isNaN(fechaLocal.getTime())) {
+            // Confirmamos que la fecha no cambió al interpretarse
+            const yyyy = fechaLocal.getFullYear();
+            const mm = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dd = String(fechaLocal.getDate()).padStart(2, '0');
+            // Reescribimos el valor corregido
+            fechaInput.value = `${yyyy}-${mm}-${dd}`;
+          } else {
+            fechaInput.value = ''; // o null si preferís
+          }
+        }
+        //*******************************************************************************
+        // Obtener la fecha del input
+        const fechaInput1 = document.getElementById('fecha_inicio');
+        const fechaValor1 = fechaInput1.value;
+
+        // Validar el formato correcto YYYY-MM-DD
+        const esFechaValida1 = /^\d{4}-\d{2}-\d{2}$/.test(fechaValor1);
+
+        // 💡 Corregir el problema de zona horaria agregando T00:00:00
+        if (esFechaValida1) {
+          const fechaLocal = new Date(`${fechaValor1}T00:00:00`);
+          // Validar que sea fecha válida (por si acaso)
+          if (!isNaN(fechaLocal.getTime())) {
+            // Confirmamos que la fecha no cambió al interpretarse
+            const yyyy = fechaLocal.getFullYear();
+            const mm = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dd = String(fechaLocal.getDate()).padStart(2, '0');
+            // Reescribimos el valor corregido
+            fechaInput1.value = `${yyyy}-${mm}-${dd}`;
+          } else {
+            fechaInput1.value = ''; // o null si preferís
+          }
+        }
+
+        //*******************************************************************************
+        // Obtener la fecha del input
+        const fechaInput2 = document.getElementById('fecha_entrega');
+        const fechaValor2 = fechaInput2.value;
+
+        // Validar el formato correcto YYYY-MM-DD
+        const esFechaValida2 = /^\d{4}-\d{2}-\d{2}$/.test(fechaValor2);
+
+        // 💡 Corregir el problema de zona horaria agregando T00:00:00
+        if (esFechaValida2) {
+          const fechaLocal = new Date(`${fechaValor2}T00:00:00`);
+          // Validar que sea fecha válida (por si acaso)
+          if (!isNaN(fechaLocal.getTime())) {
+            // Confirmamos que la fecha no cambió al interpretarse
+            const yyyy = fechaLocal.getFullYear();
+            const mm = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dd = String(fechaLocal.getDate()).padStart(2, '0');
+            // Reescribimos el valor corregido
+            fechaInput2.value = `${yyyy}-${mm}-${dd}`;
+          } else {
+            fechaInput2.value = ''; // o null si preferís
+          }
+        }
+
+        //*******************************************************************************
+        // Obtener la fecha del input
+        const fechaInput3 = document.getElementById('fecha_orden');
+        const fechaValor3 = fechaInput3.value;
+
+        // Validar el formato correcto YYYY-MM-DD
+        const esFechaValida3 = /^\d{4}-\d{2}-\d{2}$/.test(fechaValor3);
+
+        // 💡 Corregir el problema de zona horaria agregando T00:00:00
+        if (esFechaValida3) {
+          const fechaLocal = new Date(`${fechaValor3}T00:00:00`);
+          // Validar que sea fecha válida (por si acaso)
+          if (!isNaN(fechaLocal.getTime())) {
+            // Confirmamos que la fecha no cambió al interpretarse
+            const yyyy = fechaLocal.getFullYear();
+            const mm = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dd = String(fechaLocal.getDate()).padStart(2, '0');
+            // Reescribimos el valor corregido
+            fechaInput3.value = `${yyyy}-${mm}-${dd}`;
+          } else {
+            fechaInput3.value = ''; // o null si preferís
+          }
+        }
+        
+        //*******************************************************************************
+        // podés hacer lo mismo con otros campos de fecha si los tenés
+        // repetir para: fecha_orden, fecha_entrega, fecha_inicio, etc.
+            const idccVisible = document.getElementById('idcc_visible');
+            const idccOculto = document.getElementById('idcc');
+
+            idccOculto.value = idccVisible.value;
+
+        return true; // para permitir que el formulario se envíe
+      }
+</script>
+
+
   <script>
     function editarCiudad(ccosto) {
       document.getElementById('editando').value = "true";
@@ -724,15 +844,6 @@
       document.getElementById('editando').value = "false";
       document.getElementById('fecha_fin').value = "";
       document.getElementById('fecha_inicio').value = "";
-    }
-
-    function copiarDatosFormulario() {
-      const idccVisible = document.getElementById('idcc_visible');
-      const idccOculto = document.getElementById('idcc');
-
-      idccOculto.value = idccVisible.value;
-
-      return true; // permite el envío del formulario
     }
 
     function confirmarEliminacion(idcc) {
