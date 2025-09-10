@@ -381,8 +381,9 @@ const datos = {
     fecha_entrega, fecha_fin, fecha_inicio, cantidad, unidad, peso, pais,
     ciudad, estcco, comentarios, editando
   } = req.body;
-  const isValidDate = fecha_fin && /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin) && !isNaN(Date.parse(fecha_fin));
-  const fecFinal = isValidDate ? fecha_fin : null;
+const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin);
+const fecFinal = isValidDate ? fecha_fin : null;
+
 
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
