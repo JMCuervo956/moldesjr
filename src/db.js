@@ -20,7 +20,8 @@ export const pool = mysql.createPool({
   connectTimeout: 10000,
   ssl: {
     rejectUnauthorized: false // ← Clever Cloud NO requiere validación estricta de certificados
-  }
+  },
+  dateStrings: true
 });
 
 //  acquireTimeout: 10000,
