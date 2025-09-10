@@ -366,13 +366,7 @@ function normalizarFecha(valor) {
   return valor?.trim() ? valor : null;
 }
 
-const datos = {
-  fecha_orden:   normalizarFecha(req.body.fecha_orden),
-  fecha_entrega: normalizarFecha(req.body.fecha_entrega),
-  fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
-  fecha_fin:     normalizarFecha(req.body.fecha_fin),
-  // ...otros campos
-};
+
 
 // ////////////////////////////////////////////////////////////////
 
@@ -384,7 +378,14 @@ const datos = {
 const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(fecha_fin);
 const fecFinal = isValidDate ? fecha_fin : null;
 
+const datos = {
+  fecha_orden:   normalizarFecha(req.body.fecha_orden),
+  fecha_entrega: normalizarFecha(req.body.fecha_entrega),
+  fecha_inicio:  normalizarFecha(req.body.fecha_inicio),
+  fecha_fin:     normalizarFecha(req.body.fecha_fin),
+};
 
+console.log(datos);
   const userUser = req.session.user;
   let canCreate = false, canEdit = false, canDelete = false;
 
