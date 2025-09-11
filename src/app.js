@@ -3996,6 +3996,28 @@ app.post('/detalle-dia', async (req, res) => {
       texto: '✅ Datos procesados'
   };
 
+/***************************************************************************/
+    console.log(fecha);
+    console.log(doc_id);
+    console.log(tip_func);
+
+/***************************************************************************/
+
+    const [resultSets] = await conn.query('CALL validar_firma(?, ?, ?)', [ tip_func, doc_id, fecha]);
+    const rows = resultSets[0];
+    if (rows.length > 0 && rows[0].codigo === 1
+    ) {
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: '✅ Firma Registrada y Datos procesados '
+      };
+    } else {
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: '❌ Firma NO Registrada'
+      };
+    }
+     
     return res.redirect('/inspasig')  
 
   } catch (err) {
@@ -4014,25 +4036,14 @@ app.post('/detalle-dia', async (req, res) => {
       'SELECT firma_base64 FROM firmas WHERE cedula = ? AND fecha = ? AND tip_func = ? LIMIT 1',
       [doc_id, fecha, tip_func]
     );
-
-    /*
-    if (rows.length > 0 
-    ) {
-      req.session.mensaje = {
-        tipo: 'success',
-        texto: '✅ Firma Registrada y Datos procesados '
-      };
-    } else {
-      req.session.mensaje = {
-        tipo: 'success',
-        texto: '❌ Firma NO Registrada'
-      };
-    }
-    */
+*/
+    
+    
 /*
 const firmaVaciaData = firmaVaciaBase64.split(',')[1];
 const firmaData = firma_base64.split(',')[1];
 */
+
 /*
 const firmaEsValida = (
   typeof firma_base64 === 'string' &&
@@ -4041,6 +4052,7 @@ const firmaEsValida = (
   !firmaData.startsWith(firmaVaciaData.slice(0, 200))
 );
 */
+
 /*
 if (rows.length > 0) {
   req.session.mensaje = {
@@ -4064,7 +4076,7 @@ if (rows.length > 0) {
     conn.release();
   }
 */
-});
+}); 
 
 
 /* DETALLE AUXILIARES  **************************************************************************/
@@ -4936,6 +4948,7 @@ app.post('/api/generar-items', async (req, res) => {
         title: 'Registro Exitoso',
         message: '¡Registrado correctamente!',
     });
+
   } catch (error) {
     console.error('Error ejecutando SP:', error);
     res.status(500).json({ message: 'Error al ejecutar el procedimiento' });
@@ -6248,6 +6261,21 @@ app.post('/guardar-firma', async (req, res) => {
   }
 });
 
+app.post('/guardar-firma', async (req, res) => {
+  const { tip_func, doc_id, fecha, firma } = req.body;
+  try {
+    await pool.query(
+      `INSERT INTO firmas (tip_func, cedula, fecha, firma_base64) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE firma_base64 = VALUES(firma_base64)`,
+      [tip_func, doc_id, fecha, firma]
+    );
+    res.redirect(`/firma?tip_func=${encodeURIComponent(tip_func)}&doc_id=${encodeURIComponent(doc_id)}&fecha=${encodeURIComponent(fecha)}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al guardar la firma.');
+  }
+});
+
 app.get('/obtener-firma', async (req, res) => {
   const { tip_func, doc_id, fecha } = req.query;
 
@@ -6316,6 +6344,16 @@ app.get('/obtener-firmaux', async (req, res) => {
 // firmas
 
 app.get('/firmas', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT cedula, firma_base64, fecha FROM firmas ORDER BY fecha DESC');
+    res.render('firmas', { firmas: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener las firmas');
+  }
+});
+
+app.get('/firmatodo', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT cedula, firma_base64, fecha FROM firmas ORDER BY fecha DESC');
     res.render('firmas', { firmas: rows });

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Firmas Guardadas</title>
+</head>
+<body>
+  <h1>Firmas Capturadas</h1>
+  <a href="/">Volver al formulario</a>
+  <hr>
+
+  <% if (firmas.length === 0) { %>
+    <p>No hay firmas registradas.</p>
+  <% } else { %>
+    <ul>
+      <% firmas.forEach(firma => { %>
+        <li>
+          <strong>Cédula:</strong> <%= firma.cedula %><br>
+          <strong>Fecha:</strong> <%= firma.fecha.toLocaleString() %><br>
+          <img src="<%= firma.firma_base64 %>" alt="Firma" width="300"><br><br>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+<hr class="my-5">
+
+<div class="container">
+  <h3 class="mb-4">Firmas Registradas</h3>
+  <div id="firmasContainer" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <!-- Aquí se cargarán las firmas -->
+  </div>
+</div>
+
+<script>
+  // Función para cargar y mostrar todas las firmas desde la API
+  function cargarTodasLasFirmas() {
+    fetch('/obtener-todas-las-firmas')
+      .then(response => response.json())
+      .then(data => {
+        const container = document.getElementById('firmasContainer');
+        container.innerHTML = ''; // Limpiar contenido previo
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(firma => {
+            const card = document.createElement('div');
+            card.className = 'col';
+            card.innerHTML = `
+              <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                  <h5 class="card-title">Cédula: ${firma.cedula}</h5>
+                  <img src="${firma.firma_base64}" alt="Firma de ${firma.cedula}" class="img-fluid border" style="max-height: 200px;">
+                </div>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        } else {
+          container.innerHTML = '<p class="text-muted">No se encontraron firmas registradas.</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error al cargar firmas:', error);
+        document.getElementById('firmasContainer').innerHTML = '<p class="text-danger">Error al cargar las firmas.</p>';
+      });
+  }
+
+  // Llamar a la función al cargar la página
+  cargarTodasLasFirmas();
+</script>
+
+
+</body>
+</html>
