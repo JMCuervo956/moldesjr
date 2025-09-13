@@ -559,16 +559,9 @@ app.get('/barraprogreso', async (req, res) => {
             comentarios: row.comentarios
                 ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
                 : '',
-            FechaOrden: row.fecha_orden
-                ? row.fecha_orden.toISOString().split('T')[0]
-                : null,
-            FechaEntrega: row.fecha_entrega
-                ? row.fecha_entrega.toISOString().split('T')[0]
-                : null,
-            FechaFin: row.fecha_fin
-                ? row.fecha_fin.toISOString().split('T')[0]
-                : null,
-
+            FechaOrden: formatDateSafe(row.fecha_orden),
+            FechaEntrega: formatDateSafe(row.fecha_entrega),
+            FechaFin: formatDateSafe(row.fecha_fin),
             descripcion2: row.descripcion,
             proveedor: row.proveedor,
             observacion: row.observacion,
@@ -637,9 +630,9 @@ app.get('/barravarios', async (req, res) => {
             comentarios: row.comentarios
                 ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
                 : '',
-            FechaOrden: row.fecha_orden ? row.fecha_orden.toISOString().split('T')[0] : null,
-            FechaEntrega: row.fecha_entrega ? row.fecha_entrega.toISOString().split('T')[0] : null,
-            FechaFin: row.fecha_fin ? row.fecha_fin.toISOString().split('T')[0] : null,
+            FechaOrden: isValidDatet(row.fecha_orden) ? row.fecha_orden.toISOString().split('T')[0] : (row.fecha_orden || null),
+            FechaEntrega: isValidDatet(row.fecha_entrega) ? row.fecha_entrega.toISOString().split('T')[0] : (row.fecha_entrega || null),
+            FechaFin: isValidDatet(row.fecha_fin) ? row.fecha_fin.toISOString().split('T')[0] : (row.fecha_fin || null),
             proveedor: row.proveedor,
             observacion: row.obsot
         };
@@ -674,7 +667,7 @@ app.get('/barravarios', async (req, res) => {
                 actividades.push({
                     task: r.task,
                     text: r.text,
-                    start_date: r.start_date?.toISOString().split('T')[0] || '',
+                    start_date: formatDateSafe(r.start_date),
                     duration: r.duration
                 });
             }
@@ -682,8 +675,7 @@ app.get('/barravarios', async (req, res) => {
             // Items de inspección
             // Items de inspección (sin duplicar por fecha + no + aspecto + respuesta)
             if (r.si || r.no_ || r.na || r.observacion) {
-                const fecha = r.fecha_inspeccion?.toISOString().split('T')[0] || '';
-                
+                const fecha = formatDateSafe(r.fecha_inspeccion);
                 // Solo insertamos si NO existe ya un registro exacto
                 const exists = items.some(i =>
                     i.fecha_inspeccion === fecha &&
@@ -744,9 +736,26 @@ app.get('/barravarios', async (req, res) => {
     } catch (error) {
         console.error('Error real:', error);
         res.status(500).send('Error conectando a la base de datos.');
+
+        console.error('Error real:', error); // imprime el objeto
+        console.error('Mensaje:', error.message); // mensaje claro del error
+        console.error('Stack trace:', error.stack); // línea exacta del fallo
+        res.status(500).send('Error conectando a la base de datos.');        
     }
 }); 
 
+function isValidDatet(d) {
+    return d instanceof Date && !isNaN(d);
+}
+
+function formatDateSafe(date) {
+    if (date instanceof Date && !isNaN(date)) {
+        return date.toISOString().split('T')[0];
+    } else if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date;
+    }
+    return '';
+}
 
 
 app.get('/modal', async (req, res) => {
@@ -857,6 +866,7 @@ app.get('/otrabajo', async (req, res) => {
         SELECT 
           a.*, b.funcionario as clienteN, c.descripcion as descco,
           CASE
+            WHEN c.fecha_fin IS NOT NULL THEN d.cco_descrip
             WHEN ? < c.fecha_orden THEN 'Por Iniciar'
             WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
             WHEN ? > c.fecha_entrega THEN 'Atrasado'
@@ -864,7 +874,8 @@ app.get('/otrabajo', async (req, res) => {
           END AS estado_actual
         FROM tbl_otrabajo a
         LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc order by a.idot desc;
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc 
+        LEFT JOIN tbl_estcco d ON c.estado = d.cco_idest order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
@@ -887,6 +898,9 @@ app.get('/otrabajo', async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
     res.status(500).send('Error al obtener otrabajo');
+    //console.error('Error obteniendo otrabajo:', error.message); // mensaje claro
+    //console.error('Stack trace:', error.stack); // traza del error (dónde ocurrió)
+    //res.status(500).send(`Error al obtener otrabajo: ${error.message}`); 
   } finally {
     conn.release();
   }

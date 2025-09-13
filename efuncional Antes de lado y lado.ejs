@@ -273,8 +273,7 @@
 
                 <input type="hidden" name="editando" id="editando" value="false">
 
-              <div class="form-row reducir-espacio align-items-center">
-                <div class="col-6 d-flex align-items-center">                
+                <div class="form-row reducir-espacio">
                   <label for="tipo_id">Tipo Documento</label>
                   <!-- tipo_id visible -->
                   <select class="form-control form-control-sm" name="tipo_id_visible" id="tipo_id_visible" required>
@@ -283,9 +282,9 @@
                       <option value="<%= p.id %>"><%= p.tipodoc %></option>
                     <% }) %>
                   </select>
-                </div>  
+                </div>
 
-                <div class="col-6 d-flex align-items-center">
+                <div class="form-row reducir-espacio">
                   <label for="documento">Documento</label>
                   <!-- documento visible -->
                   <input type="text" 
@@ -297,7 +296,6 @@
                     title="Ingrese hasta 9 dígitos numéricos" 
                     required>
                 </div>
-              </div>
 
                 <!-- Estos son los que se envían -->
                 <input type="hidden" id="tipo_id" name="tipo_id">
@@ -351,21 +349,12 @@
                   maxlength="50">
                 </div>
 
-                <div class="form-row reducir-espacio align-items-center">                
-                    <div class="col-6 d-flex align-items-center">
-                      <label for="fecha_nac">Fecha Nacimiento</label>
-                      <input type="date" 
-                      class="form-control form-control-sm input-con-sombra" 
-                      name="fecha_nac" 
-                      id="fecha_nac">
-                    </div>
-                   
-                    <div class="form-row reducir-espacio align-items-center">
-                      <div class="col-6 d-flex align-items-center">
-                        <label for="fecha_ingreso" class="mb-0 mr-2 etiqueta-campo">Ingreso:</label>
-                        <input type="date" class="form-control form-control-sm campo-formulario" id="fecha_ingreso" name="fecha_ingreso">
-                      </div>
-                    </div>                    
+                <div class="form-row reducir-espacio">
+                  <label for="fecha_nac">Fecha Nacimiento</label>
+                  <input type="date" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="fecha_nac" 
+                  id="fecha_nac">
                 </div>
 
                 <div class="form-row reducir-espacio">
@@ -394,6 +383,14 @@
                       <option value="<%= p.iso_ciudad %>"><%= p.nombre %></option>
                     <% }) %>
                   </select>
+                </div>                
+
+                <div class="form-row reducir-espacio">
+                  <label for="fecha_ingreso">Fecha Ingreso</label>
+                  <input type="date" 
+                  class="form-control form-control-sm input-con-sombra" 
+                  name="fecha_ingreso" 
+                  id="fecha_ingreso">
                 </div>                
 
                 <div class="form-row reducir-espacio">
@@ -542,9 +539,6 @@
       document.getElementById('editando').value = "false";
       // Indicar que no está en modo edición
       document.getElementById('editando').value = "false";
-
-      document.getElementById('tipo_id_visible').disabled = false;
-      document.getElementById('documento_visible').disabled = false;      
     }
 
     function copiarDatosFormulario() {

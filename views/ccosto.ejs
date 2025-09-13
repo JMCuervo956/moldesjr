@@ -144,159 +144,179 @@
   box-shadow: 0 9px 5px rgba(0,0,0,0.1);
 }
 
+.reducir-espacio {
+  margin-bottom: 0px !important;
+  padding-bottom: 0px !important;
+}
 
+.reducir-espacio label {
+  display: block;
+  margin-bottom: 2px !important;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.reducir-espacio .form-control,
+.reducir-espacio .form-control-sm,
+.reducir-espacio input,
+.reducir-espacio select {
+  margin-bottom: 0 !important;
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
+  line-height: 1 !important;
+  font-size: 0.75rem !important;
+  height: 24px !important; /* Altura mínima funcional */
+}
   </style>
 
 </head>
 <body>
-  <div id="activities" style="
-    border: 2px solid #f0f8ff;
-    padding: 4px;
-    border-radius: 6px;
-    background-color: #aa2323;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Espacio entre botón y título */
-  ">
-  <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Inicio</a>
-  <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
+    <div id="activities" style="
+          border: 2px solid #f0f8ff;
+          padding: 4px;
+          border-radius: 6px;
+          background-color: #aa2323;
+          width: 100%;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          gap: 20px; /* Espacio entre botón y título */
+        ">
+        <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Inicio</a>
+        <a href="/menuprc" class="regresar-link" style="margin-left: 20px;">Regresar</a>
 
-    <button
-      class="texto-link"
-      data-toggle="modal"
-      data-target="#modalCiudad"
-      onclick="limpiarFormularioCiudad()"
-      style="<%= canCreate ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-      <%= canCreate ? '' : 'disabled' %>>
-      Adicionar
-    </button>
+        <button
+          class="texto-link"
+          data-toggle="modal"
+          data-target="#modalCiudad"
+          onclick="limpiarFormularioCiudad()"
+          style="<%= canCreate ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+          <%= canCreate ? '' : 'disabled' %>>
+          Adicionar
+        </button>
 
-    <div style="margin-left: auto; padding-right: 20px;">
-      <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
-    </div>
-  </div>
+        <div style="margin-left: auto; padding-right: 20px;">
+          <h4 style="margin: 0; color: #ffffff;">Moldes JR</h4>
+        </div>
+      </div>
 
   <!-- Contenido desplazable -->
   <div class="detalle-scroll">
          
-          <% if (typeof mensaje !== 'undefined') { %>
-            <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
-              <%= mensaje.texto %>
-              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <% } %>
+        <% if (typeof mensaje !== 'undefined') { %>
+          <div class="alert alert-<%= mensaje.tipo %> alert-dismissible fade show" role="alert" id="alertaMensaje">
+            <%= mensaje.texto %>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <% } %>
 
-<!-- Sticky Encabezado con Título y Búsqueda -->
-<div class="sticky-header p-3 bg-white">
-  <div class="text-md-start text-center">
-    <h4>
-      Centros de Costo
-      <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
-    </h4>
-  </div>
+        <!-- Sticky Encabezado con Título y Búsqueda -->
+        <div class="sticky-header p-3 bg-white">
+          <div class="text-md-start text-center">
+            <h4>
+              Centros de Costo
+              <span style="display: block; height: 3px; background-color: #3498db; margin-top: 12px; width: 100%; margin-left: auto; margin-right: auto; border-radius: 5px;"></span>
+            </h4>
+          </div>
 
-  <!-- Input búsqueda -->
-  <div class="mb-3 mt-2">
-    <input 
-      type="text" 
-      id="buscarOrden" 
-      class="form-control" 
-      placeholder="Buscar por Orden, Descripción, Cliente o Estado..." 
-      onkeyup="filtrarTabla()" 
-      autocomplete="off"
-    >
-  </div>
-</div>
-
-
+          <!-- Input búsqueda -->
+          <div class="mb-3 mt-2">
+            <input 
+              type="text" 
+              id="buscarOrden" 
+              class="form-control" 
+              placeholder="Buscar por Orden, Descripción, Cliente o Estado..." 
+              onkeyup="filtrarTabla()" 
+              autocomplete="off"
+            >
+          </div>
+        </div>
 
         <div class="container-fluid mt-1">
               <div class="content2">
                 <div class="register-formAnchoCM">           
 
-<div class="detalle-scroll">
-                  <div style="overflow-x: auto;">
-                    <table class="table-striped">
+                  <div class="detalle-scroll">
+                                    <div style="overflow-x: auto;">
+                                      <table class="table-striped">
 
-                      <thead class="thead-dark">
-                        <tr>
-                          <th class="text-center">Id</th>
-                          <th class="text-center">Descripción</th>
-                          <th class="text-center">Cliente</th>
-                          <th class="text-center">Progreso</th>
-                          <th class="text-center">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <% if (ccosto.length > 0) { %>
-                          <% ccosto.forEach(ccosto => { %>
-                            <tr style="line-height: 1.3;">
-                              <td style="width: 50px; font-size: 14px;"><%= ccosto.idcc %></td>
-                              <td style="width: 400px; font-size: 12px;"><%= ccosto.descripcion %></td>
-                              <td style="width: 400px; font-size: 12px;"><%= ccosto.clienteN %></td>
-                              <td style="width: 100px; font-size: 15px; font-weight: bold; color:
-                                <%= ccosto.estado_actual === 'Atrasado' ? 'red' :
-                                    ccosto.estado_actual === 'Sin Estado' ? 'teal' :
-                                    ccosto.estado_actual === 'En Progreso' ? 'green' :
-                                    'black' %>">
-                                <%= ccosto.estado_actual %>
-                              </td>
+                                        <thead class="thead-dark">
+                                          <tr>
+                                            <th class="text-center">Id</th>
+                                            <th class="text-center">Descripción</th>
+                                            <th class="text-center">Cliente</th>
+                                            <th class="text-center">Progreso</th>
+                                            <th class="text-center">Acciones</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <% if (ccosto.length > 0) { %>
+                                            <% ccosto.forEach(ccosto => { %>
+                                              <tr style="line-height: 1.3;">
+                                                <td style="width: 50px; font-size: 14px;"><%= ccosto.idcc %></td>
+                                                <td style="width: 400px; font-size: 12px;"><%= ccosto.descripcion %></td>
+                                                <td style="width: 400px; font-size: 12px;"><%= ccosto.clienteN %></td>
+                                                <td style="width: 100px; font-size: 15px; font-weight: bold; color:
+                                                  <%= ccosto.estado_actual === 'Atrasado' ? 'red' :
+                                                      ccosto.estado_actual === 'Sin Estado' ? 'teal' :
+                                                      ccosto.estado_actual === 'En Progreso' ? 'green' :
+                                                      'black' %>">
+                                                  <%= ccosto.estado_actual %>
+                                                </td>
 
-                              <td class="text-center align-middle" style="width: 200px; font-size: 12px;">
-                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                                                <td class="text-center align-middle" style="width: 200px; font-size: 12px;">
+                                                  <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
 
-                                <button 
-                                  class="btn btn-warning btn-sm icon-btn" 
-                                  onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
-                                  data-toggle="modal" 
-                                  data-target="#modalCiudad" 
-                                  title="Modificar"
-                                  style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-                                  <%= canEdit ? '' : 'disabled' %>>
-                                  <i class="bi bi-pencil-square"></i>
-                                </button>
+                                                  <button 
+                                                    class="btn btn-warning btn-sm icon-btn" 
+                                                    onclick='editarCiudad(<%- JSON.stringify(ccosto) %>)' 
+                                                    data-toggle="modal" 
+                                                    data-target="#modalCiudad" 
+                                                    title="Modificar"
+                                                    style="<%= canEdit ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                                    <%= canEdit ? '' : 'disabled' %>>
+                                                    <i class="bi bi-pencil-square"></i>
+                                                  </button>
 
-                                <button 
-                                  class="btn btn-danger btn-sm icon-btn" 
-                                  onclick="confirmarEliminacion('<%= ccosto.idcc %>')" 
-                                  title="Eliminar"
-                                  style="<%= canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
-                                  <%= canDelete ? '' : 'disabled' %>>
-                                  <i class="bi bi-trash"></i>
-                                </button>
+                                                  <button 
+                                                    class="btn btn-danger btn-sm icon-btn" 
+                                                    onclick="confirmarEliminacion('<%= ccosto.idcc %>')" 
+                                                    title="Eliminar"
+                                                    style="<%= canDelete ? '' : 'opacity: 0.5; cursor: not-allowed;' %>"
+                                                    <%= canDelete ? '' : 'disabled' %>>
+                                                    <i class="bi bi-trash"></i>
+                                                  </button>
 
-                                  <a 
-                                    href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
-                                    class="btn btn-primary btn-sm icon-btn" 
-                                    title="Consultar">
-                                    <i class="bi bi-search"></i>
-                                  </a>
+                                                    <a 
+                                                      href="/barraprogreso?idcc=<%= ccosto.idcc %>" 
+                                                      class="btn btn-primary btn-sm icon-btn" 
+                                                      title="Consultar">
+                                                      <i class="bi bi-search"></i>
+                                                    </a>
 
-                                  <a 
-                                    href="/barravarios?idcc=<%= ccosto.idcc %>" 
-                                    class="btn btn-success btn-sm icon-btn" 
-                                    title="Consultar">
-                                    <i class="bi bi-printer"></i>
-                                  </a>
+                                                    <a 
+                                                      href="/barravarios?idcc=<%= ccosto.idcc %>" 
+                                                      class="btn btn-success btn-sm icon-btn" 
+                                                      title="Consultar">
+                                                      <i class="bi bi-printer"></i>
+                                                    </a>
 
 
-                                </div>
-                              </td>
-                            </tr>
-                          <% }) %>
-                        <% } else { %>
-                          <tr>
-                            <td colspan="5">No hay Centro de costo registrado.</td>
-                          </tr>
-                        <% } %>
-                      </tbody>
-                    </table>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            <% }) %>
+                                          <% } else { %>
+                                            <tr>
+                                              <td colspan="5">No hay Centro de costo registrado.</td>
+                                            </tr>
+                                          <% } %>
+                                        </tbody>
+                                      </table>
+                                    </div>
                   </div>
-</div>
 
                 </div>
               </div>
@@ -321,214 +341,208 @@
         </div>
 
         <!-- Modal Adicionar / Modificar -->
+
+        <!-- Modal Adicionar / Modificar -->
         
         <div class="modal fade" id="modalCiudad" tabindex="-1" role="dialog" aria-labelledby="modalCiudadLabel" aria-hidden="true">
           <div class="modal-dialog modal-lg" role="document">
             <form action="/ccosto" method="POST" class="modal-content" onsubmit="return copiarDatosFormulario()">
     
-            <input type="hidden" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
-            <input type="hidden" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
-            <input type="hidden" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
+                <input type="hidden" id="permCanCreate" name="canCreate" value="<%= typeof canCreate !== 'undefined' ? canCreate : 0 %>">
+                <input type="hidden" id="permCanEdit" name="canEdit" value="<%= typeof canEdit !== 'undefined' ? canEdit : 0 %>">
+                <input type="hidden" id="permCanDelete" name="canDelete" value="<%= typeof canDelete !== 'undefined' ? canDelete : 0 %>">
 
+                <div class="modal-header" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3; padding-top: 0.3rem; padding-bottom: 0.3rem;">
+                  <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
+                </div>
+               
+                <div class="modal-body">
+                    <input type="hidden" name="editando" id="editando" value="false">
 
+                    
+                    <div class="form-row reducir-espacio align-items-center">
+                            <div class="col-2">
+                              <label for="idcc_visible">Centro de Costo</label>
+                            </div>
+                            <div class="col-2">
+                              <input 
+                                type="text" 
+                                id="idcc_visible" 
+                                name="idcc_visible" 
+                                class="form-control form-control-sm input-con-sombra input-numerico igualar-altura"
+                                pattern="[0-9]{1,9}"
+                                maxlength="9" 
+                                required
+                                title="Ingrese hasta 9 dígitos numéricos">                    
+                            </div>
 
-              <div class="modal-header d-flex justify-content-between align-items-center" style="background-color: #007bff; color: white; border-bottom: 2px solid #0056b3;">
-                <h5 class="modal-title" id="modalCiudadLabel" style="font-weight: bold; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px;">Adicionar / Modificar</h5>
-                <button type="button" class="close p-1" data-dismiss="modal" aria-label="Cerrar" style="width: 30px; height: 30px; font-size: 1.2rem; line-height: 1;">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-             
+                            <!-- Estos son los que se envían -->
+                            <input type="hidden" id="idcc" name="idcc">
 
-              <div class="modal-body">
-                <input type="hidden" name="editando" id="editando" value="false">
+                              <label for="descripcion">Descripcion</label>
+                            <div class="col-8">
+                              <input type="text" 
+                              class="form-control form-control-sm input-con-sombra igualar-altura" 
+                              name="descripcion" 
+                              id="descripcion"
+                              maxlength="60" 
+                              required>
+                            </div>  
+                    </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">
-                    <label for="idcc_visible">Centro de Costo</label>
-                  </div>
-                  <div class="col-2">
-                    <input 
-                      type="text" 
-                      id="idcc_visible" 
-                      name="idcc_visible" 
-                      class="form-control form-control-sm input-con-sombra input-numerico igualar-altura"
-                      pattern="[0-9]{1,9}"
-                      maxlength="9" 
-                      required
-                      title="Ingrese hasta 9 dígitos numéricos">                    
-                  </div>
-                </div>                    
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="ocompra">Ord. Compra</label>
+                      </div>
+                      <div class="col-2">
+                        <input 
+                          type="text" 
+                          id="ocompra" 
+                          name="ocompra" 
+                          class="form-control form-control-sm input-con-sombra igualar-altura"
+                          pattern="[A-Za-z0-9\-]{1,20}"
+                          maxlength="20" 
+                          required
+                          title="Ingrese hasta 9 dígitos numéricos">
+                      </div>    
+                    </div>
 
-                <!-- Estos son los que se envían -->
-                <input type="hidden" id="idcc" name="idcc">
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                      <label for="cliente">Cliente</label>
+                      </div>
+                      <div class="col-8">
+                          <select class="form-control form-control-sm input-con-sombra igualar-altura" name="cliente" id="cliente" required>
+                            <option value="">Seleccione Cliente</option>
+                            <% clienteT.forEach(p => { %>
+                              <option value="<%= p.nit %>"><%= p.cliente %></option>
+                            <% }) %>
+                          </select>
+                      </div>      
+                    </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="descripcion">Descripcion</label>
-                  </div>
-                  <div class="col-10">
-                    <input type="text" 
-                    class="form-control form-control-sm input-con-sombra igualar-altura" 
-                    name="descripcion" 
-                    id="descripcion"
-                    maxlength="60" 
-                    required>
-                  </div>  
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                      <label for="pais_codigo">País</label>
+                      </div>
+                      <div class="col-4">
+                        <select class="form-control form-control-sm igualar-altura" name="pais" id="pais" required>
+                          <option value="">Seleccione un país</option>
+                          <% paisesl.forEach(p => { %>
+                            <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
+                          <% }) %>
+                        </select>
+                      </div>    
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="ciudad_codigo">Ciudad</label>
+                      </div>
+                      <div class="col-4">
+                        <select class="form-control form-control-sm igualar-altura" name="ciudad" id="ciudad" required>
+                          <option value="">Seleccione Ciudad</option>
+                        </select>
+                      </div> 
+                    </div>
+                    
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="fecha_orden">Fecha Inicio</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_orden" id="fecha_orden" maxlength="60" required>
+                      </div>  
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="fecha_entrega">Fecha Entrega</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_entrega" id="fecha_entrega" maxlength="60" required>
+                      </div>    
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="cantidad">Cantidad</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="number" class="form-control form-control-sm input-con-sombra igualar-altura" name="cantidad" id="cantidad" maxlength="60" required>
+                      </div>
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="peso">Peso Total</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="number" class="form-control form-control-sm input-con-sombra igualar-altura" name="peso" id="peso" maxlength="60" required>
+                      </div>
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="unidad">Unidad</label>
+                      </div>
+                      <div class="col-2">
+                          <select class="form-control form-control-sm input-con-sombra igualar-altura" name="unidad" id="unidad" required>
+                            <option value="">Seleccione unidad</option>
+                            <% unidadT.forEach(p => { %>
+                              <option value="<%= p.id_unidad %>"><%= p.unidad %></option>
+                            <% }) %>
+                          </select>
+                      </div> 
+                    </div> 
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                      <label for="estcco">Estado</label>
+                      </div>
+                      <div class="col-2">
+                          <select class="form-control form-control-sm input-con-sombra igualar-altura" name="estcco" id="estcco" required>
+                            <option value="">Seleccione Edtado</option>
+                            <% estccoT.forEach(p => { %>
+                              <option value="<%= p.cco_idest %>"><%= p.cco_descrip %></option>
+                            <% }) %>
+                          </select>
+                      </div> 
+                    </div>
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="fecha_fin">Fecha Inicio Real</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_inicio" id="fecha_inicio" maxlength="60" required>
+                      </div>    
+                    </div>                
+
+                    <div class="form-row reducir-espacio">
+                      <div class="col-2">                  
+                        <label for="fecha_fin">Fecha Finalizacion</label>
+                      </div>
+                      <div class="col-2">
+                        <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_fin" id="fecha_fin" maxlength="60">
+                      </div>    
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="comentarios">Comentarios</label>
+                      <textarea class="form-control form-control-sm input-con-sombra " name="comentarios" id="comentarios" rows="4" style="resize: vertical;" placeholder="Ej: - OPC1\n- OPC2\n- OPC3"></textarea>
+                    </div>
                 </div>
 
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="ocompra">Orden de Compra</label>
-                  </div>
-                  <div class="col-2">
-                    <input 
-                      type="text" 
-                      id="ocompra" 
-                      name="ocompra" 
-                      class="form-control form-control-sm input-con-sombra igualar-altura"
-                      pattern="[A-Za-z0-9\-]{1,20}"
-                      maxlength="20" 
-                      required
-                      title="Ingrese hasta 9 dígitos numéricos">
-                  </div>    
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
                 </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                  <label for="cliente">Cliente</label>
-                  </div>
-                  <div class="col-8">
-                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="cliente" id="cliente" required>
-                        <option value="">Seleccione Cliente</option>
-                        <% clienteT.forEach(p => { %>
-                          <option value="<%= p.nit %>"><%= p.cliente %></option>
-                        <% }) %>
-                      </select>
-                  </div>      
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                  <label for="pais_codigo">País</label>
-                  </div>
-                  <div class="col-4">
-                    <select class="form-control form-control-sm igualar-altura" name="pais" id="pais" required>
-                      <option value="">Seleccione un país</option>
-                      <% paisesl.forEach(p => { %>
-                        <option value="<%= p.iso_pais %>"><%= p.nombre %></option>
-                      <% }) %>
-                    </select>
-                  </div>    
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="ciudad_codigo">Ciudad</label>
-                  </div>
-                  <div class="col-4">
-                    <select class="form-control form-control-sm igualar-altura" name="ciudad" id="ciudad" required>
-                      <option value="">Seleccione Ciudad</option>
-                    </select>
-                  </div> 
-                </div>
-                
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="fecha_orden">Fecha Inicio</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_orden" id="fecha_orden" maxlength="60" required>
-                  </div>  
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="fecha_entrega">Fecha Entrega</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_entrega" id="fecha_entrega" maxlength="60" required>
-                  </div>    
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="cantidad">Cantidad</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="number" class="form-control form-control-sm input-con-sombra igualar-altura" name="cantidad" id="cantidad" maxlength="60" required>
-                  </div>
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="peso">Peso Total</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="number" class="form-control form-control-sm input-con-sombra igualar-altura" name="peso" id="peso" maxlength="60" required>
-                  </div>
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="unidad">Unidad</label>
-                  </div>
-                  <div class="col-4">
-                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="unidad" id="unidad" required>
-                        <option value="">Seleccione unidad</option>
-                        <% unidadT.forEach(p => { %>
-                          <option value="<%= p.id_unidad %>"><%= p.unidad %></option>
-                        <% }) %>
-                      </select>
-                  </div> 
-                </div> 
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                  <label for="estcco">Estado</label>
-                  </div>
-                  <div class="col-4">
-                      <select class="form-control form-control-sm input-con-sombra igualar-altura" name="estcco" id="estcco" required>
-                        <option value="">Seleccione Edtado</option>
-                        <% estccoT.forEach(p => { %>
-                          <option value="<%= p.cco_idest %>"><%= p.cco_descrip %></option>
-                        <% }) %>
-                      </select>
-                  </div> 
-                </div>
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="fecha_fin">Fecha Inicio Real</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_inicio" id="fecha_inicio" maxlength="60" required>
-                  </div>    
-                </div>                
-
-                <div class="form-row align-items-center mb-2">
-                  <div class="col-4">                  
-                    <label for="fecha_fin">Fecha Finalizacion</label>
-                  </div>
-                  <div class="col-2">
-                    <input type="date" class="form-control form-control-sm input-con-sombra igualar-altura" name="fecha_fin" id="fecha_fin" maxlength="60">
-                  </div>    
-                </div>                
-                
-                <div class="form-group">
-                  <label for="comentarios">Comentarios</label>
-                  <textarea class="form-control form-control-sm input-con-sombra " name="comentarios" id="comentarios" rows="4" style="resize: vertical;" placeholder="Ej: - OPC1\n- OPC2\n- OPC3"></textarea>
-                </div>
-              </div>
-
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-              </div>
-
             </form>
           </div>
         </div>
+
+        
   </div>
 
   <%- include('partials/footer') %>
