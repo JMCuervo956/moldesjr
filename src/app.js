@@ -636,9 +636,6 @@ app.get('/barravarios', async (req, res) => {
             proveedor: row.proveedor,
             observacion: row.obsot
         };
-            console.log(rows);
-            console.log(data);
-
         const piezas = [];
         const acabados = [];
         const actividades = [];
@@ -4008,13 +4005,6 @@ app.post('/detalle-dia', async (req, res) => {
       tipo: 'success',
       texto: '✅ Datos procesados'
   };
-
-/***************************************************************************/
-    console.log(fecha);
-    console.log(doc_id);
-    console.log(tip_func);
-
-/***************************************************************************/
 
     const [resultSets] = await conn.query('CALL validar_firma(?, ?, ?)', [ tip_func, doc_id, fecha]);
     const rows = resultSets[0];
