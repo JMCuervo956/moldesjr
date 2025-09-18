@@ -522,11 +522,10 @@ app.get('/barraprogreso', async (req, res) => {
             const id = req.query.idcc;
             const [rows] = await pool.execute(`
             select 
-            a.idcc,
-            a.fecha_entrega, a.descripcion as descco, a.cliente, a.fecha_orden, a.cantidad as cantcco, a.unidad, a.peso, a.pais, a.ciudad, 
-            a.comentarios, a.estado, a.fecha_fin, a.fecha_inicio,'tbl_otrabajo' as tr1, 
-            i.descripcion as desotr, i.proveedor, i.observacion as obsot, 'gestor' as tr2, 
-            j.identificador,'piezas' as tr3, 
+            a.idcc, a.descripcion as descco, a.cliente, b.cliente as nomcli, a.fecha_orden, a.fecha_entrega, 
+            a.cantidad as cantcco, a.peso, c.unidad as unid, a.comentarios, h.cco_descrip,
+            a.pais, a.ciudad, a.ocompra as orden, a.fecha_inicio, a.fecha_fin, 'tbl_otrabajo' as tr1, 
+            i.descripcion as desotr, i.proveedor, i.observacion as obsot, 'gestor' as tr2, j.identificador,'piezas' as tr3, 
             d.nombre as nompieza, d.descripcion as despieza, d.cantidad,'acabados' as tr4, 
             e.nombre as nomacabado, e.descripcion as desacabado,'actividad' as tr5, 
             f.task, f.text, f.start_date, f.duration,'ispeccion' as tr6, 
@@ -541,36 +540,35 @@ app.get('/barraprogreso', async (req, res) => {
             left join items g on a.idcc = g.ocompra 
             and (g.si<>'' or g.no_<>'' or g.na<>'' or g.observacion <>'') 
             left JOIN tbl_cliente b ON a.cliente = b.nit
-            left JOIN tbl_unidad c ON a.unidad = c.id_unidad
+            left JOIN tbl_unidad c ON a.unidad = c.id_unidad  
+            left JOIN tbl_estcco h on a.estado = h.cco_idest
             WHERE a.idcc = ?
               `, [id]);
             const row = rows[0]; // obtenemos la primera fila
             const data = {
             cc: row.idcc,
-            descripcion: row.descripcion,
-            oc: row.ocompra,
+            descripcion: row.descco,
+            oc: row.orden,
             cliente: row.cliente,
-            ncliente: row.client,
-            cantidad: row.cantidad,
+            ncliente: row.nomcli,
+            cantidad: row.cantcco,
             peso: row.peso,
-            unidad: row.unidad,
-            nunidad: row.nund,
-            estado: row.estado,
+            unidad: row.unid,
+            estado: row.cco_descrip,
             comentarios: row.comentarios
                 ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
                 : '',
             FechaOrden: formatDateSafe(row.fecha_orden),
             FechaEntrega: formatDateSafe(row.fecha_entrega),
             FechaFin: formatDateSafe(row.fecha_fin),
-            descripcion2: row.descripcion,
+            fecha_inicio: formatDateSafe(row.fecha_inicio), 
             proveedor: row.proveedor,
             observacion: row.observacion,
-               
             };
             //  Recuperar mensaje de sesión
             const mensaje = req.session.mensaje;
             delete req.session.mensaje;
-            res.render('barraprogreso', { preguntas: rows, user: userUser, name: userName, datosBD: data });
+            res.render('barraprogreso', { user: userUser, name: userName, datosBD: data });
 
         } else {
             res.redirect('/');
@@ -579,7 +577,7 @@ app.get('/barraprogreso', async (req, res) => {
         console.error('Error real:', error);
         res.status(500).send('Error conectando a la base de datos.');
     }
-});
+}); 
 
 app.get('/barravarios', async (req, res) => {
     if (!req.session.loggedin) return res.redirect('/?expired=1');
@@ -591,14 +589,13 @@ app.get('/barravarios', async (req, res) => {
 
         const [rows] = await pool.execute(`
             SELECT 
-                a.idcc,
-                a.fecha_entrega, a.descripcion AS descco, a.cliente, a.fecha_orden, a.cantidad AS cantcco, 
-                a.unidad, a.peso, a.pais, a.ciudad, a.comentarios, a.estado, a.fecha_fin, a.fecha_inicio,
-                i.descripcion AS desotr, i.proveedor, i.observacion AS obsot,
-                j.identificador,
-                d.nombre AS nompieza, d.descripcion AS despieza, d.cantidad,
-                e.nombre AS nomacabado, e.descripcion AS desacabado,
-                f.task, f.text, f.start_date, f.duration,
+                a.idcc, a.descripcion as descco, a.cliente, b.cliente as nomcli, a.fecha_orden, a.fecha_entrega, 
+		            a.cantidad AS cantcco, a.peso, a.unidad, c.unidad as unid, a.comentarios, h.cco_descrip, a.estado,
+                a.pais, a.ciudad, a.ocompra as orden, a.fecha_inicio, a.fecha_fin, 'tbl_otrabajo' as tr1,     
+                i.descripcion AS desotr, i.proveedor, i.observacion AS obsot, 'gestor' as tr2, j.identificador, k.funcionario, 'piezas' as tr3, 
+                d.nombre AS nompieza, d.descripcion AS despieza, d.cantidad, 'acabados' as tr4, 
+                e.nombre AS nomacabado, e.descripcion AS desacabado, 'actividad' as tr5,
+                f.task, f.text, f.start_date, f.duration,'ispeccion' as tr6,
                 g.func_doc, g.id_bloque, g.ocompra, g.fecha_inspeccion, g.no, 
                 g.aspecto, g.si, g.no_ AS no_, g.na, g.observacion
             FROM tbl_ccosto a
@@ -611,6 +608,8 @@ app.get('/barravarios', async (req, res) => {
                 AND (g.no_ <> '' OR g.na <> '' OR g.observacion <> '') 
             LEFT JOIN tbl_cliente b ON a.cliente = b.nit
             LEFT JOIN tbl_unidad c ON a.unidad = c.id_unidad
+            LEFT JOIN tbl_efuncional k ON j.identificador = k.identificador
+      	    left JOIN tbl_estcco h on a.estado = h.cco_idest
             WHERE a.idcc = ?
         `, [id]);
         if (!rows.length) return res.send('No hay datos');
@@ -621,21 +620,24 @@ app.get('/barravarios', async (req, res) => {
             descripcion: row.descco,
             oc: row.ocompra,
             cliente: row.cliente,
-            ncliente: row.ncliente,
+            ncliente: row.nomcli,
             cantidad: row.cantcco,
             peso: row.peso,
-            unidad: row.unidad,
-            nunidad: row.nunidad,
-            estado: row.estado,
+            unidad: row.unid,
+            nunidad: row.unidad,
+            estado: row.cco_descrip,
             comentarios: row.comentarios
                 ? row.comentarios.replace(/(\r\n|\n|\r)/g, '<br>')
                 : '',
             FechaOrden: isValidDatet(row.fecha_orden) ? row.fecha_orden.toISOString().split('T')[0] : (row.fecha_orden || null),
             FechaEntrega: isValidDatet(row.fecha_entrega) ? row.fecha_entrega.toISOString().split('T')[0] : (row.fecha_entrega || null),
             FechaFin: isValidDatet(row.fecha_fin) ? row.fecha_fin.toISOString().split('T')[0] : (row.fecha_fin || null),
+            FechaInicio: isValidDatet(row.fecha_fin) ? row.fecha_fin.toISOString().split('T')[0] : (row.fecha_inicio || null),
             proveedor: row.proveedor,
             observacion: row.obsot
         };
+            console.log(rows);
+            console.log(data);
 
         const piezas = [];
         const acabados = [];
@@ -705,7 +707,10 @@ app.get('/barravarios', async (req, res) => {
 
             // DSS
             if (r.identificador && !dss.some(d => d.identificador === r.identificador)) {
-                dss.push({ identificador: r.identificador });
+                dss.push({ 
+                  identificador: r.identificador,
+                  funcionario: r.funcionario 
+                });
             }
             
             // Otros trabajos
@@ -857,14 +862,11 @@ app.get('/otrabajo', async (req, res) => {
     const [
       [otrabajo],
       [prov],
-      [dise],
-      [supe],
-      [sold],
       [ccost]
     ] = await Promise.all([
       conn.execute(`
         SELECT 
-          a.*, b.funcionario as clienteN, c.descripcion as descco,
+          a.*, b.nombre as clienteN, c.descripcion as descco,
           CASE
             WHEN c.fecha_fin IS NOT NULL THEN d.cco_descrip
             WHEN ? < c.fecha_orden THEN 'Por Iniciar'
@@ -873,14 +875,11 @@ app.get('/otrabajo', async (req, res) => {
             ELSE 'Sin Estado'
           END AS estado_actual
         FROM tbl_otrabajo a
-        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
+        LEFT JOIN tbl_proveedor b ON a.proveedor = b.nit
         LEFT JOIN tbl_ccosto c ON a.idot = c.idcc 
         LEFT JOIN tbl_estcco d ON c.estado = d.cco_idest order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
-      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
-      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),
-      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 3'),
-      conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 4'),
+      conn.execute('SELECT nit, nombre FROM tbl_proveedor'),
       conn.execute('SELECT * FROM tbl_ccosto'),
     ]);
 
@@ -893,7 +892,7 @@ app.get('/otrabajo', async (req, res) => {
       [userUser, 3, fechaHoraBogota]
     );
    
-    res.render('otrabajo', { canCreate, canView, canEdit, canDelete, otrabajo, prov, dise, supe, sold, ccost, user: userUser, name: userName, mensaje });
+    res.render('otrabajo', { canCreate, canView, canEdit, canDelete, otrabajo, prov, ccost, user: userUser, name: userName, mensaje });
     
   } catch (error) {
     console.error('Error obteniendo otrabajo:', error);
@@ -972,18 +971,18 @@ app.post('/otrabajo', async (req, res) => {
     ] = await Promise.all([
       conn.execute(`
         SELECT 
-          a.*, 
-          b.funcionario as clienteN, 
-          c.descripcion as descco,
+          a.*, b.nombre as clienteN, c.descripcion as descco,
           CASE
+            WHEN c.fecha_fin IS NOT NULL THEN d.cco_descrip
             WHEN ? < c.fecha_orden THEN 'Por Iniciar'
             WHEN ? >= c.fecha_orden AND ? <= c.fecha_entrega THEN 'En Progreso'
             WHEN ? > c.fecha_entrega THEN 'Atrasado'
             ELSE 'Sin Estado'
           END AS estado_actual
         FROM tbl_otrabajo a
-        LEFT JOIN tbl_efuncional b ON a.proveedor = b.identificador
-        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc order by a.idot desc;
+        LEFT JOIN tbl_proveedor b ON a.proveedor = b.nit
+        LEFT JOIN tbl_ccosto c ON a.idot = c.idcc 
+        LEFT JOIN tbl_estcco d ON c.estado = d.cco_idest order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 1'),
       conn.execute('SELECT * FROM tbl_efuncional WHERE perfil = 2'),

@@ -183,6 +183,22 @@
   white-space: nowrap; /* Evita que el texto se divida en varias líneas */
 }
 
+  .fila-fecha-fin td {
+    color: blue;
+    font-weight: bold;
+  }
+
+  /* O si quieres más control por celda: */
+  .etiqueta-fecha {
+    color: blue;
+    font-weight: bold;
+  }
+
+  .valor-fecha {
+    color: blue;
+    font-weight: bold;
+  }
+
 </style>
 </head>
 <body>
@@ -259,10 +275,22 @@
               <td class="sin-negrilla">Fecha Orden:</td>
               <td class="col">${datosBD.FechaOrden}</td>
             </tr>
+
+            <tr>
+              <td class="sin-negrilla">Fecha Inicio:</td>
+              <td class="col">${datosBD.fecha_inicio}</td>
+            </tr>
+
             <tr>
               <td class="sin-negrilla">Fecha Entrega:</td>
               <td class="col">${datosBD.FechaEntrega}</td>
             </tr>
+
+            <tr class="fila-fecha-fin">
+              <td class="etiqueta-fecha">Fecha Fin:</td>
+              <td class="valor-fecha">${datosBD.FechaFin}</td>
+            </tr>
+
             <tr>
               <td class="sin-negrilla">Cantidad:</td>
               <td class="col">${datosBD.cantidad}</td>
@@ -273,7 +301,7 @@
             </tr>
             <tr>
               <td class="sin-negrilla">Unidad:</td>
-              <td class="col">${datosBD.nunidad}</td>
+              <td class="col">${datosBD.unidad}</td>
             </tr>
             <tr><td colspan="3" style="height: 16px;"></td></tr>
             <tr>
@@ -285,8 +313,6 @@
               <td><strong>estado:</strong></td>
               <td colspan="2">${datosBD.estado}</td>
             </tr>
-
-            
 
         </table>
     </div>
@@ -311,6 +337,7 @@
 
   <script>
     const datos = {
+      Fecha_inicio: datosBD.fecha_inicio, 
       FechaOrden: datosBD.FechaOrden,
       FechaEntrega: datosBD.FechaEntrega,
       FechaFin: datosBD.FechaFin,
@@ -363,7 +390,7 @@
         porcentaje = 100;
       }
       porcentaje = Math.min(100, Math.max(0, porcentaje));
-      return { estado, color, porcentaje, fechaOrden: orden, fechaEntrega: entrega, hoy, fechaFin: fin };
+      return { estado, color, porcentaje, fecha_inicio: orden, fechaEntrega: entrega, hoy, fechaFin: fin };
     }
 
     const festivosColombia = {
@@ -386,7 +413,7 @@
       '2025-12-25': 'Navidad'
     };
 
-    const res = calcularEstadoYProgreso(datos.FechaOrden, datos.FechaEntrega, datos.FechaFin);
+    const res = calcularEstadoYProgreso(datos.Fecha_inicio, datos.FechaEntrega, datos.FechaFin);
 
     // Mostrar estado
     const estadoDiv = document.getElementById('estado');
@@ -394,18 +421,17 @@
     estadoDiv.style.color = res.color;
 
     // Mostrar fechas
-    document.getElementById('fecha-inicio').textContent = 'Inicio: ' + formatYMD(res.fechaOrden);
+    document.getElementById('fecha-inicio').textContent = 'Inicio: ' + formatYMD(res.fecha_inicio);
     document.getElementById('fecha-hoy').textContent = 'Hoy: ' + formatYMD(res.hoy);
     document.getElementById('fecha-final').textContent = 'Entrega: ' + formatYMD(res.fechaEntrega);
 
     const fechaFinDiv = document.getElementById('fecha-fin');
-    if (res.fechaFin) {
-      fechaFinDiv.textContent = 'Finalización: ' + formatYMD(res.fechaFin);
-    }
+
+
 
     // Calcular días y ancho
     const anchoDiaPx = 40;
-    const totalDias = Math.floor((res.fechaEntrega - res.fechaOrden) / (864e5)) + 1;
+    const totalDias = Math.floor((res.fechaEntrega - res.fecha_inicio) / (864e5)) + 1;
     const anchoTotal = totalDias * anchoDiaPx;
 
     const cont = document.getElementById('barra-contenedor');
@@ -416,14 +442,14 @@
     const barraProgreso = document.getElementById('barra-progreso');
     barraFondo.style.width = anchoTotal + 'px';
 
-    const diasTranscurridos = Math.min(totalDias, Math.floor((res.hoy - res.fechaOrden) / (1000 * 60 * 60 * 24)) + 1);
+    const diasTranscurridos = Math.min(totalDias, Math.floor((res.hoy - res.fecha_inicio) / (1000 * 60 * 60 * 24)) + 1);
     const anchoProgresoPx = diasTranscurridos * anchoDiaPx;
     barraProgreso.style.width = anchoProgresoPx + 'px';
 
     barraProgreso.style.backgroundColor = res.color;
 
     // Dibujar líneas y etiquetas
-    let mesAnt = res.fechaOrden.getMonth();
+    let mesAnt = res.fecha_inicio.getMonth();
     const fechasArray = [];
 
     for (let i = 0; i <= totalDias; i++) {
@@ -437,7 +463,7 @@
 
       // Línea cambio de mes (excepto la primera línea)
       if (i > 0 && i < totalDias) {
-        const fecha = new Date(res.fechaOrden.getTime());
+        const fecha = new Date(res.fecha_inicio.getTime());
         fecha.setDate(fecha.getDate() + i - 1);
         if (fecha.getMonth() !== mesAnt) {
           const lineaMes = document.createElement('div');
@@ -450,9 +476,9 @@
     }
 
     // Etiquetas centradas entre líneas (en 0.5, 1.5, 2.5...)
-    mesAnt = res.fechaOrden.getMonth();
+    mesAnt = res.fecha_inicio.getMonth();
     for (let i = 0; i < totalDias; i++) {
-      const fecha = new Date(res.fechaOrden.getTime());
+      const fecha = new Date(res.fecha_inicio.getTime());
       fecha.setDate(fecha.getDate() + i);
       fechasArray.push(fecha);
       const diaIndex = (fecha.getDay() + 6) % 7;

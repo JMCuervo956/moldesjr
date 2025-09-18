@@ -125,7 +125,7 @@
 
   <!-- BOTONES -->
   <div class="seccion botones">
-    <a href="/menuprc">Volver al menú</a>
+    <a href="/menuprc" style="background-color: #aa2323; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px;">Inicio</a>
     <a href="/ccosto">Volver a Centro de Costos</a>
     <button onclick="imprimirPDF()">Imprimir en PDF</button>
 
@@ -138,19 +138,21 @@
   <table>
 
     <tr><th>Descripción</th><td><%= datosBD.descripcion %></td></tr>
-    <tr><th>Cliente</th><td><%= datosBD.ncliente %> (<%= datosBD.cliente %>)</td></tr>
+    <tr><th>Cliente</th><td><%= datosBD.cliente %> - <%= datosBD.ncliente %></td></tr>
     <tr><th>Orden</th><td><%= datosBD.FechaOrden %></td></tr>
+    <tr><th>Inicio</th><td><%= datosBD.FechaInicio %></td></tr>
     <tr><th>Entrega</th><td><%= datosBD.FechaEntrega %></td></tr>
+    <tr><th>Fin</th><td><%= datosBD.FechaFin %></td></tr>
     <tr><th>Cantidad</th><td><%= datosBD.cantidad %></td></tr>
     <tr><th>Peso</th><td><%= datosBD.peso %></td></tr>
-    <tr><th>Unidad</th><td><%= datosBD.nunidad %></td></tr>
+    <tr><th>Unidad</th><td><%= datosBD.unidad %></td></tr>
     <tr><th>Estado</th><td><%= datosBD.estado %></td></tr>
     <tr><th>Comentarios</th><td><%= datosBD.comentarios %></td></tr>
   </table>
 
   <% if (otrabajo.length > 0) { %>
     <div class="seccion">
-      <h2>Otros Trabajos</h2>
+      <h2>Orden de Compra</h2>
       <table>
         <tr><th>Descripción</th><th>Proveedor</th><th>Observación</th></tr>
         <% otrabajo.forEach(o => { %>
@@ -166,11 +168,14 @@
 
   <% if (dss.length > 0) { %>
     <div class="seccion">
-      <h2>Identificadores DSS</h2>
+      <h2>Soldadores</h2>
       <table>
-        <tr><th>Identificador</th></tr>
+        <tr><th>Identificación</th><th>Nombre</th></tr>
         <% dss.forEach(d => { %>
-          <tr><td><%= d.identificador %></td></tr>
+          <tr>
+            <td><%= d.identificador %></td>
+            <td><%= d.funcionario %></td>
+          </tr>
         <% }) %>
       </table>
     </div>
