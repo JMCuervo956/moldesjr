@@ -290,8 +290,11 @@ app.get('/ccosto', async (req, res) => {
     const userUser = req.session.user;
     const userName = req.session.name;
 //
+    console.log(req.session.rol);
     let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
-    if (userUser !== 'admin') {
+
+    if (parseInt(req.session.rol) !== 1)
+      {
       const [permisos] = await conn.execute(
         'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
         [userUser, 'Centros de Costo']
@@ -375,7 +378,8 @@ app.post('/ccosto', async (req, res) => {
   try {
 
     // Consulta segura de permisos
-    if (userUser !== 'admin') {
+    if (parseInt(req.session.rol) !== 1)
+      {
       const [permisos] = await conn.execute(
         'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
         [userUser, 'Centros de Costo']
@@ -828,7 +832,8 @@ app.get('/otrabajo', async (req, res) => {
     const userName = req.session.name;
 
     //
-        if (userUser !== 'admin') {
+        if (parseInt(req.session.rol) !== 1)
+          {
           const [permisos] = await conn.execute(
             'SELECT * FROM users_add WHERE user_code = ? AND module = ?',
             [userUser, 'Ordenes']
