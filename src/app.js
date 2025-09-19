@@ -2061,65 +2061,88 @@ app.get('/progresogralT', async (req, res) => {
 
 /*  tareas */
 
-
 app.post('/tareas', async (req, res) => {
-    try {
-      // Realizamos la consulta a la base de datos
-      const idot = req.body.idot;  // <-- Obtener idot del body
-      const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ?", [idot]);
-      // Crear un array de tareas basadas en la respuesta de la base de datos
-      const tasks = {
-        tasks: rows.map((row, index) => {
-        // Asignamos un color basado en el tipo (row.type)
-        let color = "#32CD32"; // Valor predeterminado 
+  try {
+    const idot = req.body.idot;
+    const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ? ORDER BY id", [idot]);
 
-        if (row.fecha_inicio > row.start_date) {
-          color = "#FFD700";
-        }        
+    const formatFecha = (fecha) => {
+      if (!fecha) return '';
+      if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        return fecha; // ya viene bien formateada
+      }
+      const dateObj = new Date(fecha);
+      if (isNaN(dateObj)) return '';
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
-        // Asegura que start_date sea una instancia Date
-        const startDate = new Date(row.start_date);
-        let fechaFormateada = formatoFechaYYYYMMDD(startDate);
-        let hoy = getHoyBogota();
-        let { date: fechaIniDate, formatted: fechaIniFormateada } = formatearFechaBogota(row.fecha_inicio);
-        let { date: fechaFinDate, formatted: fechaFinFormateada } = formatearFechaBogota(row.fecha_fin);
-        const fchterm = sumarDias(fechaFormateada, row.duration-1);
-        if (fechaFinFormateada === null && fchterm < hoy) {
-            color = "#FF6347";
-        }       
+    const hoy = new Date().toISOString().split("T")[0]; // hoy en YYYY-MM-DD
+    const tasks = {
+      tasks: rows.map((row, index) => {
+        let color = "#32CD32"; // predeterminado
 
-        if (row.type === "Principal") {
-          color = "#0000FF";  // Verde para tareas planificadas  0000FF       row.duration
-        } else if (row.type === "in-progress") {
-          color = "#FFD700";  // Amarillo para tareas en progreso
-        } else if (row.type === "completed") {
-          color = "#4CAF50";  // Verde oscuro para tareas completadas
-        } else if (row.type === "delayed") {
-          color = "#FF6347";  // Rojo para tareas retrasadas
-        }
-        return {  
-          id: index + 1, // Asignamos un id único basado en el índice
-          task: row.task || 1, // Ajusta esto según el nombre de la columna en tu base de datos
-          text: row.text || "Tarea sin descripción", // Ajusta según el nombre de la columna
-          start_date: row.start_date || "2025-02-12", // Ajusta según el nombre de la columna
-          fecha_inicio: row.fecha_inicio || null, // Ajusta según el nombre de la columna
-          fecha_fin: row.fecha_fin || null, // Ajusta según el nombre de la columna
-          duration: row.duration || 6, // Ajusta según el nombre de la columna
-          progress: row.progress || 0, // Ajusta según el nombre de la columna
-          type: row.type, // O ajusta según lo que corresponda en tu base de datos
-          termina: fchterm,
+        const startDateStr = formatFecha(row.start_date);
+        const fchtermDate = new Date(startDateStr);
+        fchtermDate.setDate(fchtermDate.getDate() + (row.duration || 1) - 1);
+        const fchterm = formatFecha(fchtermDate);
+
+        // lógica de colores
+        if (row.fecha_inicio > row.start_date) color = "#FFD700";
+        if (!row.fecha_fin && fchterm < hoy) color = "#FF6347";
+        if (row.type === "Principal") color = "#0000FF";
+        else if (row.type === "in-progress") color = "#FFD700";
+        else if (row.type === "completed") color = "#4CAF50";
+        else if (row.type === "delayed") color = "#FF6347";
+
+        return {
+          id: index + 1,
+          task: row.task || 1,
+          text: row.text || "Tarea sin descripción",
+
+          start_date: `${startDateStr}T00:00`,
+          fecha_inicio: row.fecha_inicio ? `${formatFecha(row.fecha_inicio)}T00:00` : null,
+          fecha_fin: row.fecha_fin ? `${formatFecha(row.fecha_fin)}T00:00` : null,
+          termina: `${fchterm}T00:00`,
+
+          duration: row.duration || 1,
+          progress: row.progress || 0,
+          type: row.type,
           color: color
-          //color: row.color || "#32CD32" // Ajusta según el nombre de la columna, si tienes uno
-        };  
-        }),
-        links: []
-      };
-      res.json(tasks); // Enviamos la respuesta al cliente
-    } catch (error) {
-      console.error('Error en el servidor:', error);
-      res.status(500).json({ message: 'Error al procesar la solicitud' });
-    }
-  });
+        };
+      }),
+      links: []
+    };
+
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    res.status(500).json({ message: 'Error al procesar la solicitud' });
+  }
+});
+
+
+function formatFecha(fecha) {
+  if (!fecha) return '';
+
+  // Dividir manualmente si es string (YYYY-MM-DD)
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    const [year, month, day] = fecha.split('-');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Si es Date, usar partes locales
+  const dateObj = new Date(fecha);
+  if (isNaN(dateObj)) return '';
+
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 
 
 /* TAREAS G*/ 
@@ -4360,6 +4383,16 @@ app.post('/modificar-actividad', async(req, res) => {
   fecha_fin = fecha_fin === '' ? null : fecha_fin;
   try {
     // actualiza una actividad específica
+    /*
+    cons freal = date 
+    if (fecha_inicio is null) { 
+       freal 0 null
+    }
+    if (fecha_inicio is not null) { 
+       freal =0 null
+    }
+    */
+    
     await pool.execute(
       `UPDATE tbl_actividad SET text = ?, start_date = ?, fecha_inicio = ?, fecha_fin = ?,  duration = ? WHERE idot = ? and task = ?`,
       [text, start_date, fecha_inicio, fecha_fin, duration, idot, task]

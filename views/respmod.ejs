@@ -342,48 +342,62 @@
     <!-- Modal Modificar -->
 <!-- Modal Modificar -->
 <div class="modal fade" id="modalCiudad" tabindex="-1" aria-labelledby="modalCiudadLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg"> <!-- más ancho -->
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-primary text-white">
         <h5 class="modal-title" id="modalCiudadLabel">Modificar Actividad</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
+        <!-- Mensaje de error opcional -->
+        <div id="formEditarActividadFeedback" class="alert alert-danger d-none" role="alert"></div>
+
         <form id="formEditarActividad" method="POST" action="/modificar-actividad">
-          
-          <div class="mb-3">
-            <label for="descripcionActividad" class="form-label">Descripción</label>
-            <input type="text" class="form-control" id="descripcionActividad" name="text" required>
+          <div class="container">
+            <div class="row g-3">
+
+<div class="mb-3">
+  <label for="descripcionActividad" class="form-label small">Descripción</label>
+  <input type="text" 
+         class="form-control form-control w-100 text-secondary bg-light border-0" 
+         id="descripcionActividad" 
+         name="text" 
+         readonly 
+         onmousedown="return false;" 
+         onselectstart="return false;">
+</div>
+
+
+              <div class="col-md-6">
+                <label for="fechaActividad" class="form-label">Fecha planificada</label>
+                <input type="date" class="form-control" id="fechaActividad" name="start_date">
+              </div>
+
+              <div class="col-md-6">
+                <label for="duracionActividad" class="form-label">Duración (días)</label>
+                <input type="number" class="form-control" id="duracionActividad" name="duration" min="1" required>
+              </div>
+
+              <div class="col-md-6">
+                <label for="fechaInicio" class="form-label">Fecha inicio real</label>
+                <input type="date" class="form-control" id="fechaInicio" name="fecha_inicio">
+              </div>
+
+              <div class="col-md-6">
+                <label for="fechaFinal" class="form-label">Fecha final</label>
+                <input type="date" class="form-control" id="fechaFinal" name="fecha_fin">
+              </div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label for="fechaActividad" class="form-label">Fecha</label>
-            <input type="date" class="form-control" id="fechaActividad" name="start_date">
-          </div>
-
-          <div class="mb-3">
-            <label for="duracionActividad" class="form-label">Duración</label>
-            <input type="number" class="form-control" id="duracionActividad" name="duration" min="1" required>
-          </div>
-
-          <div class="mb-3">
-            <label for="fechaInicio" class="form-label">Fecha Inicio Real</label>
-            <input type="date" class="form-control" id="fechaInicio" name="fecha_inicio">
-          </div>
-
-          <div class="mb-3">
-            <label for="fechaFinal" class="form-label">Fecha Final</label>
-            <input type="date" class="form-control" id="fechaFinal" name="fecha_fin">
-          </div>
-
-
+          <!-- Hidden inputs -->
           <input type="hidden" id="idActividad" name="id">
           <input type="hidden" name="idot" value="<%= idot %>">
           <input type="hidden" name="descripcion" value="<%= descripcion %>">
           <input type="hidden" id="taskActividad" name="task">
-
         </form>
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="submit" class="btn btn-primary" form="formEditarActividad">Guardar cambios</button>
@@ -475,9 +489,46 @@
             alert("Ocurrió algún error al guardar cambios.");
           });
         }
-
-      
   </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("formEditarActividad");
+    const feedback = document.getElementById("formEditarActividadFeedback");
+
+    form.addEventListener("submit", (event) => {
+        const fechaActividad = document.getElementById("fechaActividad").value;
+        const fechaInicio = document.getElementById("fechaInicio").value;
+
+        // Limpia mensajes anteriores
+        feedback.classList.add("d-none");
+        feedback.textContent = "";
+
+        if (fechaActividad && fechaInicio) {
+            const fechaPlanificada = new Date(fechaActividad);
+            const fechaReal = new Date(fechaInicio);
+
+            if (fechaReal < fechaPlanificada) {
+                // Mostrar mensaje de error en el formulario
+                feedback.textContent = "❌ La fecha de inicio real no puede ser anterior a la fecha planificada.";
+                feedback.classList.remove("d-none");
+
+                setTimeout(() => {
+                  feedback.classList.add("d-none");
+                }, 4000);
+                                
+                event.preventDefault(); // Detiene el envío
+                return false;
+            }
+        }
+    });
+});
+
+</script>
+
+<div id="formEditarActividadFeedback" class="alert alert-danger d-none" role="alert">
+</div>
+
 </body>
 
 </html>

@@ -333,9 +333,8 @@
                 <div class="modal-header">
                     <h4>Agregar nueva Actividad</h4>
                 </div>
-                <form action="/respuesta" id="addTaskForm" method="POST" onsubmit="return copiarDatosFormulario()">
-
-
+                <form action="/respuesta" id="addTaskForm" method="POST">
+ 
                     <input type="hidden" id="maxTaskIdInput" name="maxTaskId">
                     <input type="hidden" id="maxTaskCodeInput" name="maxTaskCode">
 
@@ -355,7 +354,7 @@
                     <input type="number" id="taskDuration" min="1" name="taskDuration" required placeholder="Ingrese la duración en días">
 
                     <label for="taskStartReal">Fecha Real de inicio:</label>
-                    <input type="date" id="taskStartReal" name="taskStartReal">
+                    <input type="date" id="taskStartReal" name="taskStartReal"  required>
 
                     <label for="taskStartFin">Fecha Fin:</label>
                     <input type="date" id="taskStartFin" name="taskStartFin">
@@ -390,6 +389,9 @@
             gantt.config.drag_move = false;
             gantt.config.drag_resize = false;
             gantt.config.drag_links = false;
+            gantt.config.drag_progress = false;  // bloqueo progress
+            gantt.config.details_on_dblclick = false;
+            gantt.config.details_on_create = false;
 
             /* tamaño texto Actividad*/
             let lastTaskShown = null;
@@ -654,62 +656,80 @@
             // Llamamos a loadTasks para cargar las tareas al iniciar
             loadTasks();
         </script>
+
         <!-- end GANTT PROCESO -->
 
         <!-- MODAL -detalle ACTIVIDAD -->
 
-        <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const modal = document.getElementById("addTaskModal");
-            const openModalButton = document.getElementById("openModalButton"); // Asegúrate de tener este botón en tu HTML
-            const closeModalButton = document.getElementById("closeModalButton");
-            const addTaskButton = document.getElementById("addTaskButton");
-            const formFeedback = document.getElementById("formFeedback");
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("addTaskModal");
+    const openModalButton = document.getElementById("openModalButton");
+    const closeModalButton = document.getElementById("closeModalButton");
+    const form = document.getElementById("addTaskForm");
+    const formFeedback = document.getElementById("formFeedback");
 
-            // Mostrar el modal
-            if (openModalButton) {
-                openModalButton.addEventListener("click", () => {
-                    modal.style.display = "flex";
-                });
+    // Mostrar modal
+    openModalButton?.addEventListener("click", () => {
+        modal.style.display = "flex";
+    });
+
+    // Cerrar modal
+    closeModalButton?.addEventListener("click", () => {
+        modal.style.display = "none";
+        clearForm();
+    });
+
+    // 🚨 Este es el cambio IMPORTANTE: escuchar el evento "submit"
+    form.addEventListener("submit", (event) => {
+        const name = document.getElementById("taskName").value.trim();
+        const startDate = document.getElementById("taskStartDate").value;
+        const duration = document.getElementById("taskDuration").value;
+        const StartReal = document.getElementById("taskStartReal").value;
+        const StartFin = document.getElementById("taskStartFin").value;
+
+        // Validaciones
+        if (!name || !startDate || !duration || parseInt(duration) < 1 || !StartReal) {
+            formFeedback.textContent = "Por favor, complete todos los campos correctamente.";
+            formFeedback.style.color = "red";
+            event.preventDefault(); // ❌ Detiene el envío
+            return;
+        }
+
+        const fechaInicio = new Date(startDate);
+        const fechaReal = new Date(StartReal);
+
+        if (fechaReal < fechaInicio) {
+            formFeedback.textContent = "La fecha de inicio real no puede ser anterior a la fecha de inicio planificada.";
+            formFeedback.style.color = "red";
+            event.preventDefault(); // ❌ Detiene el envío
+            return;
+        }
+
+        if (StartFin) {
+            const fechaFin = new Date(StartFin);
+            if (fechaFin < fechaReal) {
+                formFeedback.textContent = "La fecha de fin no puede ser anterior a la fecha de inicio real.";
+                formFeedback.style.color = "red";
+                event.preventDefault(); // ❌ Detiene el envío
+                return;
             }
+        }
 
-            // Cerrar el modal
-            closeModalButton.addEventListener("click", () => {
-                modal.style.display = "none";
-                clearForm();
-            });
+        // Copiar maxTaskId y maxTaskCode antes de enviar
+        document.getElementById('maxTaskIdInput').value = maxTaskId;
+        document.getElementById('maxTaskCodeInput').value = maxTaskCode;
 
-            // Agregar tarea
-            addTaskButton.addEventListener("click", () => {
-                const name = document.getElementById("taskName").value.trim();
-                const startDate = document.getElementById("taskStartDate").value;
-                const duration = document.getElementById("taskDuration").value;
-                const StartReal = document.getElementById("taskStartReal").value;
-                const StartFin = document.getElementById("taskStartFin").value;
-                if (!name || !startDate || !duration || parseInt(duration) < 1) {
-                    formFeedback.textContent = "Por favor, complete todos los campos correctamente.";
-                    formFeedback.style.color = "red";
-                    return;
-                }
+        formFeedback.textContent = ""; // Limpiar mensaje si todo está bien
+    });
 
-                // Aquí puedes insertar la lógica para guardar la tarea  BASE DE DATOS
-                formFeedback.textContent = "Tarea agregada exitosamente.";
-                formFeedback.style.color = "green";
+    function clearForm() {
+        form.reset();
+        formFeedback.textContent = "";
+    }
+});
+</script>
 
-                // Opcional: cerrar el modal después de un segundo
-                setTimeout(() => {
-                    modal.style.display = "none";
-                    clearForm();
-                }, 2000);
-            });
-
-            // Función para limpiar el formulario
-            function clearForm() {
-                document.getElementById("addTaskForm").reset();
-                formFeedback.textContent = "";
-            }
-        });
-        </script>
 
          <script>  // este
             document.addEventListener('contextmenu', function (e) {
