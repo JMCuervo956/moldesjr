@@ -6294,13 +6294,27 @@ app.post('/generar-pdfsemT', async (req, res) => {
               texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
             }
           });
-        }    
+        }
+
+        // temporal
+        await pool.query(`DROP TABLE IF EXISTS tmpitm`);
+        await pool.query(
+            `
+            create table tmpitm as
+            SELECT func_doc, ocompra, fecha_inspeccion, COUNT(*) as total
+            FROM items
+            WHERE (si = 'x' OR no_ = 'x' OR na = 'x')
+              OR (observacion IS NOT NULL AND TRIM(observacion) != '')
+            group by func_doc,ocompra,fecha_inspeccion;      
+            `);        
+
         const [rows] = await pool.query(`
           SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion,
                 a.no, a.aspecto, a.si, a.no_, a.na, a.observacion, c.firma_base64
           FROM items a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
+          INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
           WHERE fecha_inspeccion >= ? AND fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fecha, fechaf, doc_id, tip_func]);
