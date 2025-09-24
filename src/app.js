@@ -5618,7 +5618,7 @@ app.post('/generar-pdf', async (req, res) => {
 
         conn = await pool.getConnection();
         
-        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
         const totalRegistros = countResult[0].totalRegistros;
         if (totalRegistros === 0) {
           conn.release();
@@ -5829,6 +5829,7 @@ if (row.firma_base64) {
 // pdf total
 
 app.post('/generar-pdftot', async (req, res) => {
+  console.log('ingreso PDF Total');
   let conn;
   try {
         const { fecha, doc_id, func, tip_func } = req.body;
@@ -5844,7 +5845,7 @@ app.post('/generar-pdftot', async (req, res) => {
 
         conn = await pool.getConnection();
         
-        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items`);
+        const [countResult] = await conn.query(`select count(*) AS totalRegistros from items_hist`);
         const totalRegistros = countResult[0].totalRegistros;
         if (totalRegistros === 0) {
           conn.release();
@@ -6064,7 +6065,7 @@ if (row.firma_base64) {
           mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
         });
   }
-});  
+});
 
 
 // PDF SEMANA 
