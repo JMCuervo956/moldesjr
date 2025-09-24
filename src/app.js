@@ -5491,12 +5491,27 @@ app.post('/generar-pdf2', async (req, res) => {
         }
       });
     }    
+
+    // temporal
+    await pool.query(`DROP TABLE IF EXISTS tmpitm`);
+    await pool.query(
+        `
+        create table tmpitm as
+        SELECT func_doc, ocompra, fecha_inspeccion, COUNT(*) as total
+        FROM items_hist
+        WHERE (si = 'x' OR no_ = 'x' OR na = 'x')
+          OR (observacion IS NOT NULL AND TRIM(observacion) != '')
+        group by func_doc,ocompra,fecha_inspeccion;      
+        `);
+
     const [rows] = await pool.query(`
       SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
              a.no, a.aspecto, a.no_, a.observacion 
       FROM items_hist a 
       LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
-      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion < "${fechaf}" and func_doc="80164653"
+      LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
+      INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
+      where fecha_inspeccion >= "${fecha}" and fecha_inspeccion <= "${fechaf}" and func_doc="80164653"
       ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
     `);
     const fonts = {
@@ -5646,6 +5661,18 @@ app.post('/generar-pdf', async (req, res) => {
           return `${yyyy}-${mm}-${dd}`;
         }
 
+        // temporal
+        await pool.query(`DROP TABLE IF EXISTS tmpitm`);
+        await pool.query(
+            `
+            create table tmpitm as
+            SELECT func_doc, ocompra, fecha_inspeccion, COUNT(*) as total
+            FROM items_hist
+            WHERE (si = 'x' OR no_ = 'x' OR na = 'x')
+              OR (observacion IS NOT NULL AND TRIM(observacion) != '')
+            group by func_doc,ocompra,fecha_inspeccion;      
+            `);        
+
         const fechaISO = formatDate(fechaInicial);  // Ej: "2025-07-22"
         const fechafISO = formatDate(fechaFinal);   // Ej: "2025-07-27"
 
@@ -5656,7 +5683,8 @@ app.post('/generar-pdf', async (req, res) => {
           FROM items_hist a
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
-          WHERE fecha_inspeccion >= ? AND fecha_inspeccion < ? AND func_doc = ? AND ocompra= ?
+          INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
+          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion <= ? AND a.func_doc = ? AND a.ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fechaISO, fechafISO, doc_id, tip_func]);
 
@@ -5829,7 +5857,6 @@ if (row.firma_base64) {
 // pdf total
 
 app.post('/generar-pdftot', async (req, res) => {
-  console.log('ingreso PDF Total');
   let conn;
   try {
         const { fecha, doc_id, func, tip_func } = req.body;
@@ -5896,7 +5923,7 @@ app.post('/generar-pdftot', async (req, res) => {
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
           INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
-          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion < ? 
+          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion <= ? 
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fechaISO, fechafISO]);
 
@@ -6315,7 +6342,7 @@ app.post('/generar-pdfsemT', async (req, res) => {
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
           INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
-          WHERE fecha_inspeccion >= ? AND fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
+          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fecha, fechaf, doc_id, tip_func]);
         const fonts = {
