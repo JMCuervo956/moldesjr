@@ -290,7 +290,6 @@ app.get('/ccosto', async (req, res) => {
     const userUser = req.session.user;
     const userName = req.session.name;
 //
-    console.log(req.session.rol);
     let canView = 0, canCreate = 0, canEdit = 0, canDelete = 0;
 
     if (parseInt(req.session.rol) !== 1)
@@ -1716,12 +1715,12 @@ app.post('/respuesta', async (req, res) => {
     // Ejecutar las dos inserciones en paralelo
     await Promise.all([
       pool.execute(
-        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [ultid, ulttask, idot, `${taskname} (Planificada)`, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 1, 'Principal']
+        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type, fchinip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [ultid, ulttask, idot, `${taskname} (Planificada)`, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 1, 'Principal', , taskStartDate]
       ),
       pool.execute(
-        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [ultid + 1, ulttask, idot, taskname, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 0, 'Real']
+        'INSERT INTO tbl_actividad (id, task, idot, text, start_date, fecha_inicio, fecha_fin, duration, progress, type, fchinip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [ultid + 1, ulttask, idot, taskname, taskStartDate,  taskStartReal === '' ? null : taskStartReal, taskStartFin === '' ? null : taskStartFin, taskDuration, 0, 'Real', taskStartDate]
       )
     ]);
 
@@ -2068,50 +2067,238 @@ app.get('/progresogralT', async (req, res) => {
 
 app.post('/tareas', async (req, res) => {
   try {
-    const idot = req.body.idot;
+    const { idot } = req.body;
     const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ? ORDER BY id", [idot]);
 
+    const hoy = new Date().toISOString().split("T")[0];
+
     const formatFecha = (fecha) => {
-      if (!fecha) return '';
-      if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-        return fecha; // ya viene bien formateada
-      }
       const dateObj = new Date(fecha);
-      if (isNaN(dateObj)) return '';
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return isNaN(dateObj) ? '' : dateObj.toISOString().split("T")[0];
     };
 
-    const hoy = new Date().toISOString().split("T")[0]; // hoy en YYYY-MM-DD
+    const esFechaValida = (fecha) => {
+      return fecha && !isNaN(new Date(fecha));
+    };
     const tasks = {
       tasks: rows.map((row, index) => {
-        let color = "#32CD32"; // predeterminado
+        // Fechas base
+        const fechaInicio = new Date(row.start_date);
+        const fechaFin = new Date(row.fecha_fin);
+        const fechaInicioValida = esFechaValida(row.start_date);
+        const fechaFinValida = esFechaValida(row.fecha_fin);
 
-        const startDateStr = formatFecha(row.start_date);
-        const fchtermDate = new Date(startDateStr);
+        // Fecha término estimada
+        let fchtermDate = fechaInicioValida ? new Date(fechaInicio) : new Date();
         fchtermDate.setDate(fchtermDate.getDate() + (row.duration || 1) - 1);
         const fchterm = formatFecha(fchtermDate);
 
-        // lógica de colores
-        if (row.fecha_inicio > row.start_date) color = "#FFD700";
-        if (!row.fecha_fin && fchterm < hoy) color = "#FF6347";
-        if (row.type === "Principal") color = "#0000FF";
-        else if (row.type === "in-progress") color = "#FFD700";
-        else if (row.type === "completed") color = "#4CAF50";
-        else if (row.type === "delayed") color = "#FF6347";
+        // Días entre fechas (si ambas son válidas)
+        let diasConInicio = 0;
+        if (fechaInicioValida && fechaFinValida) {
+          const diffMs = fechaFin - fechaInicio;
+          diasConInicio = diffMs / (1000 * 60 * 60 * 24) + 1;
+        }
+
+        // Lógica de color simplificada
+        let color = "#32CD32"; // default
+
+        function esFechaFinValida(fecha) {
+          const fechaTime = new Date(fecha).getTime();
+          const epochTime = new Date('1970-01-01T00:00:00.000Z').getTime();
+          return !isNaN(fechaTime) && fechaTime !== epochTime;
+        }
+
+
+
+// Mostrar resultados
+
+const fchterm1 = row.fchinip; // fecha de inicio
+const duration = row.duration;           // duración en días
+const startDate = new Date(fchterm1);
+const daysToAdd = duration - 1;
+const resultDate = new Date(startDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+const formattedResult = resultDate.toISOString().slice(0, 10);
+
+// Mostrar resultado
+
+
+
+        if (row.type === "Principal") {
+          color = "#0000FF"; // Azul obligatorio
+        } else if (row.fecha_inicio == row.fchinip && !row.fecha_fin) {
+          color = "#32CD32";
+        } else if (  row.fecha_fin < formattedResult && esFechaFinValida(fechaFin) ) {
+          color = "#22e4ebff"; // celeste si duración corta y fecha válida
+        } else if (row.fecha_inicio > row.fchinip && !row.fecha_fin) {
+          color = "#FFD700"; // Amarillo si inició después del planificado
+        } else if (row.fecha_fin && row.fecha_fin > formattedResult) {
+          color = "#e90a0aff";
+        } 
+
+/*        
+        if (row.type === "Principal") {
+          color = "#0000FF"; // Azul obligatorio
+        } else if (row.fecha_inicio > row.start_date) {
+          color = "#FFD700"; // inicio después del planificado
+        } else if (!row.fecha_fin && fchterm < hoy) {
+          color = "#a3746bff"; // sin fin y ya vencido
+        } else if (diasConInicio === 6) {
+          color = "#22e4ebff";
+        } else if (row.fecha_fin && row.fecha_fin < fchterm) {
+          color = "#7373d4ff";
+        } else if (row.fecha_fin && row.fecha_fin > fchterm) {
+          color = "#e90a0aff";
+        } else if (!row.fecha_fin && fchterm < hoy) {
+          color = "#0c700cff";
+        } else {
+          const typeColors = {
+            "in-progress": "#FFD700",
+            "completed": "#4CAF50",
+            "delayed": "#FF6347"
+          };
+          color = typeColors[row.type] || color;
+        }
+*/
 
         return {
           id: index + 1,
           task: row.task || 1,
           text: row.text || "Tarea sin descripción",
-
-          start_date: `${startDateStr}T00:00`,
+          start_date: `${formatFecha(row.start_date)}T00:00`,
+          fchinip: `${formatFecha(row.fchinip)}T00:00`,
           fecha_inicio: row.fecha_inicio ? `${formatFecha(row.fecha_inicio)}T00:00` : null,
           fecha_fin: row.fecha_fin ? `${formatFecha(row.fecha_fin)}T00:00` : null,
           termina: `${fchterm}T00:00`,
+          duration: row.duration || 1,
+          progress: row.progress || 0,
+          type: row.type,
+          color
+        };
+      }),
+      links: []
+    };
 
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    res.status(500).json({ message: 'Error al procesar la solicitud' });
+  }
+}); 
+
+
+app.post('/tareassss', async (req, res) => {
+  try {
+    const idot = req.body.idot;
+    const [rows] = await pool.execute("SELECT * FROM tbl_actividad WHERE idot = ? ORDER BY id", [idot]);
+    // Función segura para formatear fechas en YYYY-MM-DD usando UTC
+    function formatFecha(fecha) {
+      if (!fecha) return '';
+
+      const dateObj = new Date(fecha);
+      if (isNaN(dateObj)) return '';
+
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getUTCDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    }
+
+    const hoy = new Date().toISOString().split("T")[0]; // hoy en YYYY-MM-DD
+
+    const tasks = {
+      tasks: rows.map((row, index) => {
+        // Validar y crear fecha término base
+        let fchtermDate = new Date(row.start_date);
+        if (isNaN(fchtermDate)) {
+          console.warn('Fecha inválida en row.fecha:', row.fecha);
+          fchtermDate = new Date(); // Asignar hoy para evitar errores
+        }
+
+        // Ajustar fecha término con duración
+        fchtermDate.setDate(fchtermDate.getDate() + (row.duration || 1) - 1);
+
+        const fchterm = formatFecha(fchtermDate);
+
+        // Formatear fechas de inicio y fin con función segura
+        const startDateStr = formatFecha(row.start_date);
+        const fechaInicioStr = row.fecha_inicio ? formatFecha(row.fecha_inicio) : null;
+        const fechaFinStr = row.fecha_fin ? formatFecha(row.fecha_fin) : null;
+
+        // Lógica de colores
+        let color = "#32CD32"; // color por defecto
+
+        if (row.fecha_inicio > row.start_date) {
+          color = "#FFD700";  // Oro
+        } else if (!row.fecha_fin && fchterm < hoy) {
+          color = "#a3746bff";  // fecha fin vacía y término pasado
+        } else {
+          const typeColors = {
+            "Principal": "#0000FF",
+            "in-progress": "#FFD700",
+            "completed": "#4CAF50",
+            "delayed": "#FF6347"
+          };
+          color = typeColors[row.type] || color;
+        }
+        
+        const fechaFin = new Date(row.fecha_fin); 
+        const fechaInicio = new Date(row.start_date);
+        const fechaStart = new Date(row.start_date);
+        let diasConInicio = 0;
+
+        if (esFechaValida(row.fecha_fin) && esFechaValida(row.start_date)) {
+          const fechaFin = new Date(row.fecha_fin);
+          const fechaInicio = new Date(row.start_date);
+          const fechaSD = new Date(row.start_date);
+
+          const diffMs = fechaFin - fechaInicio;
+          const diffDias = diffMs / (1000 * 60 * 60 * 24);
+          diasConInicio = diffDias + 1;
+
+          if (row.type === "Principal") {
+            color = "#0000FF";
+          } else if (!fechaFin && fechaInicio >= fechaInicio) {
+            color = "#FFD700";
+          } else if (diasConInicio == 6) {
+            color = "#22e4ebff";
+          } else if (row.fecha_fin && row.fecha_fin < fchterm) {
+            color = "#7373d4ff";
+          } else if (row.fecha_fin && row.fecha_fin > fchterm) {
+            color = "#e90a0aff";
+          } else if (!row.fecha_fin && fchterm < hoy) {
+            color = "#0c700cff";
+          }          
+
+        } else {
+
+          const fechaInicio = new Date(row.start_date);
+          const fechaSD = new Date(row.start_date);
+
+          if (row.type === "Principal") {
+            color = "#0000FF";
+          } else if (!fechaFin && fechaInicio >= fechaInicio) {
+            color = "#FFD700";
+          } else if (diasConInicio == 6) {
+            color = "#22e4ebff";
+          } else if (row.fecha_fin && row.fecha_fin < fchterm) {
+            color = "#7373d4ff";
+          } else if (row.fecha_fin && row.fecha_fin > fchterm) {
+            color = "#e90a0aff";
+          } else if (!row.fecha_fin && fchterm < hoy) {
+            color = "#0c700cff";
+          }          
+        }
+
+        return {
+          id: index + 1,
+          task: row.task || 1,
+          text: row.text || "Tarea sin descripción",
+          start_date: `${startDateStr}T00:00`,
+          fecha_inicio: fechaInicioStr ? `${fechaInicioStr}T00:00` : null,
+          fecha_fin: fechaFinStr ? `${fechaFinStr}T00:00` : null,
+          termina: `${fchterm}T00:00`,
           duration: row.duration || 1,
           progress: row.progress || 0,
           type: row.type,
@@ -2128,26 +2315,23 @@ app.post('/tareas', async (req, res) => {
   }
 });
 
+function esFechaValida(fechaStr) {
+  return typeof fechaStr === 'string' && !isNaN(new Date(fechaStr).getTime());
+}
 
 function formatFecha(fecha) {
   if (!fecha) return '';
 
-  // Dividir manualmente si es string (YYYY-MM-DD)
-  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    const [year, month, day] = fecha.split('-');
-    return `${year}-${month}-${day}`;
-  }
-
-  // Si es Date, usar partes locales
   const dateObj = new Date(fecha);
   if (isNaN(dateObj)) return '';
 
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
+  // 🔧 Usar UTC para evitar que la zona horaria local altere el día
+  const year = dateObj.getUTCFullYear();
+  const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getUTCDate()).padStart(2, '0');
+
   return `${year}-${month}-${day}`;
 }
-
 
 
 /* TAREAS G*/ 
@@ -2240,7 +2424,6 @@ app.post('/tareasg', async (req, res) => {
             color = "#e96149ff"; // Rojo - aún no finaliza y está vencida
         }
     }  // start_date
-      
     return {
       task: row.idcc,
       text: row.descripcion || "Tarea sin descripción",
@@ -2275,7 +2458,42 @@ app.post('/tareasg', async (req, res) => {
   }
 });
 
-function formatDateAAAAMMDD(date) {
+function formatDateAAAAMMDD(dateStr) {
+  if (!dateStr) return null;
+
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return null;
+
+  const [year, month, day] = parts;
+
+  if (isNaN(Number(year)) || isNaN(Number(month)) || isNaN(Number(day))) {
+    return null;
+  }
+
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+
+function formatDateAAAAMMDD1111111111(date) {
+  if (!date) return null;
+
+  let d = date;
+
+  // Si viene como string (por ejemplo '2025-08-18'), conviértelo a Date
+  if (typeof date === 'string') {
+    d = new Date(date);
+  }
+
+  // Verifica que sea una fecha válida
+  if (isNaN(d.getTime())) return null;
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateAAAAMMDDAAAA(date) {
   if (!date || isNaN(date)) return null;
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -4388,19 +4606,24 @@ app.post('/modificar-actividad', async(req, res) => {
   fecha_fin = fecha_fin === '' ? null : fecha_fin;
   try {
     // actualiza una actividad específica
-    /*
-    cons freal = date 
-    if (fecha_inicio is null) { 
-       freal 0 null
-    }
-    if (fecha_inicio is not null) { 
-       freal =0 null
-    }
-    */
-    
     await pool.execute(
-      `UPDATE tbl_actividad SET text = ?, start_date = ?, fecha_inicio = ?, fecha_fin = ?,  duration = ? WHERE idot = ? and task = ?`,
-      [text, start_date, fecha_inicio, fecha_fin, duration, idot, task]
+      `UPDATE tbl_actividad SET text = ?, start_date = ?, fchinip= ?, fecha_inicio = ?, fecha_fin = ?,  duration = ? WHERE idot = ? and task = ?`,
+      [text, start_date, start_date, fecha_inicio, fecha_fin, duration, idot, task]
+    );
+
+    await pool.execute(
+      `UPDATE tbl_actividad 
+      SET text = ?, start_date = ?, fchinip= ? , fecha_fin = ?, duration = ? 
+      WHERE idot = ? AND task = ? AND type = ?`,
+      [text, start_date, start_date, fecha_fin, duration, idot, task, "Principal"]
+    );
+   
+    // Actualizar tipo 'Real'
+    await pool.execute(
+      `UPDATE tbl_actividad 
+      SET text = ?, start_date = ?, fecha_inicio = ?, fecha_fin = ?, duration = ? 
+      WHERE idot = ? AND task = ? AND type = ?`,
+      [text, fecha_inicio, fecha_inicio, fecha_fin, duration, idot, task, "Real"]
     );
 
     req.session.mensaje = {
@@ -5385,7 +5608,7 @@ app.post('/generar-pdf', async (req, res) => {
         const { fecha, doc_id, func, tip_func } = req.body;
         if (!fecha) {
           // Redirige con mensaje de error
-          return res.render('inspeccion', {
+          return res.render('opciones', {
             mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
           });
         }
@@ -5399,7 +5622,7 @@ app.post('/generar-pdf', async (req, res) => {
         const totalRegistros = countResult[0].totalRegistros;
         if (totalRegistros === 0) {
           conn.release();
-          return res.render('inspeccion', {
+          return res.render('opciones', {
             mensaje: {  
               tipo: 'danger',
               texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
@@ -5611,7 +5834,7 @@ app.post('/generar-pdftot', async (req, res) => {
         const { fecha, doc_id, func, tip_func } = req.body;
         if (!fecha) {
           // Redirige con mensaje de error
-          return res.render('inspeccion', {
+          return res.render('opciones', {
             mensaje: { tipo: 'danger', texto: 'Debes seleccionar una fecha...' }
           });
         }
@@ -5625,7 +5848,7 @@ app.post('/generar-pdftot', async (req, res) => {
         const totalRegistros = countResult[0].totalRegistros;
         if (totalRegistros === 0) {
           conn.release();
-          return res.render('inspeccion', {
+          return res.render('opciones', {
             mensaje: {  
               tipo: 'danger',
               texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`

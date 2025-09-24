@@ -398,9 +398,9 @@
             gantt.config.columns = [
                 {
                     name: "task",
-                    label: "<b>Id</b>",
+                    label: '<span style="font-size:14px; font-weight:bold;">Id</span>',
                     align: "center",
-                    width: 40,
+                    width: 30,
                     template: function (task) {
                         // Obtener la fila anterior directamente desde Gantt
                         const index = gantt.getTaskIndex(task.id);
@@ -414,37 +414,52 @@
                         return task.task;
                     }
                 },
-                { name: "text", label: '<span style="font-size:12px; font-weight:bold;">Actividad</span>', align: "left", width: 150 },
-                { name: "start_date", label: "<b>Inicio</b>",  align: "left", width: 80,
+                { name: "text", 
+                  label: '<span style="font-size:14px; font-weight:bold;">Actividad</span>',
+                  align: "left", width: 150 },
+                { name: "start_date", 
+                  label: '<span style="font-size:14px; font-weight:bold;">Inicio</span>',  
+                  align: "left", width: 80,
                         template: function(task) {
-                        return `<span style="color: #0000ff; font-weight: bold; font-size: 10px;">${gantt.date.date_to_str("%d-%m-%Y")(task.start_date)}</span>`;
+                        return `<span style="color: #0000ff; font-weight: bold; font-size: 10px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fchinip)}</span>`;
                     }
                 },
                 { 
-                    name: "fecha_inicio", label: "<b>Inicio Real</b>", label: '<span style="font-size:12px; font-weight:bold;">Real</span>', align: "left", width: 80,
+                    name: "fecha_inicio", 
+                    label: '<span style="font-size:14px; font-weight:bold;">Real</span>',
+                    align: "left", width: 80,
                     template: function(task) {
                         return task.fecha_inicio 
-                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_inicio)}</span>`
+                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 10px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_inicio)}</span>`
                             : `<span style="color: #888888;">N/A</span>`;
                     }
                 },
                 { 
-                    name: "fecha_fin", label: "<b>Fecha Fin</b>", label: '<span style="font-size:12px; font-weight:bold;">Fin</span>', align: "left", width: 80,
+                    name: "fecha_fin", 
+                    label: "<b>Fecha Fin</b>", 
+                    label: '<span style="font-size:14px; font-weight:bold;">Fin</span>', 
+                    align: "left", width: 80,
                     template: function(task) {
                         return task.fecha_fin 
-                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_fin)}</span>`
-                            : `<span style="color: #888888;">N/A</span>`;
+                            ? `<span style="color: #642f2a; background-color: #fcebea; font-weight: bold; font-size: 9px; padding: 2px 4px; border-radius: 3px;">
+                                    ${gantt.date.date_to_str("%d-%m-%Y")(task.fecha_fin)}
+                            </span>`
+                            : `<span style="color: #888888; background-color: #f0f0f0; font-size: 10px; padding: 2px 4px; border-radius: 3px;">
+                                    N/A
+                            </span>`;
                     }
                 },
                 { 
-                    name: "termina", label: "<b>Termina</b>", label: '<span style="font-size:12px; font-weight:bold;">Termina</span>', align: "left", width: 80,
+                    name: "termina", 
+                    label: "<b>Termina</b>", 
+                    label: '<span style="font-size:14px; font-weight:bold;">Termina</span>', 
+                    align: "left", width: 80,
                     template: function(task) {
                         return task.termina 
-                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 8px;">${gantt.date.date_to_str("%d-%m-%Y")(task.termina)}</span>`
+                            ? `<span style="color: #0000ff; font-weight: bold; font-size: 10px;">${gantt.date.date_to_str("%d-%m-%Y")(task.termina)}</span>`
                             : `<span style="color: #888888;">N/A</span>`;
                     }
                 },                
-                
             ];
 
             gantt.locale = {
@@ -567,7 +582,6 @@
                             if (day === 'dom') {
                                 return `<span style="color: red; font-weight: bold; text-transform: uppercase; font-size: 10px;">${day}</span>`;  // Devolver el día en rojo, negrita, mayúsculas y con tamaño de letra más grande
                             } else {
-                    
                                 // Fechas en el array (por ejemplo, las fechas de eventos en el Gantt)
                                 const fechas = ['2025-04-15', '2025-04-16', '2025-05-12'];
 
@@ -579,13 +593,12 @@
                                     // Comparamos la fecha del Gantt con las fechas del array
                                     return fechaGantt === fechaStr;
                                 });
-
                                 // Estilo dependiendo de si la fecha está en el array
                                 if (fechaEncontrada) {
                                     // tamaño texto nom dia [mie]
                                     return `<span style="color: darkblue; font-weight: bold; font-size: 12px;">${day}</span>`;  // Estilo para fechas en el array (rojo)
                                 } else {
-                                    return `<span style="color: green; font-weight: bold; font-size: 42px;">${day}</span>`;  // Estilo para otros días (verde)
+                                    return `<span style="color: green; font-weight: bold; font-size: 12px;">${day}</span>`;  // Estilo para otros días (verde)
                                 }
                         }
                     },
@@ -626,6 +639,7 @@
                             task: task.task,
                             text: task.text,
                             start_date: new Date(task.start_date),
+                            fchinip: new Date(task.fchinip),
                             fecha_inicio: task.fecha_inicio ? new Date(task.fecha_inicio) : null,
                             fecha_fin: task.fecha_fin ? new Date(task.fecha_fin) : null,
                             termina: task.termina ? new Date(task.termina) : null,
@@ -643,7 +657,9 @@
                         gantt.init("gantt_here");
                         gantt.clearAll();
                         // Ordenar las tareas por fecha de inicio (start_date)
-                        ganttData.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+                        //ganttData.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+                        // ORDEN
+                        ganttData.sort((a, b) => a.id - b.id);
                         gantt.parse({ data: ganttData, links: [] });
                         loadActivities(data.tasks);
                     } else {
@@ -731,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 
-         <script>  // este
+         <script>  
             document.addEventListener('contextmenu', function (e) {
                 e.preventDefault();
                 const target = e.target.closest(".gantt_cell[data-column-name='text']");
@@ -749,9 +765,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     tooltip.innerHTML = `
                         <b>${task.text}</b><br>
                         <b>Inicio ..... :</b> ${gantt.date.date_to_str("%d %M %Y")(task.start_date)}<br>
-                        <b>Finaliza ... :</b> ${gantt.date.date_to_str("%d %M %Y")(adjustedEndDate)}<br>
+                        <b>Finaliza ... :</b> ${gantt.date.date_to_str("%d %M %Y")(task.fecha_fin)}<br>
                         <b>Duración ... :</b> ${task.duration} días<br>
-                        <b>Progreso ... :</b> ${task.progress * 100}%
                     `;
                     tooltip.style.left = e.pageX + "px";
                     tooltip.style.top = e.pageY + "px";
