@@ -6276,7 +6276,7 @@ app.post('/generar-pdfsemT', async (req, res) => {
   try {
         const { fecha, doc_id, tip_func } = req.body;
         if (!fecha || !doc_id || !tip_func) {
-          return res.render('opcion', {
+          return res.render('opciones', {
             mensaje: { tipo: 'danger', texto: 'Debes completar todos los campos del formulario.' }
           });
         }
@@ -6288,7 +6288,7 @@ app.post('/generar-pdfsemT', async (req, res) => {
         const totalRegistros = countResult[0].totalRegistros;
         if (totalRegistros === 0) {
           conn.release();
-          return res.render('opcion', {
+          return res.render('opciones', {
             mensaje: {  
               tipo: 'danger',
               texto: `NO existen registros ${totalRegistros}, desde el ${fecha} hasta el ${fechaf}.`
