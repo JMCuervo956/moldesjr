@@ -1047,14 +1047,17 @@ app.post('/otrabajo', async (req, res) => {
   }
 });
 
-app.get('/otrabajo/delete/:idot', async (req, res) => {
-    const idot = req.params.idot;
+app.get('/otrabajo/delete/:idot/:subot', async (req, res) => {
+    const { idot, subot } = req.params;
     try {
-        await pool.execute('DELETE FROM tbl_otrabajo WHERE idot = ?', [idot]);
-        req.session.mensaje = {
-            tipo: 'success',
-            texto: `Eliminado exitosamente - ID: ${idot}`
-        };
+      await pool.execute(
+        'DELETE FROM tbl_otrabajo WHERE idot = ? AND subot = ?',
+        [idot, subot]
+      );
+      req.session.mensaje = {
+        tipo: 'success',
+        texto: `Eliminado exitosamente - ID: ${idot}, SUBOT: ${subot}`
+      };
     } catch (err) {
         console.error('Error al eliminar Orden de Trabajo:', err);
         let texto = `Error al eliminar Orden de Trabajo - ID: ${idot}`;

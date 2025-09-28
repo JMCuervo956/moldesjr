@@ -39,7 +39,7 @@ export const login = async (req, res) => {
         horaini: param.id_horaini,
         horafin: param.id_horafin,
         diasverif: param.id_diasverif,
-        diassem: param.id_dia
+        diassem: param.dia
       };      
     };
 
@@ -54,6 +54,8 @@ export const login = async (req, res) => {
     } else {
       return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
     }
+
+    console.log(diassem);
 
     if (getBogotaWeekday('capitalized') !== diassem) {
     } else {
