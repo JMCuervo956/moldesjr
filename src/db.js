@@ -17,7 +17,8 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 20,
   queueLimit: 0,
-  connectTimeout: 10000,
+  connectTimeout: 20000,
+  acquireTimeout: 20000,  // importante agregar
   ssl: {
     rejectUnauthorized: false // ← Clever Cloud NO requiere validación estricta de certificados
   },

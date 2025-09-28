@@ -325,7 +325,7 @@ app.get('/ccosto', async (req, res) => {
           END AS estado_actual
         FROM tbl_ccosto a
         JOIN tbl_cliente b ON a.cliente = b.nit
-        LEFT JOIN tbl_estcco c ON a.estado = c.cco_idest order by idcc desc;
+        LEFT JOIN tbl_estcco c ON a.estado = c.cco_idest order by idcc desc LIMIT 100;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT * FROM tbl_unidad'),
       conn.execute('SELECT * FROM tbl_cliente ORDER BY cliente'),
@@ -336,7 +336,7 @@ app.get('/ccosto', async (req, res) => {
     const mensaje = req.session.mensaje;
     delete req.session.mensaje;
 
-    await pool.execute(
+    await conn.execute(
       `INSERT INTO logs_mjr (user, proceso, fecha_proceso) 
         VALUES (?, ?, ?)`,
       [userUser, 2, fechaHoraBogota]
