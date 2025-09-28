@@ -325,10 +325,9 @@ html, body {
                 <div class="form-row">
                     <label for="cco_codigo">Centro de Costo:</label>
                     <select class="form-control" id="cco_codigo" required>
-
                       <option value="">Centro de Costo</option>
                       <% ccost.forEach(p => { %>
-                        <option value="<%= p.idcc %>"><%= p.idcc %></option>
+                        <option value="<%= p.idcc %>"><%= p.idcc %> - <%= p.descripcion %></option>
                       <% }) %>
                     </select>
                 </div>

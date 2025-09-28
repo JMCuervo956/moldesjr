@@ -881,7 +881,7 @@ app.get('/otrabajo', async (req, res) => {
         LEFT JOIN tbl_estcco d ON c.estado = d.cco_idest order by a.idot desc;
       `, [fechaHoraBogota, fechaHoraBogota, fechaHoraBogota, fechaHoraBogota]),
       conn.execute('SELECT nit, nombre FROM tbl_proveedor'),
-      conn.execute('SELECT * FROM tbl_ccosto'),
+      conn.execute('SELECT * FROM tbl_ccosto order by idcc desc'),
     ]);
 
     const mensaje = req.session.mensaje;

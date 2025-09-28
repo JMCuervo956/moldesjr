@@ -39,7 +39,9 @@ export const login = async (req, res) => {
         horaini: param.id_horaini,
         horafin: param.id_horafin,
         diasverif: param.id_diasverif,
-        diassem: param.dia
+        diassem: param.dia,
+        diasab: param.sbd,
+        horasbd: param.sbd_hf,
       };      
     };
 
@@ -47,7 +49,7 @@ export const login = async (req, res) => {
     const hora = fechaBogota.getUTCHours();
     const dia = fechaBogota.getUTCDay();
 
-    const { horaini, horafin, diasverif, diassem } = req.session.param || {};
+    const { horaini, horafin, diasverif, diassem, diasab, horasbd } = req.session.param || {};
 
    
     if (hora >= 7 && hora < horafin) {
@@ -55,13 +57,18 @@ export const login = async (req, res) => {
       return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
     }
 
-    console.log(diassem);
-
     if (getBogotaWeekday('capitalized') !== diassem) {
     } else {
-      return res.json({ status: 'error', message: 'Día fuera de rango' });
+      return res.json({ status: 'error', message: '- Domingo - Día fuera de rango' });
     }
 
+    if (getBogotaWeekday('capitalized') !== diasab) {
+    } else {
+        if (hora >= 7 && hora < horasbd) {
+        } else {
+          return res.json({ status: 'error', message: '- sabado - Hora Fuera de Rango' });
+        }
+    }
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
   } catch (error) {
     console.error('Error en login:', error);
