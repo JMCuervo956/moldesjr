@@ -38,7 +38,8 @@ export const login = async (req, res) => {
       req.session.param = {
         horaini: param.id_horaini,
         horafin: param.id_horafin,
-        diasverif: param.id_diasverif
+        diasverif: param.id_diasverif,
+        diassem: param.id_dia
       };      
     };
 
@@ -46,7 +47,7 @@ export const login = async (req, res) => {
     const hora = fechaBogota.getUTCHours();
     const dia = fechaBogota.getUTCDay();
 
-    const { horaini, horafin, diasverif } = req.session.param || {};
+    const { horaini, horafin, diasverif, diassem } = req.session.param || {};
 
    
     if (hora >= 7 && hora < horafin) {
@@ -54,7 +55,7 @@ export const login = async (req, res) => {
       return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
     }
 
-    if (getBogotaWeekday('capitalized') !== 'Dom') {
+    if (getBogotaWeekday('capitalized') !== diassem) {
     } else {
       return res.json({ status: 'error', message: 'Día fuera de rango' });
     }
