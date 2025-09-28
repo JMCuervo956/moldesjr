@@ -42,18 +42,23 @@ export const login = async (req, res) => {
       };      
     };
 
-  // Ahora puedes usar:
-  const hora = fechaBogota.getUTCHours();
-  const dia = fechaBogota.getUTCDay();
+    // Ahora puedes usar:
+    const hora = fechaBogota.getUTCHours();
+    const dia = fechaBogota.getUTCDay();
 
-  const { horaini, horafin, diasverif } = req.session.param || {};
-      
-  if (hora >= 7 && hora < horafin) {
-  } else {
-    return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
-  }
+    const { horaini, horafin, diasverif } = req.session.param || {};
 
-    
+   
+    if (hora >= 7 && hora < horafin) {
+    } else {
+      return res.json({ status: 'error', message: 'Hora Fuera de Rango' });
+    }
+
+    if (getBogotaWeekday('capitalized') !== 'Dom') {
+    } else {
+      return res.json({ status: 'error', message: 'Día fuera de rango' });
+    }
+
     return res.json({ status: 'success', message: '!LOGIN Correcto!' });
   } catch (error) {
     console.error('Error en login:', error);
@@ -78,3 +83,39 @@ function getBogotaDateTime() {
 
   return `${data.year}-${data.month}-${data.day} ${data.hour}:${data.minute}:${data.second}`;
 }
+
+function getBogotaWeekday(format = 'capitalized') {
+  const date = new Date();
+
+  const formatter = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    weekday: format === 'full' ? 'long' : 'short'
+  });
+
+  let weekday = formatter.format(date); // Ej: 'dom.' o 'domingo'
+
+  // Limpiar el punto si existe (algunos navegadores devuelven 'dom.' con punto)
+  weekday = weekday.replace('.', '');
+
+  switch (format) {
+    case 'lower':
+      return weekday.toLowerCase();       // 'dom'
+    case 'upper':
+      return weekday.toUpperCase();       // 'DOM'
+    case 'capitalized':
+      return weekday.charAt(0).toUpperCase() + weekday.slice(1).toLowerCase(); // 'Dom'
+    case 'full':
+      return weekday.charAt(0).toUpperCase() + weekday.slice(1).toLowerCase(); // 'Domingo'
+    default:
+      return weekday; // por defecto devuelve capitalizada
+  }
+}
+
+/*
+
+console.log(getBogotaWeekday('lower'));       // 'dom'
+console.log(getBogotaWeekday('upper'));       // 'DOM'
+console.log(getBogotaWeekday('capitalized')); // 'Dom'
+console.log(getBogotaWeekday('full'));        // 'Domingo'
+
+*/

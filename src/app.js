@@ -911,7 +911,7 @@ app.post('/otrabajo', async (req, res) => {
   if (!req.session.loggedin) return res.redirect('/?expired=1');
   const conn = await pool.getConnection();
   try {
-    const { idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando, } = req.body;
+    const { idot, subot, descripcion, proveedor, disenador, supervisor, soldador, observacion, editando, } = req.body;
 
     const permisos = req.session.permisos || {};
     const canCreate = permisos.canCreate;
@@ -926,8 +926,8 @@ app.post('/otrabajo', async (req, res) => {
       await conn.execute(
         `UPDATE tbl_otrabajo 
          SET descripcion = ?, proveedor = ?, disenador = ?, supervisor = ?, soldador = ?, observacion = ? 
-         WHERE idot = ?`,
-        [descripcion, proveedor, 0, 0, 0, observacion, idot]
+         WHERE idot = ? and subot = ? `,
+        [descripcion, proveedor, 0, 0, 0, observacion, idot, subot]
       );
       mensaje = {
         tipo: 'success',
@@ -936,8 +936,8 @@ app.post('/otrabajo', async (req, res) => {
     } else {
       // Verificar si ya existe el idot
       const [rows] = await conn.execute(
-        'SELECT COUNT(*) AS count FROM tbl_otrabajo WHERE idot = ?',
-        [idot]
+        'SELECT COUNT(*) AS count FROM tbl_otrabajo WHERE idot = ? and subot = ? ',
+        [idot, subot]
       );
 
       if (rows[0].count > 0) {
@@ -949,9 +949,9 @@ app.post('/otrabajo', async (req, res) => {
         const fechaHoraBogota = getBogotaDateTime();
         await conn.execute(
           `INSERT INTO tbl_otrabajo 
-           (idot, descripcion, proveedor, disenador, supervisor, soldador, observacion, fecharg) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [idot, descripcion, proveedor, 0, 0, 0, observacion, fechaHoraBogota]
+           (idot, subot, descripcion, proveedor, disenador, supervisor, soldador, observacion, fecharg) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [idot, subot, descripcion, proveedor, 0, 0, 0, observacion, fechaHoraBogota]
         );
         mensaje = {
           tipo: 'success',
@@ -6342,7 +6342,7 @@ app.post('/generar-pdfsemT', async (req, res) => {
           LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
           LEFT JOIN firmas c on a.func_doc=c.cedula and a.ocompra=c.tip_func and a.fecha_inspeccion=c.fecha
           INNER JOIN tmpitm t on a.func_doc=t.func_doc and a.ocompra=t.ocompra and a.fecha_inspeccion=t.fecha_inspeccion
-          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion <= ? AND func_doc = ? AND ocompra= ?
+          WHERE a.fecha_inspeccion >= ? AND a.fecha_inspeccion <= ? AND a.func_doc = ? AND a.ocompra= ?
           ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
         `, [fecha, fechaf, doc_id, tip_func]);
         const fonts = {
@@ -6504,7 +6504,7 @@ app.post('/generar-pdfsemT', async (req, res) => {
   } catch (error) {
         if (conn) conn.release();
         console.error('Error ejecutando SP:', error);
-        res.render('inspeccioncfg', {
+        res.render('opciones', {
           mensaje: { tipo: 'danger', texto: 'Error al ejecutar el procedimiento.' }
         });
   }
