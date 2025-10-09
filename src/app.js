@@ -6523,8 +6523,6 @@ app.get('/pendientes', async (req, res) => {
 
   const fechaInicio = obtenerFechaBogotaYYYYMMDD(new Date(Date.now() - 86400000)); // ayer Bogotá
   const fechaFin = obtenerFechaBogotaYYYYMMDD(new Date()); // hoy Bogotá
-  console.log(fechaInicio);
-  console.log(fechaFin);
   
 function obtenerFechaBogotaYYYYMMDD(date = new Date()) {
   const fechaBogota = new Date(
@@ -6554,7 +6552,7 @@ const [rows] = await pool.query(`
 
 
 
-app.get('/pendientessss', async (req, res) => {
+app.get('/pendientest', async (req, res) => {
   const [rows] = await pool.query(`
     SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
            a.no, a.aspecto, a.no_, a.observacion 
