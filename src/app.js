@@ -6523,7 +6523,9 @@ app.get('/pendientes', async (req, res) => {
 
   const fechaInicio = yesterday.toISOString().split('T')[0]; // 'YYYY-MM-DD'
   const fechaFin = today.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-
+  console.log(fechaInicio);
+  console.log(fechaFin);
+  
   const [rows] = await pool.query(`
     SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
            a.no, a.aspecto, a.no_, a.observacion 
