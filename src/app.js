@@ -6516,18 +6516,28 @@ app.post('/generar-pdfsemT', async (req, res) => {
 /** **/
 
 app.get('/pendientes', async (req, res) => {
+  // Calcular fechas en formato 'YYYY-MM-DD'
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const fechaInicio = yesterday.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+  const fechaFin = today.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
   const [rows] = await pool.query(`
     SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
            a.no, a.aspecto, a.no_, a.observacion 
     FROM items a 
     LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
     WHERE 
-      (no_ = 'x' OR (observacion IS NOT NULL AND TRIM(observacion) <> ''))
-      AND a.fecha_inspeccion >= CURDATE() - INTERVAL 1 DAY
+      (a.no_ = 'x' OR (a.observacion IS NOT NULL AND TRIM(a.observacion) <> ''))
+      AND a.fecha_inspeccion BETWEEN ? AND ?
     ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
-  `);
+  `, [fechaInicio, fechaFin]);
+
   res.render('pendientes', { rows });
 });
+
 
 
 app.get('/pendientessss', async (req, res) => {
