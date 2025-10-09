@@ -6526,6 +6526,17 @@ app.get('/pendientes', async (req, res) => {
   console.log(fechaInicio);
   console.log(fechaFin);
   
+function obtenerFechaBogotaYYYYMMDD(date = new Date()) {
+  const fechaBogota = new Date(
+    date.toLocaleString('en-US', { timeZone: 'America/Bogota' })
+  );
+  const yyyy = fechaBogota.getFullYear();
+  const mm = String(fechaBogota.getMonth() + 1).padStart(2, '0');
+  const dd = String(fechaBogota.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
 const [rows] = await pool.query(`
   SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
          a.no, a.aspecto, a.no_, a.observacion 
