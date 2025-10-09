@@ -6521,21 +6521,22 @@ app.get('/pendientes', async (req, res) => {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  const fechaInicio = yesterday.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-  const fechaFin = today.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+  const fechaInicio = obtenerFechaBogotaYYYYMMDD(new Date(Date.now() - 86400000)); // ayer Bogotá
+  const fechaFin = obtenerFechaBogotaYYYYMMDD(new Date()); // hoy Bogotá
   console.log(fechaInicio);
   console.log(fechaFin);
   
-  const [rows] = await pool.query(`
-    SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
-           a.no, a.aspecto, a.no_, a.observacion 
-    FROM items a 
-    LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
-    WHERE 
-      (a.no_ = 'x' OR (a.observacion IS NOT NULL AND TRIM(a.observacion) <> ''))
-      AND a.fecha_inspeccion BETWEEN ? AND ?
-    ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
-  `, [fechaInicio, fechaFin]);
+const [rows] = await pool.query(`
+  SELECT a.func_doc, b.funcionario, a.ocompra, a.fecha_inspeccion, 
+         a.no, a.aspecto, a.no_, a.observacion 
+  FROM items a 
+  LEFT JOIN tbl_efuncional b ON b.identificador = a.func_doc
+  WHERE 
+    (a.no_ = 'x' OR (a.observacion IS NOT NULL AND TRIM(a.observacion) <> ''))
+    AND a.fecha_inspeccion >= ?
+    AND a.fecha_inspeccion < ?
+  ORDER BY b.funcionario, a.ocompra, a.fecha_inspeccion, a.no
+`, [fechaInicio, fechaFin]);
 
   res.render('pendientes', { rows });
 });
